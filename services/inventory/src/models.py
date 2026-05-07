@@ -1,5 +1,7 @@
+from datetime import datetime
 from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy import String, Integer, Float
+from sqlalchemy import String, Integer, Float, DateTime
+from sqlalchemy.sql import func
 from shared.python.core import Base
 
 class Product(Base):
@@ -12,3 +14,13 @@ class Product(Base):
     name: Mapped[str] = mapped_column(String(255))
     price: Mapped[float] = mapped_column(Float)
     stock_quantity: Mapped[int] = mapped_column(Integer, default=0)
+    
+    # --- New Audit Fields ---
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), 
+        server_default=func.now(), 
+        onupdate=func.now()
+    )
