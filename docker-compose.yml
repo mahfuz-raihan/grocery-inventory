@@ -1,18 +1,18 @@
 services:
   # --- API GATEWAY ---
   traefik:
-    image: traefik:v3.0
+    image: traefik:latest
     container_name: erp-gateway
     command:
       - "--api.insecure=true"
       - "--providers.docker=true"
+      - "--providers.docker.endpoint=tcp://host.docker.internal:2375"
+      - "--providers.docker.network=erp-network"
+      - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.web.address=:80"
     ports:
       - "80:80"
       - "8080:8080"
-    volumes:
-      # FIX: Added double slash for Windows Docker Desktop compatibility
-      - "//var/run/docker.sock:/var/run/docker.sock:ro"
     networks:
       - erp-network
 
