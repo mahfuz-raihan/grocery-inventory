@@ -11,7 +11,8 @@ services:
       - "80:80"
       - "8080:8080"
     volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      # FIX: Added double slash for Windows Docker Desktop compatibility
+      - "//var/run/docker.sock:/var/run/docker.sock:ro"
     networks:
       - erp-network
 
@@ -24,7 +25,7 @@ services:
       POSTGRES_PASSWORD: password_change_me
       POSTGRES_DB: erp_master
     ports:
-      - "5433:5432" # Assuming you chose to use 5433 locally based on our last step
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -48,7 +49,7 @@ services:
   # --- INVENTORY SERVICE ---
   inventory-service:
     build:
-      context: . # Build from root to access /shared
+      context: .
       dockerfile: ./services/inventory/Dockerfile
     container_name: erp-inventory
     labels:
