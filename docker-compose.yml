@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # --- API GATEWAY ---
   traefik:
@@ -26,9 +24,14 @@ services:
       POSTGRES_PASSWORD: password_change_me
       POSTGRES_DB: erp_master
     ports:
-      - "5432:5432"
+      - "5433:5432" # CHANGED: Local port is 5433, container port is 5432
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U admin -d erp_master" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     networks:
       - erp-network
 
@@ -41,14 +44,28 @@ services:
       - "8222:8222" # NATS Monitoring
     networks:
       - erp-network
-  # --- SERVICE PLACEHOLDERS (To be built) ---
-  # inventory-service:
-  #   build: ./services/inventory
-  #   labels:
-  #     - "traefik.http.routers.inventory.rule=PathPrefix(`/api/v1/inventory`)"
-  #   depends_on:
-  #     - postgres
-  #     - nats
+
+  # --- INVENTORY SERVICE ---
+  inventory-service:
+    build:
+      context: . # Build from the root so it can access the /shared folder
+      dockerfile: ./services/inventory/Dockerfile
+    container_name: erp-inventory
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.inventory.rule=PathPrefix(`/api/v1/inventory`)"
+      - "traefik.http.services.inventory.loadbalancer.server.port=8000"
+    environment:
+      # Note: Inside the Docker network, it connects to 'postgres:5432', not localhost:5433
+      - DATABASE_URL=postgresql+asyncpg://admin:password_change_me@postgres:5432/erp_master
+      - NATS_URL=nats://nats:4222
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_started
+    networks:
+      - erp-network
 
 networks:
   erp-network:
