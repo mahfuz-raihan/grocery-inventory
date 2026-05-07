@@ -9,7 +9,7 @@ services:
       - "--entrypoints.web.address=:80"
     ports:
       - "80:80"
-      - "8080:8080" # Traefik Dashboard
+      - "8080:8080"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
     networks:
@@ -24,7 +24,7 @@ services:
       POSTGRES_PASSWORD: password_change_me
       POSTGRES_DB: erp_master
     ports:
-      - "5433:5432" # CHANGED: Local port is 5433, container port is 5432
+      - "5433:5432" # Assuming you chose to use 5433 locally based on our last step
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -41,14 +41,14 @@ services:
     container_name: erp-messaging
     ports:
       - "4222:4222"
-      - "8222:8222" # NATS Monitoring
+      - "8222:8222"
     networks:
       - erp-network
 
   # --- INVENTORY SERVICE ---
   inventory-service:
     build:
-      context: . # Build from the root so it can access the /shared folder
+      context: . # Build from root to access /shared
       dockerfile: ./services/inventory/Dockerfile
     container_name: erp-inventory
     labels:
@@ -56,7 +56,6 @@ services:
       - "traefik.http.routers.inventory.rule=PathPrefix(`/api/v1/inventory`)"
       - "traefik.http.services.inventory.loadbalancer.server.port=8000"
     environment:
-      # Note: Inside the Docker network, it connects to 'postgres:5432', not localhost:5433
       - DATABASE_URL=postgresql+asyncpg://admin:password_change_me@postgres:5432/erp_master
       - NATS_URL=nats://nats:4222
     depends_on:
