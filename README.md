@@ -1,13 +1,14 @@
 # grocery-inventory
-Grocery inventory apps
 
+Grocery inventory apps
 
 ## Grocery ERP - Micro-modular Foundation
 
 This monorepo is designed for a scalable, event-driven grocery management system.
 
 ## Directory Structure
-```
+
+```text
 /grocery-erp
 ├── services/
 │   ├── auth/                # Identity & Access Management
