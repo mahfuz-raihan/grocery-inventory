@@ -1,6 +1,7 @@
+from datetime import datetime
+from typing import Optional
 from pydantic import BaseModel, ConfigDict, Field
 
-# Using Pydantic v2 for robust validation
 class ProductBase(BaseModel):
     sku: str = Field(..., description="Stock Keeping Unit (Unique identifier)")
     name: str = Field(..., min_length=2, max_length=255)
@@ -12,11 +13,13 @@ class ProductCreate(ProductBase):
 class ProductResponse(ProductBase):
     id: int
     stock_quantity: int
+    
+    # Add timestamps to our API response
+    created_at: datetime
+    updated_at: datetime
 
-    # Pydantic v2 way to tell it to read data even if it's not a dict (like an ORM model)
     model_config = ConfigDict(from_attributes=True)
 
-# Event schema for NATS messaging
 class StockUpdateEvent(BaseModel):
     sku: str
     quantity_change: int
