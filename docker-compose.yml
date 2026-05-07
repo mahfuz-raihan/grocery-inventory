@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  # --- API GATEWAY ---
+  traefik:
+    image: traefik:v3.0
+    container_name: erp-gateway
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - "80:80"
+      - "8080:8080" # Traefik Dashboard
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    networks:
+      - erp-network
+
+  # --- DATABASE ---
+  postgres:
+    image: postgres:16-alpine
+    container_name: erp-db
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password_change_me
+      POSTGRES_DB: erp_master
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - erp-network
+
+  # --- MESSAGE BROKER ---
+  nats:
+    image: nats:2.10-alpine
+    container_name: erp-messaging
+    ports:
+      - "4222:4222"
+      - "8222:8222" # NATS Monitoring
+    networks:
+      - erp-network
+  # --- SERVICE PLACEHOLDERS (To be built) ---
+  # inventory-service:
+  #   build: ./services/inventory
+  #   labels:
+  #     - "traefik.http.routers.inventory.rule=PathPrefix(`/api/v1/inventory`)"
+  #   depends_on:
+  #     - postgres
+  #     - nats
+
+networks:
+  erp-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
