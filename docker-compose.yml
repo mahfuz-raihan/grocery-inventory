@@ -78,6 +78,7 @@ services:
 
 networks:
   erp-network:
+    name: erp-network
     driver: bridge
 
 volumes:
