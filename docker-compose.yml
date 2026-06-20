@@ -1,18 +1,18 @@
 services:
   # --- API GATEWAY ---
   traefik:
-    image: traefik:latest
+    image: traefik:v3.0
     container_name: erp-gateway
     command:
       - "--api.insecure=true"
       - "--providers.docker=true"
-      - "--providers.docker.endpoint=tcp://host.docker.internal:2375"
-      - "--providers.docker.network=erp-network"
-      - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.web.address=:80"
     ports:
       - "80:80"
       - "8080:8080"
+    volumes:
+      # FIX: Added double slash for Windows Docker Desktop compatibility
+      - "//var/run/docker.sock:/var/run/docker.sock:ro"
     networks:
       - erp-network
 
@@ -29,7 +29,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U admin -d erp_master" ]
+      test: ["CMD-SHELL", "pg_isready -U admin -d erp_master"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -46,10 +46,19 @@ services:
     networks:
       - erp-network
 
+  # --- REDIS CACHE (NEW FOR SPRINT 2) ---
+  redis:
+    image: redis:7-alpine
+    container_name: erp-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - erp-network
+
   # --- INVENTORY SERVICE ---
   inventory-service:
     build:
-      context: .
+      context: . 
       dockerfile: ./services/inventory/Dockerfile
     container_name: erp-inventory
     labels:
