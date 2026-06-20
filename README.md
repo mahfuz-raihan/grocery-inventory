@@ -9,7 +9,7 @@ This monorepo is designed for a scalable, event-driven grocery management system
 ## Directory Structure
 
 ```text
-/grocery-erp
+/grocery-inventory
 ├── services/
 │   ├── auth/                # Identity & Access Management
 │   │   ├── src/
