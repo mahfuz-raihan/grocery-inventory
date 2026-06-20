@@ -56,6 +56,27 @@ services:
     networks:
       - erp-network
 
+
+# --- AUTHENTICATION SERVICE ---
+  auth-service:
+    build:
+      context: .
+      dockerfile: ./services/auth/Dockerfile
+    container_name: erp-auth
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - erp-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.auth.rule=PathPrefix(`/api/v1/auth`)"
+      - "traefik.http.routers.auth.entrypoints=web"
+      - "traefik.http.services.auth.loadbalancer.server.port=8000"
+      - "traefik.docker.network=erp-network"
+
   # --- INVENTORY SERVICE ---
   inventory-service:
     build:
