@@ -3,19 +3,19 @@ services:
   traefik:
     image: traefik:v3.0
     container_name: erp-gateway
+    environment:
+      # FIX: Force Traefik to use a modern Docker API version to satisfy Ubuntu
+      - DOCKER_API_VERSION=1.41
     command:
       - "--api.insecure=true"
       - "--providers.docker=true"
-      # Notice we removed the tcp://host.docker.internal line!
-      - "--providers.docker.network=erp-network"
-      - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.web.address=:80"
     ports:
       - "80:80"
-      - "8082:8080"
+      - "8081:8080" # CHANGED: Moved from 8080 to 8081 to avoid local conflicts
     volumes:
-      # Changed back to standard Linux single slash
-      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      # FIX: Added double slash for Windows Docker Desktop compatibility
+      - "//var/run/docker.sock:/var/run/docker.sock:ro"
     networks:
       - erp-network
 
@@ -30,7 +30,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U admin -d erp_master"]
+      test: [ "CMD-SHELL", "pg_isready -U admin -d erp_master" ]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -60,6 +60,7 @@ services:
   inventory-service:
     build:
       context: .
+      # FIX: Point exactly to the lowercase 'f' standard naming
       dockerfile: ./services/inventory/Dockerfile
     container_name: erp-inventory
     labels:
@@ -78,7 +79,6 @@ services:
 
 networks:
   erp-network:
-    name: erp-network
     driver: bridge
 
 volumes:
