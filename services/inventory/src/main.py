@@ -8,8 +8,9 @@ from sqlalchemy.exc import IntegrityError
 
 from shared.python.core import DatabaseManager, MessagingManager, log, Base
 from src.models import Product
-from src.schemas import ProductCreate, ProductResponse, StockUpdateEvent
+from src.schemas import ProductCreate, ProductResponse, StockUpdateEvent, BranchResponse, BranchCreate, CategoryResponse, CategoryCreate, ProductWithStockResponse
 from src.config import settings
+from src.models import Product, Branch, Category, StockLedger, MovementType
 
 # Initialize Shared Managers using our centralized settings!
 db_manager = DatabaseManager(settings.database_url)
