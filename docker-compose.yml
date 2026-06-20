@@ -60,13 +60,16 @@ services:
   inventory-service:
     build:
       context: .
-      # FIX: Point exactly to the lowercase 'f' standard naming
       dockerfile: ./services/inventory/Dockerfile
     container_name: erp-inventory
+    ports:
+      - "8000:8000"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.inventory.rule=PathPrefix(`/api/v1/inventory`)"
+      - "traefik.http.routers.inventory.entrypoints=web"
       - "traefik.http.services.inventory.loadbalancer.server.port=8000"
+      - "traefik.docker.network=erp-network"
     env_file:
       - .env
     depends_on:
