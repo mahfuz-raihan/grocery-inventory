@@ -6,17 +6,76 @@ services:
     command:
       - "--api.insecure=true"
       - "--providers.docker=true"
-      # Notice we removed the tcp://host.docker.internal line!
-      - "--providers.docker.network=erp-network"
-      - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.web.address=:80"
     ports:
       - "80:80"
       - "8081:8080"
     volumes:
-      # Changed back to standard Linux single slash
-      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      # FIX: Added double slash for Windows Docker Desktop compatibility
+      - "//var/run/docker.sock:/var/run/docker.sock:ro"
     networks:
       - erp-network
 
-# ... the rest of your file (postgres, nats, redis, inventory) stays exactly the same!
+  # --- DATABASE ---
+  postgres:
+    image: postgres:16-alpine
+    container_name: erp-db
+    env_file:
+      - .env
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d erp_master"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - erp-network
+
+  # --- MESSAGE BROKER ---
+  nats:
+    image: nats:2.10-alpine
+    container_name: erp-messaging
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+    networks:
+      - erp-network
+
+  # --- REDIS CACHE (NEW FOR SPRINT 2) ---
+  redis:
+    image: redis:7-alpine
+    container_name: erp-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - erp-network
+
+  # --- INVENTORY SERVICE ---
+  inventory-service:
+    build:
+      context: .
+      dockerfile: ./services/inventory/Dockerfile
+    container_name: erp-inventory
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.inventory.rule=PathPrefix(`/api/v1/inventory`)"
+      - "traefik.http.services.inventory.loadbalancer.server.port=8000"
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_started
+    networks:
+      - erp-network
+
+networks:
+  erp-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
