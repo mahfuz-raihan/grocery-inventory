@@ -6,13 +6,16 @@ services:
     command:
       - "--api.insecure=true"
       - "--providers.docker=true"
+      # Notice we removed the tcp://host.docker.internal line!
+      - "--providers.docker.network=erp-network"
+      - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.web.address=:80"
     ports:
       - "80:80"
       - "8081:8080"
     volumes:
-      # FIX: Added double slash for Windows Docker Desktop compatibility
-      - "//var/run/docker.sock:/var/run/docker.sock:ro"
+      # Changed back to standard Linux single slash
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
     networks:
       - erp-network
 
