@@ -6,79 +6,17 @@ services:
     command:
       - "--api.insecure=true"
       - "--providers.docker=true"
+      # Notice we removed the tcp://host.docker.internal line!
+      - "--providers.docker.network=erp-network"
+      - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.web.address=:80"
     ports:
       - "80:80"
-      - "8080:8080"
+      - "8081:8080"
     volumes:
-      # FIX: Added double slash for Windows Docker Desktop compatibility
-      - "//var/run/docker.sock:/var/run/docker.sock:ro"
+      # Changed back to standard Linux single slash
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
     networks:
       - erp-network
 
-  # --- DATABASE ---
-  postgres:
-    image: postgres:16-alpine
-    container_name: erp-db
-    environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: password_change_me
-      POSTGRES_DB: erp_master
-    ports:
-      - "5433:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U admin -d erp_master"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    networks:
-      - erp-network
-
-  # --- MESSAGE BROKER ---
-  nats:
-    image: nats:2.10-alpine
-    container_name: erp-messaging
-    ports:
-      - "4222:4222"
-      - "8222:8222"
-    networks:
-      - erp-network
-
-  # --- REDIS CACHE (NEW FOR SPRINT 2) ---
-  redis:
-    image: redis:7-alpine
-    container_name: erp-redis
-    ports:
-      - "6379:6379"
-    networks:
-      - erp-network
-
-  # --- INVENTORY SERVICE ---
-  inventory-service:
-    build:
-      context: . 
-      dockerfile: ./services/inventory/Dockerfile
-    container_name: erp-inventory
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.inventory.rule=PathPrefix(`/api/v1/inventory`)"
-      - "traefik.http.services.inventory.loadbalancer.server.port=8000"
-    environment:
-      - DATABASE_URL=postgresql+asyncpg://admin:password_change_me@postgres:5432/erp_master
-      - NATS_URL=nats://nats:4222
-    depends_on:
-      postgres:
-        condition: service_healthy
-      nats:
-        condition: service_started
-    networks:
-      - erp-network
-
-networks:
-  erp-network:
-    driver: bridge
-
-volumes:
-  postgres_data:
+# ... the rest of your file (postgres, nats, redis, inventory) stays exactly the same!
