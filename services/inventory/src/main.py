@@ -18,13 +18,20 @@ msg_manager = MessagingManager([settings.nats_url])
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     log.info("Starting Inventory Service...")
+    
+    # 1. Ensure the DB schema exists, then create tables
     async with db_manager.engine.begin() as conn:
         await conn.execute(text("CREATE SCHEMA IF NOT EXISTS inventory"))
         await conn.run_sync(Base.metadata.create_all)
         log.info("Database schema (Stock Ledger) initialized successfully.")
         
+    # 2. Connect to NATS message broker
     await msg_manager.connect()
+    
     yield
+    
+    # Shutdown gracefully
+    log.info("Shutting down Inventory Service...")
     await msg_manager.close()
     await db_manager.engine.dispose()
 
@@ -101,7 +108,8 @@ async def create_product(product: ProductCreate, session: AsyncSession = Depends
         
     except IntegrityError:
         await session.rollback()
-        raise HTTPException(status_code=400, detail="SKU or Barcode already exists, or Branch/Category ID is invalid.")
+        log.error(f"Duplicate SKU attempted: {product.sku}")
+        raise HTTPException(status_code=400, detail="A product with this SKU already exists.")
     except Exception as e:
         await session.rollback()
         log.error(f"Error creating product: {e}")
