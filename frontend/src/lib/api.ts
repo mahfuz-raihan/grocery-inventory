@@ -23,17 +23,41 @@ export interface CheckoutRequest {
     status: "paid" | "pending";
 }
 
+// New GRN Types
+export interface GRNItemCreate {
+    product_id: string;
+    quantity_received: number;
+    cost_price: number;
+}
+
+export interface GRNCreate {
+    branch_id: string;
+    supplier_name: string;
+    invoice_reference?: string;
+    items: GRNItemCreate[];
+}
+
+// New Report Types
+export interface DailyReport {
+    date: string;
+    branch_id: string | null;
+    total_revenue: number;
+    transaction_count: number;
+}
+
 // --- API Functions ---
-const API_BASE = '/api/v1';
+const getApiBaseUrl = () => {
+    if (typeof window !== 'undefined') {
+      return window.location.origin;
+    }
+    return '';
+};
 
 export const api = {
-    /**
-     * Fetches the product list from the Inventory service.
-     * We can easily add a search query parameter here later!
-     */
     getProducts: async (): Promise<Product[]> => {
         try {
-            const response = await fetch(`${API_BASE}/inventory/products`);
+            const baseUrl = getApiBaseUrl();
+            const response = await fetch(`${baseUrl}/api/v1/inventory/products`);
             if (!response.ok) throw new Error("Failed to fetch products");
             return await response.json();
         } catch (error) {
@@ -42,25 +66,54 @@ export const api = {
         }
     },
 
-    /**
-     * Sends the cart to the Sales service for checkout and receipt generation.
-     */
     checkout: async (payload: CheckoutRequest) => {
         try {
-            const response = await fetch(`${API_BASE}/sales/checkout`, {
+            const baseUrl = getApiBaseUrl();
+            const response = await fetch(`${baseUrl}/api/v1/sales/checkout`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
-            
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.detail || "Checkout failed");
             }
-            
             return await response.json();
         } catch (error) {
             console.error("API Error (checkout):", error);
+            throw error;
+        }
+    },
+
+    // NEW: Fetch Daily Sales Report
+    getDailyReport: async (): Promise<DailyReport> => {
+        try {
+            const baseUrl = getApiBaseUrl();
+            const response = await fetch(`${baseUrl}/api/v1/sales/reports/daily`);
+            if (!response.ok) throw new Error("Failed to fetch report");
+            return await response.json();
+        } catch (error) {
+            console.error("API Error (getDailyReport):", error);
+            return { date: new Date().toISOString(), branch_id: null, total_revenue: 0, transaction_count: 0 };
+        }
+    },
+
+    // NEW: Submit Goods Receipt Note
+    submitGRN: async (payload: GRNCreate) => {
+        try {
+            const baseUrl = getApiBaseUrl();
+            const response = await fetch(`${baseUrl}/api/v1/inventory/grn`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || "GRN submission failed");
+            }
+            return await response.json();
+        } catch (error) {
+            console.error("API Error (submitGRN):", error);
             throw error;
         }
     }
