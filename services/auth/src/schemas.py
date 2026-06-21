@@ -6,14 +6,16 @@ from src.models import Role
 
 class UserCreate(BaseModel):
     email: EmailStr = Field(..., description="A valid, strictly formatted email address")
-    password: str = Field(..., min_length=8, description="Strong password (minimum 8 characters)")
+    # CHANGED: Removed min_length=8 so you can use ANY password you want!
+    password: str = Field(...)
     full_name: str = Field(..., min_length=2, max_length=100)
     role: Role = Field(..., description="Assigned role: owner, manager, cashier, or stock_handler")
     branch_id: Optional[uuid.UUID] = Field(None, description="Null if role is 'owner', otherwise requires a valid Branch UUID")
 
 class UserLogin(BaseModel):
     email: EmailStr
-    password: str = Field(..., min_length=8)
+    # CHANGED: Removed min_length=8
+    password: str
 
 class UserResponse(BaseModel):
     id: uuid.UUID
