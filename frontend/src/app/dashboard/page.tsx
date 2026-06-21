@@ -16,6 +16,11 @@ interface Branch {
     location: string;
 }
 
+interface BranchCreate {
+    name: string;
+    location: string;
+}
+
 interface GRNItemCreate {
     product_id: string;
     quantity_received: number;
@@ -75,6 +80,21 @@ const api = {
             return [];
         }
     },
+    createBranch: async (payload: BranchCreate): Promise<Branch> => {
+        try {
+            const baseUrl = getApiBaseUrl();
+            const response = await fetch(`${baseUrl}/api/v1/inventory/branches`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (!response.ok) throw new Error("Failed to create branch");
+            return await response.json();
+        } catch (error) {
+            console.error("API Error (createBranch):", error);
+            throw error;
+        }
+    },
     getDailyReport: async (): Promise<DailyReport> => {
         try {
             const baseUrl = getApiBaseUrl();
@@ -107,7 +127,7 @@ const api = {
 };
 
 export default function Dashboard() {
-  const [activeTab, setActiveTab] = useState<"analytics" | "grn">("analytics");
+  const [activeTab, setActiveTab] = useState<"analytics" | "grn" | "branches">("analytics");
   
   // Currency State (Base is BDT)
   const [currency, setCurrency] = useState<"BDT" | "USD">("BDT");
@@ -128,6 +148,12 @@ export default function Dashboard() {
   const [costPrice, setCostPrice] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+
+  // Branch Creation State
+  const [newBranchName, setNewBranchName] = useState("");
+  const [newBranchLocation, setNewBranchLocation] = useState("");
+  const [isSubmittingBranch, setIsSubmittingBranch] = useState(false);
+  const [branchSuccessMessage, setBranchSuccessMessage] = useState("");
 
   // Helper to auto-generate sequential invoice references
   const generateInvoiceRef = () => {
@@ -214,6 +240,36 @@ export default function Dashboard() {
     }
   };
 
+  // Handle Branch Creation
+  const handleCreateBranch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newBranchName || !newBranchLocation) return;
+    
+    setIsSubmittingBranch(true);
+    setBranchSuccessMessage("");
+    
+    try {
+      const newBranch = await api.createBranch({
+        name: newBranchName,
+        location: newBranchLocation
+      });
+      
+      setBranches(prev => [...prev, newBranch]);
+      if (!selectedBranchId) {
+        setSelectedBranchId(newBranch.id);
+      }
+      
+      setBranchSuccessMessage(`✅ Branch "${newBranchName}" created successfully!`);
+      setNewBranchName("");
+      setNewBranchLocation("");
+    } catch (error) {
+      console.error("Branch Creation Error:", error);
+      alert("Failed to create branch. Check console for details.");
+    } finally {
+      setIsSubmittingBranch(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 text-gray-800 p-8">
       <div className="max-w-6xl mx-auto">
@@ -268,6 +324,15 @@ export default function Dashboard() {
           >
             Receive Stock (GRN)
           </button>
+          <button
+            onClick={() => setActiveTab("branches")}
+            className={`px-6 py-3 font-semibold rounded-t-lg transition-colors ${
+              activeTab === "branches" ? "bg-white border-t border-l border-r border-b-0 text-blue-600" : "text-gray-500 hover:text-gray-700 bg-gray-100"
+            }`}
+            style={{ marginBottom: activeTab === "branches" ? "-1px" : "0" }}
+          >
+            Manage Branches
+          </button>
         </div>
 
         {/* Tab Content: HQ Analytics */}
@@ -300,125 +365,68 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Tab Content: Goods Receipt Note */}
-        {activeTab === "grn" && (
+        {/* Tab Content: Manage Branches */}
+        {activeTab === "branches" && (
           <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100 max-w-2xl">
-            <h2 className="text-xl font-bold text-gray-800 mb-2">Receive Supplier Delivery</h2>
-            <p className="text-gray-500 mb-6 text-sm">Log incoming stock to update the Ledger and set Cost Basis.</p>
+            <h2 className="text-xl font-bold text-gray-800 mb-2">Create New Branch</h2>
+            <p className="text-gray-500 mb-6 text-sm">Add a new store location to the ERP system.</p>
 
-            {successMessage && (
+            {branchSuccessMessage && (
               <div className="mb-6 p-4 bg-green-50 border border-green-200 text-green-700 rounded-lg font-medium">
-                ✅ {successMessage}
+                {branchSuccessMessage}
               </div>
             )}
 
-            {branches.length === 0 && (
-              <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 text-yellow-700 rounded-lg text-sm">
-                ⚠️ <b>No branches found.</b> Please create a Branch in the Inventory API first before submitting GRNs.
+            <form onSubmit={handleCreateBranch} className="space-y-5">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Branch Name *</label>
+                <input
+                  type="text"
+                  required
+                  className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  value={newBranchName}
+                  onChange={(e) => setNewBranchName(e.target.value)}
+                  placeholder="e.g., Dhaka Main Branch"
+                />
               </div>
-            )}
-
-            <form onSubmit={handleGRNSubmit} className="space-y-5">
               
-              {/* NEW: Branch Selection */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Destination Branch *</label>
-                <select
+                <label className="block text-sm font-medium text-gray-700 mb-1">Location *</label>
+                <input
+                  type="text"
                   required
-                  className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white"
-                  value={selectedBranchId}
-                  onChange={(e) => setSelectedBranchId(e.target.value)}
-                >
-                  <option value="" disabled>-- Select a branch --</option>
-                  {branches.map(b => (
-                    <option key={b.id} value={b.id}>{b.name} ({b.location})</option>
-                  ))}
-                </select>
+                  className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  value={newBranchLocation}
+                  onChange={(e) => setNewBranchLocation(e.target.value)}
+                  placeholder="e.g., Gulshan 1"
+                />
               </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Supplier Name *</label>
-                  <input
-                    type="text"
-                    required
-                    className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                    value={supplierName}
-                    onChange={(e) => setSupplierName(e.target.value)}
-                    placeholder="e.g., Fresh Farms LLC"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Invoice Reference (Auto)</label>
-                  <input
-                    type="text"
-                    readOnly
-                    className="w-full p-2.5 border rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed font-mono text-sm"
-                    value={invoiceRef}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Select Product *</label>
-                <select
-                  required
-                  className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white"
-                  value={selectedProductId}
-                  onChange={(e) => setSelectedProductId(e.target.value)}
-                >
-                  <option value="" disabled>-- Select a product --</option>
-                  {products.map(p => (
-                    <option key={p.id} value={p.id}>{p.name} (SKU: {p.sku})</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Quantity Received *</label>
-                  <input
-                    type="number"
-                    required
-                    step="0.01"
-                    min="0.01"
-                    className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                    value={quantity}
-                    onChange={(e) => setQuantity(e.target.value)}
-                    placeholder="0.00"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Unit Cost Price ({currency === "BDT" ? "৳" : "$"}) *
-                  </label>
-                  <input
-                    type="number"
-                    required
-                    step="0.01"
-                    min="0"
-                    className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                    value={costPrice}
-                    onChange={(e) => setCostPrice(e.target.value)}
-                    placeholder="0.00"
-                  />
-                </div>
-              </div>
-
-              {quantity && costPrice && (
-                 <div className="text-right text-sm text-gray-500 font-medium pt-2">
-                    Total Invoice Cost: <span className="text-gray-800">{currency === "USD" ? "$" : "৳"}{(parseFloat(quantity) * parseFloat(costPrice)).toFixed(2)}</span>
-                 </div>
-              )}
 
               <button
                 type="submit"
-                disabled={isSubmitting || products.length === 0 || branches.length === 0}
+                disabled={isSubmittingBranch}
                 className="w-full mt-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors shadow-md disabled:bg-gray-400"
               >
-                {isSubmitting ? "Processing..." : "Submit GRN to Ledger"}
+                {isSubmittingBranch ? "Creating..." : "Create Branch"}
               </button>
             </form>
+
+            {/* List Existing Branches */}
+            <div className="mt-8 pt-6 border-t">
+              <h3 className="font-bold text-gray-800 mb-4">Existing Branches ({branches.length})</h3>
+              {branches.length === 0 ? (
+                <p className="text-sm text-gray-500">No branches created yet.</p>
+              ) : (
+                <ul className="space-y-2">
+                  {branches.map(b => (
+                    <li key={b.id} className="p-3 bg-gray-50 rounded-lg border text-sm flex justify-between items-center">
+                      <span className="font-medium">{b.name}</span>
+                      <span className="text-gray-500">{b.location}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
         )}
       </div>
