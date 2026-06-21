@@ -10,6 +10,12 @@ interface Product {
     current_stock: number;
 }
 
+interface Branch {
+    id: string;
+    name: string;
+    location: string;
+}
+
 interface GRNItemCreate {
     product_id: string;
     quantity_received: number;
@@ -51,13 +57,22 @@ const api = {
             if (!response.ok) throw new Error("Failed to fetch products");
             
             const data = await response.json();
-            // Fallback: If DB is empty, provide dummy data so the user can test the UI
             if (data.length === 0) return DUMMY_PRODUCTS;
             return data;
-            
         } catch (error) {
             console.error("API Error (getProducts):", error);
             return DUMMY_PRODUCTS;
+        }
+    },
+    getBranches: async (): Promise<Branch[]> => {
+        try {
+            const baseUrl = getApiBaseUrl();
+            const response = await fetch(`${baseUrl}/api/v1/inventory/branches`);
+            if (!response.ok) throw new Error("Failed to fetch branches");
+            return await response.json();
+        } catch (error) {
+            console.error("API Error (getBranches):", error);
+            return [];
         }
     },
     getDailyReport: async (): Promise<DailyReport> => {
@@ -96,9 +111,7 @@ export default function Dashboard() {
   
   // Currency State (Base is BDT)
   const [currency, setCurrency] = useState<"BDT" | "USD">("BDT");
-  
-  // Real-time exchange rate fetched dynamically
-  const USD_EXCHANGE_RATE = 117.80; 
+  const USD_EXCHANGE_RATE = 117.0; // 1 USD = 117 BDT
   
   // Analytics State
   const [report, setReport] = useState<DailyReport | null>(null);
@@ -106,6 +119,8 @@ export default function Dashboard() {
 
   // GRN State
   const [products, setProducts] = useState<Product[]>([]);
+  const [branches, setBranches] = useState<Branch[]>([]);
+  const [selectedBranchId, setSelectedBranchId] = useState("");
   const [supplierName, setSupplierName] = useState("");
   const [invoiceRef, setInvoiceRef] = useState("");
   const [selectedProductId, setSelectedProductId] = useState("");
@@ -133,12 +148,17 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
-        const [reportData, productsData] = await Promise.all([
+        const [reportData, productsData, branchesData] = await Promise.all([
           api.getDailyReport(),
-          api.getProducts()
+          api.getProducts(),
+          api.getBranches()
         ]);
         setReport(reportData);
         setProducts(productsData);
+        setBranches(branchesData);
+        if (branchesData.length > 0) {
+            setSelectedBranchId(branchesData[0].id);
+        }
         setInvoiceRef(generateInvoiceRef()); // Auto-generate first invoice ref
       } catch (error) {
         console.error("Error loading dashboard data", error);
@@ -152,8 +172,8 @@ export default function Dashboard() {
   // Handle GRN Submission
   const handleGRNSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedProductId || !quantity || !costPrice || !supplierName) {
-      alert("Please fill in all required fields.");
+    if (!selectedProductId || !quantity || !costPrice || !supplierName || !selectedBranchId) {
+      alert("Please fill in all required fields and ensure a branch is selected.");
       return;
     }
 
@@ -161,13 +181,13 @@ export default function Dashboard() {
     setSuccessMessage("");
 
     try {
-      // If the user entered the cost price in USD, we MUST convert it to BDT before saving to the database!
+      // Convert cost price to BDT if USD is selected
       const finalCostPriceBDT = currency === "USD" 
         ? parseFloat(costPrice) * USD_EXCHANGE_RATE 
         : parseFloat(costPrice);
 
       await api.submitGRN({
-        branch_id: "00000000-0000-0000-0000-000000000001", // Dummy Branch ID for Phase 1
+        branch_id: selectedBranchId, // Using the real selected branch!
         supplier_name: supplierName,
         invoice_reference: invoiceRef,
         items: [{
@@ -177,9 +197,9 @@ export default function Dashboard() {
         }]
       });
       
-      setSuccessMessage(`Successfully received ${quantity} units from ${supplierName}!`);
+      setSuccessMessage(`Successfully received ${quantity} units from ${supplierName} at selected branch!`);
       
-      // Reset form and auto-generate the NEXT sequential invoice number
+      // Reset form
       setSupplierName("");
       setQuantity("");
       setCostPrice("");
@@ -292,7 +312,30 @@ export default function Dashboard() {
               </div>
             )}
 
+            {branches.length === 0 && (
+              <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 text-yellow-700 rounded-lg text-sm">
+                ⚠️ <b>No branches found.</b> Please create a Branch in the Inventory API first before submitting GRNs.
+              </div>
+            )}
+
             <form onSubmit={handleGRNSubmit} className="space-y-5">
+              
+              {/* NEW: Branch Selection */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Destination Branch *</label>
+                <select
+                  required
+                  className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+                  value={selectedBranchId}
+                  onChange={(e) => setSelectedBranchId(e.target.value)}
+                >
+                  <option value="" disabled>-- Select a branch --</option>
+                  {branches.map(b => (
+                    <option key={b.id} value={b.id}>{b.name} ({b.location})</option>
+                  ))}
+                </select>
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Supplier Name *</label>
@@ -302,11 +345,11 @@ export default function Dashboard() {
                     className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                     value={supplierName}
                     onChange={(e) => setSupplierName(e.target.value)}
-                    placeholder="e.g., Fresh Farms LLC (Supports any language)"
+                    placeholder="e.g., Fresh Farms LLC"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Invoice Reference (Auto-Generated)</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Invoice Reference (Auto)</label>
                   <input
                     type="text"
                     readOnly
@@ -362,7 +405,6 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              {/* Live Preview of Total Cost */}
               {quantity && costPrice && (
                  <div className="text-right text-sm text-gray-500 font-medium pt-2">
                     Total Invoice Cost: <span className="text-gray-800">{currency === "USD" ? "$" : "৳"}{(parseFloat(quantity) * parseFloat(costPrice)).toFixed(2)}</span>
@@ -371,7 +413,7 @@ export default function Dashboard() {
 
               <button
                 type="submit"
-                disabled={isSubmitting || products.length === 0}
+                disabled={isSubmitting || products.length === 0 || branches.length === 0}
                 className="w-full mt-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors shadow-md disabled:bg-gray-400"
               >
                 {isSubmitting ? "Processing..." : "Submit GRN to Ledger"}
