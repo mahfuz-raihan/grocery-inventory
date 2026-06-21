@@ -1,7 +1,7 @@
 services:
   # --- API GATEWAY ---
   traefik:
-    image: traefik:v3.0
+    image: traefik:v2.11
     container_name: erp-gateway
     environment:
       # FIX: Force Traefik to use a modern Docker API version to satisfy Ubuntu
@@ -14,8 +14,8 @@ services:
       - "80:80"
       - "8081:8080" # CHANGED: Moved from 8080 to 8081 to avoid local conflicts
     volumes:
-      # FIX: Added double slash for Windows Docker Desktop compatibility
-      - "//var/run/docker.sock:/var/run/docker.sock:ro"
+      # FIX: Native Linux single slash for maximum compatibility and speed
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
     networks:
       - erp-network
 
@@ -30,7 +30,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U admin -d erp_master" ]
+      test: ["CMD-SHELL", "pg_isready -U admin -d erp_master"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -56,8 +56,7 @@ services:
     networks:
       - erp-network
 
-
-# --- AUTHENTICATION SERVICE ---
+  # --- AUTHENTICATION SERVICE ---
   auth-service:
     build:
       context: .
@@ -83,8 +82,7 @@ services:
       context: .
       dockerfile: ./services/inventory/Dockerfile
     container_name: erp-inventory
-    ports:
-      - "8000:8000"
+    # SECURED: Removed ports block so this container is 100% shielded by Traefik
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.inventory.rule=PathPrefix(`/api/v1/inventory`)"
