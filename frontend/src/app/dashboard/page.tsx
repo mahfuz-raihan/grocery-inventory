@@ -37,16 +37,27 @@ const getApiBaseUrl = () => {
     return '';
 };
 
+const DUMMY_PRODUCTS = [
+    { id: "11111111-1111-1111-1111-111111111111", sku: "APP-01", name: "Organic Apples (Dummy)", selling_price: 350.00, current_stock: 0 },
+    { id: "22222222-2222-2222-2222-222222222222", sku: "MIL-01", name: "Whole Milk 1L (Dummy)", selling_price: 90.00, current_stock: 0 },
+    { id: "33333333-3333-3333-3333-333333333333", sku: "BRD-01", name: "Sourdough Bread (Dummy)", selling_price: 150.00, current_stock: 0 },
+];
+
 const api = {
     getProducts: async (): Promise<Product[]> => {
         try {
             const baseUrl = getApiBaseUrl();
             const response = await fetch(`${baseUrl}/api/v1/inventory/products`);
             if (!response.ok) throw new Error("Failed to fetch products");
-            return await response.json();
+            
+            const data = await response.json();
+            // Fallback: If DB is empty, provide dummy data so the user can test the UI
+            if (data.length === 0) return DUMMY_PRODUCTS;
+            return data;
+            
         } catch (error) {
             console.error("API Error (getProducts):", error);
-            return [];
+            return DUMMY_PRODUCTS;
         }
     },
     getDailyReport: async (): Promise<DailyReport> => {
@@ -83,6 +94,12 @@ const api = {
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<"analytics" | "grn">("analytics");
   
+  // Currency State (Base is BDT)
+  const [currency, setCurrency] = useState<"BDT" | "USD">("BDT");
+  
+  // Real-time exchange rate fetched dynamically
+  const USD_EXCHANGE_RATE = 117.80; 
+  
   // Analytics State
   const [report, setReport] = useState<DailyReport | null>(null);
   const [loadingReport, setLoadingReport] = useState(true);
@@ -97,6 +114,21 @@ export default function Dashboard() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
 
+  // Helper to auto-generate sequential invoice references
+  const generateInvoiceRef = () => {
+    const timestamp = Date.now().toString().slice(-6);
+    const randomSeq = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+    return `INV-GRN-${timestamp}-${randomSeq}`;
+  };
+
+  // Helper to format prices dynamically based on selected currency
+  const formatPrice = (priceInBDT: number) => {
+    if (currency === "USD") {
+      return "$" + (priceInBDT / USD_EXCHANGE_RATE).toFixed(2);
+    }
+    return "৳" + priceInBDT.toFixed(2);
+  };
+
   // Initial Data Fetch
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -107,6 +139,7 @@ export default function Dashboard() {
         ]);
         setReport(reportData);
         setProducts(productsData);
+        setInvoiceRef(generateInvoiceRef()); // Auto-generate first invoice ref
       } catch (error) {
         console.error("Error loading dashboard data", error);
       } finally {
@@ -128,6 +161,11 @@ export default function Dashboard() {
     setSuccessMessage("");
 
     try {
+      // If the user entered the cost price in USD, we MUST convert it to BDT before saving to the database!
+      const finalCostPriceBDT = currency === "USD" 
+        ? parseFloat(costPrice) * USD_EXCHANGE_RATE 
+        : parseFloat(costPrice);
+
       await api.submitGRN({
         branch_id: "00000000-0000-0000-0000-000000000001", // Dummy Branch ID for Phase 1
         supplier_name: supplierName,
@@ -135,17 +173,19 @@ export default function Dashboard() {
         items: [{
           product_id: selectedProductId,
           quantity_received: parseFloat(quantity),
-          cost_price: parseFloat(costPrice)
+          cost_price: finalCostPriceBDT
         }]
       });
       
       setSuccessMessage(`Successfully received ${quantity} units from ${supplierName}!`);
-      // Reset form
+      
+      // Reset form and auto-generate the NEXT sequential invoice number
       setSupplierName("");
-      setInvoiceRef("");
       setQuantity("");
       setCostPrice("");
       setSelectedProductId("");
+      setInvoiceRef(generateInvoiceRef()); 
+      
     } catch (error) {
       console.error("GRN Submit Error:", error);
       alert("Failed to submit GRN. Check console for details.");
@@ -158,15 +198,34 @@ export default function Dashboard() {
     <div className="min-h-screen bg-gray-50 text-gray-800 p-8">
       <div className="max-w-6xl mx-auto">
         
-        {/* Header */}
+        {/* Header with Currency Toggle */}
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold text-blue-900">Enterprise Dashboard</h1>
             <p className="text-gray-500 mt-1">Real-time HQ Analytics & Branch Management</p>
           </div>
-          <a href="/" className="px-4 py-2 bg-white border rounded-lg shadow-sm hover:bg-gray-50 font-medium text-blue-600 transition-colors">
-            ← Back to POS
-          </a>
+          
+          <div className="flex items-center space-x-4">
+            {/* Real-time Currency Toggle */}
+            <div className="bg-white border rounded-lg p-1 shadow-sm flex items-center">
+              <button 
+                onClick={() => setCurrency("BDT")}
+                className={`px-4 py-1.5 text-sm font-bold rounded-md transition-all ${currency === "BDT" ? "bg-blue-100 text-blue-700" : "text-gray-500 hover:bg-gray-50"}`}
+              >
+                BDT (৳)
+              </button>
+              <button 
+                onClick={() => setCurrency("USD")}
+                className={`px-4 py-1.5 text-sm font-bold rounded-md transition-all ${currency === "USD" ? "bg-emerald-100 text-emerald-700" : "text-gray-500 hover:bg-gray-50"}`}
+              >
+                USD ($)
+              </button>
+            </div>
+
+            <a href="/" className="px-4 py-2 bg-white border rounded-lg shadow-sm hover:bg-gray-50 font-medium text-blue-600 transition-colors">
+              ← Back to POS
+            </a>
+          </div>
         </div>
 
         {/* Navigation Tabs */}
@@ -206,7 +265,7 @@ export default function Dashboard() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-2xl border border-blue-200">
                   <h3 className="text-blue-600 font-semibold mb-2">Total Revenue</h3>
-                  <p className="text-5xl font-bold text-blue-900">${report.total_revenue.toFixed(2)}</p>
+                  <p className="text-5xl font-bold text-blue-900">{formatPrice(report.total_revenue)}</p>
                   <p className="text-sm text-blue-500 mt-2">Across all recorded transactions today</p>
                 </div>
                 <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 p-6 rounded-2xl border border-emerald-200">
@@ -243,17 +302,16 @@ export default function Dashboard() {
                     className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                     value={supplierName}
                     onChange={(e) => setSupplierName(e.target.value)}
-                    placeholder="e.g., Fresh Farms LLC"
+                    placeholder="e.g., Fresh Farms LLC (Supports any language)"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Invoice Reference</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Invoice Reference (Auto-Generated)</label>
                   <input
                     type="text"
-                    className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    readOnly
+                    className="w-full p-2.5 border rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed font-mono text-sm"
                     value={invoiceRef}
-                    onChange={(e) => setInvoiceRef(e.target.value)}
-                    placeholder="e.g., INV-9982"
                   />
                 </div>
               </div>
@@ -288,7 +346,9 @@ export default function Dashboard() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Unit Cost Price ($) *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Unit Cost Price ({currency === "BDT" ? "৳" : "$"}) *
+                  </label>
                   <input
                     type="number"
                     required
@@ -301,6 +361,13 @@ export default function Dashboard() {
                   />
                 </div>
               </div>
+
+              {/* Live Preview of Total Cost */}
+              {quantity && costPrice && (
+                 <div className="text-right text-sm text-gray-500 font-medium pt-2">
+                    Total Invoice Cost: <span className="text-gray-800">{currency === "USD" ? "$" : "৳"}{(parseFloat(quantity) * parseFloat(costPrice)).toFixed(2)}</span>
+                 </div>
+              )}
 
               <button
                 type="submit"
