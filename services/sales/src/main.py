@@ -58,6 +58,7 @@ async def process_checkout(request: CheckoutRequest, session: AsyncSession = Dep
         status=request.status
     )
     session.add(new_sale)
+    # Flush to generate ID without committing
     await session.flush() 
 
     for item in request.items:
@@ -70,16 +71,21 @@ async def process_checkout(request: CheckoutRequest, session: AsyncSession = Dep
         )
         session.add(new_item)
 
+    # Commit the transaction
     await session.commit()
 
-    # FIX: Re-fetch the sale with the items relationship loaded eagerly
-    # This prevents the MissingGreenlet error during Pydantic serialization
+    # Re-fetch the record with items eagerly loaded.
+    # By querying this after commit, we ensure a clean state.
     result = await session.execute(
         select(Sale)
         .options(selectinload(Sale.items))
         .where(Sale.id == new_sale.id)
     )
     final_sale = result.scalar_one()
+
+    # Expire the object to detach it from the session, 
+    # preventing accidental lazy-load triggers
+    session.expunge(final_sale)
 
     # Publish the event
     event = OrderCompletedEvent(
