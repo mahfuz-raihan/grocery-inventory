@@ -28,10 +28,11 @@ services:
       - erp_network
     restart: unless-stopped
 
-  # --- DATABASE ---
+  # --- INFRASTRUCTURE ---
   postgres:
     image: postgres:16-alpine
     container_name: erp-db
+    restart: unless-stopped
     env_file:
       - .env
     ports:
@@ -40,7 +41,6 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - erp_network
-    restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 5s
@@ -74,6 +74,7 @@ services:
       context: .
       dockerfile: ./services/auth/Dockerfile
     container_name: erp-auth
+    restart: unless-stopped
     env_file:
       - .env
     networks:
@@ -87,7 +88,6 @@ services:
       - "traefik.http.routers.auth.entrypoints=web"
       - "traefik.http.services.auth.loadbalancer.server.port=8000"
       - "traefik.docker.network=erp-network"
-    restart: unless-stopped
 
   # --- INVENTORY SERVICE ---
   inventory-service:
@@ -132,3 +132,17 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.sales.rule=PathPrefix(`/api/v1/sales`)"
       - "traefik.http.services.sales.loadbalancer.server.port=8000"
+
+  # --- FRONTEND SERVICE ---
+  frontend-service:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: erp-frontend
+    restart: unless-stopped
+    networks:
+      - erp_network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=PathPrefix(`/`)"
+      - "traefik.http.services.frontend.loadbalancer.server.port=3000"
