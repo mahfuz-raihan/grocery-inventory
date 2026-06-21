@@ -89,7 +89,7 @@ export default function POSTerminal() {
         const data = await api.getProducts();
         setProducts(data);
       } catch (error) {
-        console.error("Failed to load products");
+        console.error("Failed to load products:", error);
       } finally {
         setLoading(false);
       }
@@ -163,6 +163,7 @@ export default function POSTerminal() {
       setLastReceipt(response.receipt_number);
       
     } catch (error) {
+      console.error("Checkout process error:", error);
       alert("Checkout failed. Please check the console.");
     } finally {
       setIsProcessing(false);
