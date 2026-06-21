@@ -194,7 +194,7 @@ export default function Dashboard() {
         {/* Tab Content: HQ Analytics */}
         {activeTab === "analytics" && (
           <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100">
-            <h2 className="text-xl font-bold text-gray-800 mb-6">Today's Performance</h2>
+            <h2 className="text-xl font-bold text-gray-800 mb-6">Today&apos;s Performance</h2>
             
             {loadingReport ? (
               <div className="animate-pulse flex space-x-4">
