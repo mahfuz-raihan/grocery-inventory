@@ -1,10 +1,13 @@
+import csv
+import io
+import uuid
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, Depends, HTTPException, UploadFile, File
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, text, func
 from sqlalchemy.exc import IntegrityError
-import csv
-import io
 
 from shared.python.core import DatabaseManager, MessagingManager, log, Base
 
@@ -26,19 +29,13 @@ msg_manager = MessagingManager([settings.nats_url])
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     log.info("Starting Inventory Service...")
-    
-    # 1. Ensure the DB schema exists, then create tables
     async with db_manager.engine.begin() as conn:
         await conn.execute(text("CREATE SCHEMA IF NOT EXISTS inventory"))
         await conn.run_sync(Base.metadata.create_all)
         log.info("Database schema (Stock Ledger) initialized successfully.")
         
-    # 2. Connect to NATS message broker
     await msg_manager.connect()
     yield
-    
-    # Shutdown gracefully
-    log.info("Shutting down Inventory Service...")
     await msg_manager.close()
     await db_manager.engine.dispose()
 
@@ -115,8 +112,7 @@ async def create_product(product: ProductCreate, session: AsyncSession = Depends
         
     except IntegrityError:
         await session.rollback()
-        log.error(f"Duplicate SKU attempted: {product.sku}")
-        raise HTTPException(status_code=400, detail="A product with this SKU already exists.")
+        raise HTTPException(status_code=400, detail="SKU or Barcode already exists, or Branch/Category ID is invalid.")
     except Exception as e:
         await session.rollback()
         log.error(f"Error creating product: {e}")
