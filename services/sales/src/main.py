@@ -1,23 +1,20 @@
 import os
 import uuid
-from datetime import datetime
+from datetime import datetime, date, time, timezone
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import text, select
+from sqlalchemy import text, select, func
 from sqlalchemy.orm import selectinload
 
 from shared.python.core import DatabaseManager, MessagingManager, log, Base
-from src.models import Sale, SaleItem
+from src.models import Sale, SaleItem, OrderStatus
 from src.schemas import CheckoutRequest, SaleResponse, OrderCompletedEvent
+from src.config import settings
 
-# Database and NATS URLs are fetched from the environment via Docker
-DB_URL = os.getenv("DATABASE_URL")
-NATS_URL = os.getenv("NATS_URL")
-
-db_manager = DatabaseManager(DB_URL)
-msg_manager = MessagingManager([NATS_URL])
+db_manager = DatabaseManager(settings.database_url)
+msg_manager = MessagingManager([settings.nats_url])
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -34,11 +31,13 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Grocery ERP - Sales Service",
-    version="1.0.0",
+    version="1.1.0",
     lifespan=lifespan,
     docs_url="/api/v1/sales/docs",
     openapi_url="/api/v1/sales/openapi.json"
 )
+
+# --- CHECKOUT ENDPOINT ---
 
 @app.post("/api/v1/sales/checkout", response_model=SaleResponse, status_code=201)
 async def process_checkout(request: CheckoutRequest, session: AsyncSession = Depends(db_manager.get_session)):
@@ -58,7 +57,6 @@ async def process_checkout(request: CheckoutRequest, session: AsyncSession = Dep
         status=request.status
     )
     session.add(new_sale)
-    # Flush to generate ID without committing
     await session.flush() 
 
     for item in request.items:
@@ -71,11 +69,8 @@ async def process_checkout(request: CheckoutRequest, session: AsyncSession = Dep
         )
         session.add(new_item)
 
-    # Commit the transaction
     await session.commit()
 
-    # Re-fetch the record with items eagerly loaded.
-    # By querying this after commit, we ensure a clean state.
     result = await session.execute(
         select(Sale)
         .options(selectinload(Sale.items))
@@ -83,11 +78,6 @@ async def process_checkout(request: CheckoutRequest, session: AsyncSession = Dep
     )
     final_sale = result.scalar_one()
 
-    # Expire the object to detach it from the session, 
-    # preventing accidental lazy-load triggers
-    session.expunge(final_sale)
-
-    # Publish the event
     event = OrderCompletedEvent(
         sale_id=final_sale.id,
         branch_id=final_sale.branch_id,
@@ -96,3 +86,45 @@ async def process_checkout(request: CheckoutRequest, session: AsyncSession = Dep
     await msg_manager.publish("sales.order.completed", event)
 
     return final_sale
+
+
+# --- ANALYTICS & REPORTING ENDPOINTS ---
+
+@app.get("/api/v1/sales/reports/daily")
+async def get_daily_sales_report(
+    target_date: date | None = None,
+    branch_id: uuid.UUID | None = None,
+    session: AsyncSession = Depends(db_manager.get_session)
+):
+    """Calculates total revenue and transaction count for a specific day."""
+    
+    # Default to today if no date is provided
+    report_date = target_date or datetime.now(timezone.utc).date()
+    
+    # Create start and end timestamps for the target day
+    start_of_day = datetime.combine(report_date, time.min).replace(tzinfo=timezone.utc)
+    end_of_day = datetime.combine(report_date, time.max).replace(tzinfo=timezone.utc)
+
+    # Base query to calculate sum and count
+    query = select(
+        func.coalesce(func.sum(Sale.total_amount), 0).label("total_revenue"),
+        func.count(Sale.id).label("transaction_count")
+    ).where(
+        Sale.created_at >= start_of_day,
+        Sale.created_at <= end_of_day,
+        Sale.status == OrderStatus.paid
+    )
+
+    # Filter by branch if requested
+    if branch_id:
+        query = query.where(Sale.branch_id == branch_id)
+
+    result = await session.execute(query)
+    row = result.fetchone()
+
+    return {
+        "date": report_date.isoformat(),
+        "branch_id": branch_id,
+        "total_revenue": float(row.total_revenue),
+        "transaction_count": row.transaction_count
+    }
