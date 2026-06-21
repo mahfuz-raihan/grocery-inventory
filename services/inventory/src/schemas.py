@@ -55,6 +55,37 @@ class ProductResponse(ProductBase):
 class ProductWithStockResponse(ProductResponse):
     current_stock: float = 0.0
 
+# --- GRN Schemas ---
+class GRNItemCreate(BaseModel):
+    product_id: uuid.UUID
+    quantity_received: float = Field(..., gt=0)
+    cost_price: float = Field(..., ge=0, description="Cost price per unit paid to supplier")
+
+class GRNCreate(BaseModel):
+    branch_id: uuid.UUID
+    supplier_name: str = Field(..., min_length=2, max_length=200)
+    invoice_reference: Optional[str] = Field(None, max_length=100)
+    items: list[GRNItemCreate] = Field(..., min_length=1)
+
+class GRNItemResponse(BaseModel):
+    id: uuid.UUID
+    product_id: uuid.UUID
+    quantity_received: float
+    cost_price: float
+    subtotal: float
+    model_config = ConfigDict(from_attributes=True)
+
+class GRNResponse(BaseModel):
+    id: uuid.UUID
+    branch_id: uuid.UUID
+    supplier_name: str
+    invoice_reference: Optional[str]
+    total_amount: float
+    status: str
+    created_at: datetime
+    items: list[GRNItemResponse]
+    model_config = ConfigDict(from_attributes=True)
+
 # --- Event Schemas ---
 class StockUpdateEvent(BaseModel):
     product_id: uuid.UUID
