@@ -7,18 +7,19 @@ from fastapi import FastAPI, Depends, HTTPException, UploadFile, File
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, text, func
+from sqlalchemy.orm import selectinload
 from sqlalchemy.exc import IntegrityError
 
 from shared.python.core import DatabaseManager, MessagingManager, log, Base
 
 # FIX: Import all the new Models we created
-from src.models import Product, Branch, Category, StockLedger, MovementType
+from src.models import Product, Branch, Category, StockLedger, MovementType, GRN, GRNItem
 
 # FIX: Import all the new Schemas we created
 from src.schemas import (
     ProductCreate, ProductResponse, ProductWithStockResponse, 
     BranchCreate, BranchResponse, CategoryCreate, CategoryResponse, 
-    StockUpdateEvent
+    StockUpdateEvent, GRNCreate, GRNResponse
 )
 from src.config import settings
 
@@ -141,6 +142,69 @@ async def get_products(branch_id: uuid.UUID | None = None, session: AsyncSession
         response_list.append(ProductWithStockResponse(**p_dict))
         
     return response_list
+
+
+# --- GRN (GOODS RECEIPT NOTE) ENDPOINTS ---
+
+@app.post("/api/v1/inventory/grn", response_model=GRNResponse, status_code=201)
+async def create_grn(grn_data: GRNCreate, session: AsyncSession = Depends(db_manager.get_session)):
+    """Processes an incoming supplier delivery, logs items, and automatically updates the stock ledger."""
+    
+    # Calculate the total invoice amount based on cost price and quantity received
+    total_amount = sum(item.quantity_received * item.cost_price for item in grn_data.items)
+
+    new_grn = GRN(
+        branch_id=grn_data.branch_id,
+        supplier_name=grn_data.supplier_name,
+        invoice_reference=grn_data.invoice_reference,
+        total_amount=total_amount,
+        status="completed"
+    )
+    session.add(new_grn)
+    await session.flush() # Flush to get the new GRN's UUID without fully committing yet
+
+    for item in grn_data.items:
+        # 1. Record the specific GRN item and what it cost
+        new_item = GRNItem(
+            grn_id=new_grn.id,
+            product_id=item.product_id,
+            quantity_received=item.quantity_received,
+            cost_price=item.cost_price,
+            subtotal=item.quantity_received * item.cost_price
+        )
+        session.add(new_item)
+
+        # 2. Update the Stock Ledger immediately to reflect the new stock
+        ledger_entry = StockLedger(
+            branch_id=grn_data.branch_id,
+            product_id=item.product_id,
+            quantity_change=item.quantity_received,
+            movement_type=MovementType.adjustment
+        )
+        session.add(ledger_entry)
+
+        # 3. Publish a real-time event that stock has been updated
+        event = StockUpdateEvent(
+            product_id=item.product_id,
+            branch_id=grn_data.branch_id,
+            quantity_change=item.quantity_received,
+            movement_type="receipt"
+        )
+        await msg_manager.publish("inventory.stock.updated", event)
+
+    # Finalize the transaction
+    await session.commit()
+
+    # Eagerly load the attached items so Pydantic can format the final response cleanly
+    result = await session.execute(
+        select(GRN)
+        .options(selectinload(GRN.items))
+        .where(GRN.id == new_grn.id)
+    )
+    final_grn = result.scalar_one()
+
+    return final_grn
+
 
 # --- CSV BULK IMPORT / EXPORT ENDPOINTS ---
 
