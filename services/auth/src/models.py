@@ -23,7 +23,9 @@ class User(Base):
     full_name: Mapped[str] = mapped_column(String(100))
     email: Mapped[str] = mapped_column(String(150), unique=True, index=True)
     password_hash: Mapped[str] = mapped_column(String(255))
-    role: Mapped[Role] = mapped_column(SQLEnum(Role))
-    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     
+    # FIX: native_enum=False forces PostgreSQL to use a simple String, preventing crash loops!
+    role: Mapped[Role] = mapped_column(SQLEnum(Role, native_enum=False, length=50))
+    
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
