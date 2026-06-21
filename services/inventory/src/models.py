@@ -54,6 +54,33 @@ class Product(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
+class GRN(Base):
+    __tablename__ = "goods_receipt_notes"
+    __table_args__ = {"schema": "inventory"}
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    branch_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("inventory.branches.id"))
+    supplier_name: Mapped[str] = mapped_column(String(200))
+    invoice_reference: Mapped[str | None] = mapped_column(String(100))
+    total_amount: Mapped[float] = mapped_column(Numeric(10, 2))
+    status: Mapped[str] = mapped_column(String(20), default="completed")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    items: Mapped[list["GRNItem"]] = relationship(back_populates="grn", cascade="all, delete-orphan")
+
+class GRNItem(Base):
+    __tablename__ = "grn_items"
+    __table_args__ = {"schema": "inventory"}
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    grn_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("inventory.goods_receipt_notes.id"))
+    product_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("inventory.products.id"))
+    quantity_received: Mapped[float] = mapped_column(Numeric(10, 3))
+    cost_price: Mapped[float] = mapped_column(Numeric(10, 2))
+    subtotal: Mapped[float] = mapped_column(Numeric(10, 2))
+
+    grn: Mapped["GRN"] = relationship(back_populates="items")
+
 class StockLedger(Base):
     __tablename__ = "stock_ledger"
     __table_args__ = {"schema": "inventory"}
