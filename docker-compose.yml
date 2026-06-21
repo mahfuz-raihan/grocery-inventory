@@ -1,3 +1,12 @@
+version: '3.8'
+
+networks:
+  erp_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+
 services:
   # --- API GATEWAY ---
   traefik:
@@ -9,15 +18,17 @@ services:
     command:
       - "--api.insecure=true"
       - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.web.address=:80"
     ports:
       - "80:80"
-      - "8081:8080" # CHANGED: Moved from 8080 to 8081 to avoid local conflicts
+      - "8081:8080" # Dashboard port
     volumes:
       # FIX: Native Linux single slash for maximum compatibility and speed
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
     networks:
-      - erp-network
+      - erp_network
+    restart: unless-stopped
 
   # --- DATABASE ---
   postgres:
@@ -29,34 +40,37 @@ services:
       - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - erp_network
+    restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U admin -d erp_master"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
       retries: 5
-    networks:
-      - erp-network
 
   # --- MESSAGE BROKER ---
   nats:
-    image: nats:2.10-alpine
-    container_name: erp-messaging
+    image: nats:alpine
+    container_name: erp-nats
+    command: ["-js"] # JetStream enabled
     ports:
       - "4222:4222"
-      - "8222:8222"
+      - "8222:8222" # NATS Dashboard
     networks:
-      - erp-network
+      - erp_network
+    restart: unless-stopped
 
-  # --- REDIS CACHE (NEW FOR SPRINT 2) ---
   redis:
-    image: redis:7-alpine
+    image: redis:alpine
     container_name: erp-redis
     ports:
       - "6379:6379"
     networks:
-      - erp-network
+      - erp_network
+    restart: unless-stopped
 
-  # --- AUTHENTICATION SERVICE ---
+  # --- MICROSERVICES ---
   auth-service:
     build:
       context: .
@@ -64,17 +78,18 @@ services:
     container_name: erp-auth
     env_file:
       - .env
+    networks:
+      - erp_network
     depends_on:
       postgres:
         condition: service_healthy
-    networks:
-      - erp-network
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.auth.rule=PathPrefix(`/api/v1/auth`)"
       - "traefik.http.routers.auth.entrypoints=web"
       - "traefik.http.services.auth.loadbalancer.server.port=8000"
       - "traefik.docker.network=erp-network"
+    restart: unless-stopped
 
   # --- INVENTORY SERVICE ---
   inventory-service:
@@ -82,26 +97,42 @@ services:
       context: .
       dockerfile: ./services/inventory/Dockerfile
     container_name: erp-inventory
-    # SECURED: Removed ports block so this container is 100% shielded by Traefik
+    restart: unless-stopped
+    env_file:
+      - .env
+    networks:
+      - erp_network
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_started
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.inventory.rule=PathPrefix(`/api/v1/inventory`)"
       - "traefik.http.routers.inventory.entrypoints=web"
       - "traefik.http.services.inventory.loadbalancer.server.port=8000"
       - "traefik.docker.network=erp-network"
+    
+
+  sales-service:
+    build:
+      context: .
+      dockerfile: ./services/sales/Dockerfile
+    container_name: erp-sales
+    restart: unless-stopped
     env_file:
       - .env
+    networks:
+      - erp_network
+    restart: unless-stopped
     depends_on:
       postgres:
         condition: service_healthy
       nats:
         condition: service_started
-    networks:
-      - erp-network
-
-networks:
-  erp-network:
-    driver: bridge
-
-volumes:
-  postgres_data:
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.sales.rule=PathPrefix(`/api/v1/sales`)"
+      - "traefik.http.services.sales.loadbalancer.server.port=8000"
