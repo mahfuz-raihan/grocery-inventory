@@ -1,16 +1,23 @@
-import os
-import uuid
-from contextlib import asynccontextmanager
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, UploadFile, File
+from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, text, func
 from sqlalchemy.exc import IntegrityError
+import csv
+import io
 
 from shared.python.core import DatabaseManager, MessagingManager, log, Base
-from src.models import Product
-from src.schemas import ProductCreate, ProductResponse, StockUpdateEvent, BranchResponse, BranchCreate, CategoryResponse, CategoryCreate, ProductWithStockResponse
-from src.config import settings
+
+# FIX: Import all the new Models we created
 from src.models import Product, Branch, Category, StockLedger, MovementType
+
+# FIX: Import all the new Schemas we created
+from src.schemas import (
+    ProductCreate, ProductResponse, ProductWithStockResponse, 
+    BranchCreate, BranchResponse, CategoryCreate, CategoryResponse, 
+    StockUpdateEvent
+)
+from src.config import settings
 
 # Initialize Shared Managers using our centralized settings!
 db_manager = DatabaseManager(settings.database_url)
@@ -28,7 +35,6 @@ async def lifespan(app: FastAPI):
         
     # 2. Connect to NATS message broker
     await msg_manager.connect()
-    
     yield
     
     # Shutdown gracefully
@@ -139,3 +145,82 @@ async def get_products(branch_id: uuid.UUID | None = None, session: AsyncSession
         response_list.append(ProductWithStockResponse(**p_dict))
         
     return response_list
+
+# --- CSV BULK IMPORT / EXPORT ENDPOINTS ---
+
+@app.get("/api/v1/inventory/products/export-csv")
+async def export_products_csv(session: AsyncSession = Depends(db_manager.get_session)):
+    """Exports all products as a downloadable CSV file."""
+    result = await session.execute(select(Product))
+    products = result.scalars().all()
+
+    def iter_csv():
+        output = io.StringIO()
+        writer = csv.writer(output)
+        # Write the CSV Header
+        writer.writerow(["sku", "barcode", "name", "unit", "selling_price", "is_active"])
+        yield output.getvalue()
+        output.seek(0)
+        output.truncate(0)
+
+        # Write each product row
+        for p in products:
+            writer.writerow([p.sku, p.barcode, p.name, p.unit, p.selling_price, p.is_active])
+            yield output.getvalue()
+            output.seek(0)
+            output.truncate(0)
+
+    response = StreamingResponse(iter_csv(), media_type="text/csv")
+    response.headers["Content-Disposition"] = "attachment; filename=products_export.csv"
+    return response
+
+
+@app.post("/api/v1/inventory/products/import-csv")
+async def import_products_csv(file: UploadFile = File(...), session: AsyncSession = Depends(db_manager.get_session)):
+    """Imports products from a standard CSV file."""
+    if not file.filename.endswith('.csv'):
+        raise HTTPException(status_code=400, detail="Uploaded file must be a .csv")
+
+    contents = await file.read()
+    decoded = contents.decode('utf-8')
+    reader = csv.DictReader(io.StringIO(decoded))
+
+    imported_count = 0
+    errors = []
+
+    for row_num, row in enumerate(reader, start=2): # Row 2 is the first data row
+        try:
+            # Map CSV columns to our Product creation schema safely
+            product_data = {
+                "sku": row.get("sku", "").strip(),
+                "barcode": row.get("barcode", "").strip() or None,
+                "name": row.get("name", "").strip(),
+                "unit": row.get("unit", "").strip(),
+                "selling_price": float(row.get("selling_price", 0)),
+                "is_active": str(row.get("is_active", "True")).strip().lower() == "true"
+            }
+            
+            # Validate the data using Pydantic!
+            p_create = ProductCreate(**product_data)
+            
+            # Prepare database object
+            new_product = Product(**p_create.model_dump(exclude={"initial_stock_quantity", "branch_id"}))
+            session.add(new_product)
+            
+            # Flush immediately to catch duplicate SKU/Barcode errors row-by-row
+            await session.flush() 
+            imported_count += 1
+            
+        except Exception as e:
+            await session.rollback()
+            errors.append(f"Error on row {row_num}: {str(e)}")
+            continue
+
+    if errors:
+        # If anything failed, rollback the entire batch to prevent partial uploads
+        await session.rollback()
+        raise HTTPException(status_code=400, detail={"message": "Import failed due to data errors", "errors": errors})
+
+    # If everything is perfect, commit to the database!
+    await session.commit()
+    return {"message": f"Successfully imported {imported_count} products!"}
