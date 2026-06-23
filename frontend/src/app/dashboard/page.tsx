@@ -182,6 +182,7 @@ export default function Dashboard() {
       setSupplierName(""); setQuantity(""); setCostPrice(""); setSelectedProductId("");
       setInvoiceRef(generateInvoiceRef());
     } catch (error) {
+      console.error(error); // <--- Fixed Unused Variable
       alert("Failed to submit GRN.");
     } finally {
       setIsSubmitting(false);
@@ -202,6 +203,7 @@ export default function Dashboard() {
       setBranchSuccessMessage(`✅ Branch "${newBranchName}" created!`);
       setNewBranchName(""); setNewBranchLocation("");
     } catch (error) {
+      console.error(error); // <--- Fixed Unused Variable
       alert("Failed to create branch.");
     } finally {
       setIsSubmittingBranch(false);
