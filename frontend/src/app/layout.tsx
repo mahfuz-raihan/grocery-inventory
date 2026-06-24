@@ -2,6 +2,7 @@
 import React from "react";
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
+import Script from "next/script";
 import "./globals.css";
 
 const geistSans = localFont({
@@ -18,10 +19,9 @@ const geistMono = localFont({
 export const metadata: Metadata = {
   title: "ERP Inventory App",
   description: "A simple ERP inventory management app",
-  manifest: "/manifest.json", // Tells the browser this is an installable PWA
+  manifest: "/manifest.json", 
 };
 
-// Next.js 14 requires themeColor to be in the Viewport export
 export const viewport: Viewport = {
   themeColor: "#2563eb",
 };
@@ -33,28 +33,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         {children}
-
+        
         {/* Vanilla Service Worker Registration */}
-        <script
+        <Script 
+          id="service-worker-registration" 
+          strategy="afterInteractive"
           dangerouslySetInnerHTML={{
-            __html: `
-              if ('serviceWorker' in navigator) {
-                window.addEventListener('load', function() {
-                  navigator.serviceWorker.register('/sw.js').then(
-                    function(registration) {
-                      console.log('Service Worker active! Offline Safety Net secured.');
-                    },
-                    function(err) {
-                      console.error('Service Worker registration failed: ', err);
-                    }
-                  );
-                });
-              }
-            `,
+            __html: "if ('serviceWorker' in navigator) { window.addEventListener('load', function() { navigator.serviceWorker.register('/sw.js').then(function(registration) { console.log('Service Worker active!'); }, function(err) { console.error('Service Worker failed: ', err); }); }); }"
           }}
         />
       </body>
