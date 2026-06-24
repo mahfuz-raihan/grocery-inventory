@@ -1,33 +1,15 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { Product, CartItem, CheckoutRequest } from "../lib/api";
+import { 
+    saveProductsLocal, 
+    getProductsLocal, 
+    addToSyncQueue, 
+    getSyncQueue, 
+    clearSyncQueueItem 
+} from "../lib/db";
 
-interface Product {
-    id: string;
-    sku: string;
-    name: string;
-    selling_price: number;
-    current_stock: number;
-}
-
-interface CartItem extends Product {
-    cartQuantity: number;
-    subtotal: number;
-}
-
-interface CheckoutRequest {
-    branch_id: string;
-    cashier_id: string;
-    items: {
-        product_id: string;
-        quantity: number;
-        unit_price: number;
-    }[];
-    status: "paid" | "pending";
-}
-
-// In the browser preview environment, relative paths (like /api/...) can fail if the current domain isn't correct.
-// We must provide a fully qualified URL for fetch calls if window.location.origin is available.
 const getApiBaseUrl = () => {
   if (typeof window !== 'undefined') {
     return window.location.origin;
@@ -35,17 +17,28 @@ const getApiBaseUrl = () => {
   return '';
 };
 
-
-const api = {
+const posApi = {
     getProducts: async (): Promise<Product[]> => {
         try {
             const baseUrl = getApiBaseUrl();
             const response = await fetch(`${baseUrl}/api/v1/inventory/products`);
             if (!response.ok) throw new Error("Failed to fetch products");
-            return await response.json();
+            const data = await response.json();
+            
+            // Cache real data to local browser DB immediately via imported function
+            await saveProductsLocal(data);
+            return data;
+            
         } catch (error) {
-            console.error("API Error (getProducts):", error);
-            // Fallback for visual preview 
+            console.warn("Backend API not reachable. Loading from local Offline Database...", error);
+            
+            // Fallback: retrieve products from local DB via imported function
+            const localProducts = await getProductsLocal();
+            if (localProducts && localProducts.length > 0) {
+                return localProducts;
+            }
+
+            // Final fallback for purely visual previews
             return [
                 { id: "1", sku: "APP-01", name: "Organic Apples", selling_price: 2.99, current_stock: 100 },
                 { id: "2", sku: "MIL-01", name: "Whole Milk 1 Gallon", selling_price: 4.50, current_stock: 45 },
@@ -67,9 +60,11 @@ const api = {
             }
             return await response.json();
         } catch (error) {
-            console.error("API Error (checkout):", error);
-            // Fallback for visual preview
-            return { receipt_number: `INV-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-DEMO` };
+            console.warn("Could not reach backend. Saving transaction to offline queue!", error);
+            
+            // Queue the checkout locally via imported function
+            await addToSyncQueue(payload);
+            return { receipt_number: `INV-OFFLINE-${Date.now().toString().slice(-6)}`, offline: true };
         }
     }
 };
@@ -82,11 +77,14 @@ export default function POSTerminal() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [lastReceipt, setLastReceipt] = useState<string | null>(null);
 
-  // Load products on mount
+  // --- OFFLINE CAPABILITY STATE ---
+  const [isOnline, setIsOnline] = useState(true);
+  const [pendingSync, setPendingSync] = useState(0);
+
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const data = await api.getProducts();
+        const data = await posApi.getProducts();
         setProducts(data);
       } catch (error) {
         console.error("Failed to load products:", error);
@@ -95,9 +93,61 @@ export default function POSTerminal() {
       }
     };
     fetchProducts();
+
+    const checkSyncQueue = async () => {
+        const queue = await getSyncQueue();
+        setPendingSync(queue.length);
+    };
+    checkSyncQueue();
+
+    const handleOnline = () => {
+        setIsOnline(true);
+        syncPendingOrders(); // Auto-sync when internet comes back
+    };
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    setIsOnline(navigator.onLine);
+
+    return () => {
+        window.removeEventListener("online", handleOnline);
+        window.removeEventListener("offline", handleOffline);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Filter products based on search
+  const syncPendingOrders = async () => {
+      const queue = await getSyncQueue();
+      if (queue.length === 0) return;
+      
+      let successCount = 0;
+      const baseUrl = getApiBaseUrl();
+      
+      for (const item of queue) {
+          try {
+              const response = await fetch(`${baseUrl}/api/v1/sales/checkout`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(item.payload)
+              });
+              if (response.ok) {
+                  await clearSyncQueueItem(item.id);
+                  successCount++;
+              }
+          } catch (error) {
+              console.error("Failed to sync offline order", error);
+          }
+      }
+      
+      const remaining = await getSyncQueue();
+      setPendingSync(remaining.length);
+      
+      if (successCount > 0) {
+          alert(`✅ Successfully synced ${successCount} offline orders to the Main Server!`);
+      }
+  };
+
   const filteredProducts = useMemo(() => {
     return products.filter((p) =>
       p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -144,11 +194,10 @@ export default function POSTerminal() {
     setLastReceipt(null);
 
     try {
-      // In Phase 2, we will pull these UUIDs dynamically from the Auth Context
-      const payload = {
-        branch_id: "00000000-0000-0000-0000-000000000001", // Dummy Branch
-        cashier_id: "00000000-0000-0000-0000-000000000002", // Dummy Cashier
-        status: "paid" as const,
+      const payload: CheckoutRequest = {
+        branch_id: "00000000-0000-0000-0000-000000000001", // Dummy Branch ID for Phase 1/2
+        cashier_id: "00000000-0000-0000-0000-000000000002", // Dummy Cashier ID
+        status: "paid",
         items: cart.map((item) => ({
           product_id: item.id,
           quantity: item.cartQuantity,
@@ -156,11 +205,15 @@ export default function POSTerminal() {
         })),
       };
 
-      const response = await api.checkout(payload);
+      const response = await posApi.checkout(payload);
       
-      // Success! Clear cart and show receipt number
       setCart([]);
       setLastReceipt(response.receipt_number);
+      
+      if (response.offline) {
+          const queue = await getSyncQueue();
+          setPendingSync(queue.length);
+      }
       
     } catch (error) {
       console.error("Checkout process error:", error);
@@ -172,12 +225,20 @@ export default function POSTerminal() {
 
   return (
     <div className="flex h-screen bg-gray-50 font-sans text-gray-800">
-      
       {/* LEFT PANE: Product Catalog */}
       <div className="flex-1 flex flex-col h-full overflow-hidden">
-        {/* Top Search Bar */}
         <div className="bg-white p-4 shadow-sm border-b z-10 flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-blue-600">Grocery POS</h1>
+          <div className="flex items-center space-x-4">
+            <h1 className="text-2xl font-bold text-blue-600">Grocery POS</h1>
+            
+            {!isOnline && (
+                <span className="bg-red-100 text-red-600 px-3 py-1 rounded-full text-xs font-bold border border-red-200 animate-pulse">
+                    ⚠️ OFFLINE MODE
+                </span>
+            )}
+
+            <a href="/dashboard" className="px-3 py-1 bg-gray-100 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-200 transition-colors">HQ Dashboard →</a>
+          </div>
           <input
             type="text"
             placeholder="Search products by name or SKU (Manual Entry)..."
@@ -187,7 +248,6 @@ export default function POSTerminal() {
           />
         </div>
 
-        {/* Product Grid */}
         <div className="flex-1 overflow-y-auto p-4">
           {loading ? (
             <div className="flex items-center justify-center h-full text-gray-500">Loading products...</div>
@@ -220,14 +280,18 @@ export default function POSTerminal() {
 
       {/* RIGHT PANE: Cart & Checkout */}
       <div className="w-96 bg-white shadow-2xl border-l flex flex-col z-20">
-        
-        {/* Cart Header */}
         <div className="p-4 bg-gray-800 text-white flex justify-between items-center">
           <h2 className="text-xl font-bold">Current Order</h2>
-          <span className="bg-gray-700 px-3 py-1 rounded-full text-sm">{cart.length} Items</span>
+          <div className="flex items-center space-x-3">
+              {pendingSync > 0 && (
+                  <button onClick={syncPendingOrders} className="bg-yellow-500 hover:bg-yellow-400 text-yellow-900 px-3 py-1 rounded-full text-xs font-bold shadow transition-colors">
+                      ↻ Sync {pendingSync} Queued
+                  </button>
+              )}
+              <span className="bg-gray-700 px-3 py-1 rounded-full text-sm">{cart.length} Items</span>
+          </div>
         </div>
 
-        {/* Cart Items List */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {cart.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-gray-400 space-y-2">
@@ -242,7 +306,6 @@ export default function POSTerminal() {
                   <div className="text-gray-500 text-xs mt-1">${item.selling_price.toFixed(2)} / each</div>
                 </div>
                 
-                {/* Quantity Controls */}
                 <div className="flex items-center space-x-3 bg-gray-100 rounded-lg px-2 py-1">
                   <button onClick={() => updateQuantity(item.id, -1)} className="text-gray-600 hover:text-red-500 font-bold px-2">−</button>
                   <span className="font-semibold w-4 text-center">{item.cartQuantity}</span>
@@ -257,7 +320,6 @@ export default function POSTerminal() {
           )}
         </div>
 
-        {/* Checkout Footer */}
         <div className="p-4 bg-gray-50 border-t">
           {lastReceipt && (
             <div className="mb-4 p-3 bg-green-100 text-green-800 rounded-lg text-sm text-center font-medium border border-green-200">
@@ -285,7 +347,6 @@ export default function POSTerminal() {
             {isProcessing ? "Processing..." : "Pay / Checkout"}
           </button>
         </div>
-
       </div>
     </div>
   );
