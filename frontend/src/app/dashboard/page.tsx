@@ -316,8 +316,8 @@ export default function Dashboard() {
             {grnSuccessMessage && <div className="mb-6 p-4 bg-green-50 text-green-700 rounded-lg">{grnSuccessMessage}</div>}
             
             {/* Critical Warnings if missing master data */}
-            {branches.length === 0 && <div className="mb-4 p-4 bg-yellow-50 text-yellow-700 rounded-lg border border-yellow-200">⚠️ <b>No branches found.</b> Go to "Manage Branches" to create one first.</div>}
-            {products.length === 0 && <div className="mb-6 p-4 bg-yellow-50 text-yellow-700 rounded-lg border border-yellow-200">⚠️ <b>No products found.</b> Go to "Manage Products" to create your catalog first.</div>}
+            {branches.length === 0 && <div className="mb-4 p-4 bg-yellow-50 text-yellow-700 rounded-lg border border-yellow-200">⚠️ <b>No branches found.</b> Go to &quot;Manage Branches&quot; to create one first.</div>}
+            {products.length === 0 && <div className="mb-6 p-4 bg-yellow-50 text-yellow-700 rounded-lg border border-yellow-200">⚠️ <b>No products found.</b> Go to &quot;Manage Products&quot; to create your catalog first.</div>}
             
             <form onSubmit={handleGRNSubmit} className="space-y-4">
               <select className="w-full p-2.5 border rounded-lg" value={selectedBranchId} onChange={(e) => setSelectedBranchId(e.target.value)} required>
