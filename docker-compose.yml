@@ -75,6 +75,10 @@ services:
       dockerfile: ./services/auth/Dockerfile
     container_name: erp-auth
     restart: unless-stopped
+    command: python -m uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      - ./services/auth/src:/app/src
+      - ./shared:/app/shared
     env_file:
       - .env
     networks:
@@ -96,6 +100,10 @@ services:
       dockerfile: ./services/inventory/Dockerfile
     container_name: erp-inventory
     restart: unless-stopped
+    command: python -m uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      - ./services/inventory/src:/app/src
+      - ./shared:/app/shared
     env_file:
       - .env
     networks:
@@ -119,6 +127,10 @@ services:
       dockerfile: ./services/sales/Dockerfile
     container_name: erp-sales
     restart: unless-stopped
+    command: python -m uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      - ./services/sales/src:/app/src
+      - ./shared:/app/shared
     env_file:
       - .env
     networks:
@@ -142,6 +154,13 @@ services:
       dockerfile: Dockerfile
     container_name: erp-frontend
     restart: unless-stopped
+    command: npm run dev
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    environment:
+      - WATCHPACK_POLLING=true
     networks:
       - erp_network
     labels:

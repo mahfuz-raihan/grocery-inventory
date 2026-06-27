@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { Product, CartItem, CheckoutRequest } from "../lib/api";
 import { 
     saveProductsLocal, 
@@ -70,6 +71,7 @@ const posApi = {
 };
 
 export default function POSTerminal() {
+  const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -80,6 +82,14 @@ export default function POSTerminal() {
   // --- OFFLINE CAPABILITY STATE ---
   const [isOnline, setIsOnline] = useState(true);
   const [pendingSync, setPendingSync] = useState(0);
+
+  useEffect(() => {
+    const role = localStorage.getItem("erp_role");
+    if (role === "stock_handler") {
+      router.push("/dashboard");
+      return;
+    }
+  }, [router]);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -194,9 +204,12 @@ export default function POSTerminal() {
     setLastReceipt(null);
 
     try {
+      const branchId = localStorage.getItem("erp_branch_id") || "00000000-0000-0000-0000-000000000001";
+      const cashierId = localStorage.getItem("erp_user_id") || "00000000-0000-0000-0000-000000000002";
+
       const payload: CheckoutRequest = {
-        branch_id: "00000000-0000-0000-0000-000000000001", // Dummy Branch ID for Phase 1/2
-        cashier_id: "00000000-0000-0000-0000-000000000002", // Dummy Cashier ID
+        branch_id: branchId,
+        cashier_id: cashierId,
         status: "paid",
         items: cart.map((item) => ({
           product_id: item.id,
