@@ -135,6 +135,14 @@ export default function RootLayout({
                 <span className="font-medium">Point of Sale</span>
               </a>
             )}
+
+            {/* Show Users page to Owner only */}
+            {userRole && ["owner"].includes(userRole) && (
+              <a href="/users" className={`flex items-center px-4 py-3 rounded-xl transition-all ${pathname === '/users' ? 'text-white bg-brand-600 shadow-sm' : 'hover:bg-slate-800 hover:text-white'}`}>
+                <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                <span className="font-medium">Users</span>
+              </a>
+            )}
           </nav>
 
           <div className="p-4 border-t border-slate-700/50">
@@ -155,7 +163,7 @@ export default function RootLayout({
           <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 shadow-sm z-10 flex-shrink-0">
             <div className="flex items-center">
               <h2 className="text-xl font-semibold text-slate-800">
-                {pathname === '/dashboard' ? 'HQ Enterprise Dashboard' : 'Point of Sale Terminal'}
+                {pathname === '/dashboard' ? 'HQ Enterprise Dashboard' : pathname === '/users' ? 'User & Role Management' : 'Point of Sale Terminal'}
               </h2>
             </div>
             <div className="flex items-center space-x-4">
