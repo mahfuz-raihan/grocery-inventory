@@ -20,7 +20,7 @@ interface ProductCreate {
 interface Branch {
     id: string;
     name: string;
-    location: string;
+    address: string;
 }
 
 interface GRNItemCreate {
@@ -83,7 +83,7 @@ const api = {
             return [];
         }
     },
-    createBranch: async (payload: { name: string, location: string }): Promise<Branch> => {
+    createBranch: async (payload: { name: string, address: string }): Promise<Branch> => {
         const baseUrl = getApiBaseUrl();
         const response = await fetch(`${baseUrl}/api/v1/inventory/branches`, {
             method: 'POST',
@@ -223,7 +223,7 @@ export default function Dashboard() {
     setBranchSuccessMessage("");
     
     try {
-      const newBranch = await api.createBranch({ name: newBranchName, location: newBranchLocation });
+      const newBranch = await api.createBranch({ name: newBranchName, address: newBranchLocation });
       setBranches(prev => [...prev, newBranch]);
       if (!selectedBranchId) setSelectedBranchId(newBranch.id);
       setBranchSuccessMessage(`✅ Branch "${newBranchName}" created!`);
@@ -354,7 +354,7 @@ export default function Dashboard() {
             </form>
             <div className="mt-8 pt-6 border-t">
               <h3 className="font-bold mb-4">Existing Branches ({branches.length})</h3>
-              {branches.map(b => <div key={b.id} className="p-3 bg-gray-50 border rounded-lg mb-2 flex justify-between">{b.name} <span className="text-gray-500">{b.location}</span></div>)}
+              {branches.map(b => <div key={b.id} className="p-3 bg-gray-50 border rounded-lg mb-2 flex justify-between">{b.name} <span className="text-gray-500">{b.address}</span></div>)}
             </div>
           </div>
         )}

@@ -41,7 +41,7 @@ async def register_user(user_data: UserCreate, session: AsyncSession = Depends(d
     new_user = User(
         email=user_data.email,
         full_name=user_data.full_name,
-        password_hash=get_password_hash(user_data.password),
+        hashed_password=get_password_hash(user_data.password),
         role=user_data.role,
         branch_id=user_data.branch_id
     )
@@ -57,7 +57,7 @@ async def login(login_data: UserLogin, session: AsyncSession = Depends(db_manage
     user = result.scalar_one_or_none()
 
     # Verify password and activity status
-    if not user or not verify_password(login_data.password, user.password_hash):
+    if not user or not verify_password(login_data.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Incorrect email or password")
     if not user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")

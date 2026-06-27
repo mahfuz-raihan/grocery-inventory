@@ -1,96 +1,131 @@
-from datetime import datetime
-import uuid
 import enum
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import String, DateTime, ForeignKey, Boolean, Numeric, Enum as SQLEnum
-from sqlalchemy.sql import func
+import uuid
+
+from sqlalchemy import Boolean, Column, Enum as SAEnum, Float, ForeignKey, String, Text
 from sqlalchemy.dialects.postgresql import UUID
-from shared.python.core import Base
+from sqlalchemy.orm import relationship
+
+from shared.python.core import Base, TimestampMixin
+
 
 class MovementType(str, enum.Enum):
+    """Describes why a stock ledger entry was created."""
     sale = "sale"
-    grn = "grn"
-    transfer_in = "transfer_in"
-    transfer_out = "transfer_out"
-    damage = "damage"
+    receipt = "receipt"
     adjustment = "adjustment"
+    transfer = "transfer"
+    damage = "damage"
 
-class Branch(Base):
+
+class Branch(Base, TimestampMixin):
+    """A physical store branch or warehouse location."""
     __tablename__ = "branches"
     __table_args__ = {"schema": "inventory"}
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    name: Mapped[str] = mapped_column(String(100))
-    address: Mapped[str | None] = mapped_column(String)
-    phone: Mapped[str | None] = mapped_column(String(20))
-    is_head_office: Mapped[bool] = mapped_column(Boolean, default=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    name = Column(String(100), unique=True, nullable=False, index=True)
+    address = Column(Text, nullable=True)
+    phone = Column(String(20), nullable=True)
+    is_head_office = Column(Boolean, default=False, nullable=False)
 
-class Category(Base):
+
+class Category(Base, TimestampMixin):
+    """Product category for catalogue organisation."""
     __tablename__ = "categories"
     __table_args__ = {"schema": "inventory"}
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    name: Mapped[str] = mapped_column(String(100), unique=True)
-    
-    # Relationship
-    products: Mapped[list["Product"]] = relationship(back_populates="category")
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    name = Column(String(100), unique=True, nullable=False, index=True)
 
-class Product(Base):
+
+class Product(Base, TimestampMixin):
+    """
+    Master product record. Stock levels are NOT stored here —
+    they are derived on-the-fly from the StockLedger (event-sourced).
+    """
     __tablename__ = "products"
     __table_args__ = {"schema": "inventory"}
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    sku: Mapped[str] = mapped_column(String(50), unique=True, index=True)
-    barcode: Mapped[str | None] = mapped_column(String(50), unique=True, index=True)
-    name: Mapped[str] = mapped_column(String(200))
-    category_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("inventory.categories.id"))
-    unit: Mapped[str | None] = mapped_column(String(20))
-    selling_price: Mapped[float] = mapped_column(Numeric(10, 2))
-    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
-    
-    category: Mapped["Category"] = relationship(back_populates="products")
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    sku = Column(String(50), unique=True, nullable=False, index=True)
+    barcode = Column(String(100), unique=True, nullable=True, index=True)
+    name = Column(String(200), nullable=False, index=True)
+    unit = Column(String(50), nullable=True)
+    selling_price = Column(Float, nullable=False, default=0.0)
+    category_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("inventory.categories.id"),
+        nullable=True,
+    )
+    is_active = Column(Boolean, default=True, nullable=False)
 
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
-class GRN(Base):
-    __tablename__ = "goods_receipt_notes"
-    __table_args__ = {"schema": "inventory"}
-
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    branch_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("inventory.branches.id"))
-    supplier_name: Mapped[str] = mapped_column(String(200))
-    invoice_reference: Mapped[str | None] = mapped_column(String(100))
-    total_amount: Mapped[float] = mapped_column(Numeric(10, 2))
-    status: Mapped[str] = mapped_column(String(20), default="completed")
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-
-    items: Mapped[list["GRNItem"]] = relationship(back_populates="grn", cascade="all, delete-orphan")
-
-class GRNItem(Base):
-    __tablename__ = "grn_items"
-    __table_args__ = {"schema": "inventory"}
-
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    grn_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("inventory.goods_receipt_notes.id"))
-    product_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("inventory.products.id"))
-    quantity_received: Mapped[float] = mapped_column(Numeric(10, 3))
-    cost_price: Mapped[float] = mapped_column(Numeric(10, 2))
-    subtotal: Mapped[float] = mapped_column(Numeric(10, 2))
-
-    grn: Mapped["GRN"] = relationship(back_populates="items")
-
-class StockLedger(Base):
+class StockLedger(Base, TimestampMixin):
+    """
+    Append-only ledger of every stock movement.
+    Current stock = SUM(quantity_change) for a product/branch.
+    """
     __tablename__ = "stock_ledger"
     __table_args__ = {"schema": "inventory"}
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    branch_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("inventory.branches.id"))
-    product_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("inventory.products.id"))
-    quantity_change: Mapped[float] = mapped_column(Numeric(10, 3))
-    movement_type: Mapped[MovementType] = mapped_column(SQLEnum(MovementType))
-    reference_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
-    cost_price_at_time: Mapped[float | None] = mapped_column(Numeric(10, 2))
-    
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    branch_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("inventory.branches.id"),
+        nullable=False,
+        index=True,
+    )
+    product_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("inventory.products.id"),
+        nullable=False,
+        index=True,
+    )
+    # Positive = stock in, negative = stock out
+    quantity_change = Column(Float, nullable=False)
+    movement_type = Column(
+        SAEnum(MovementType, native_enum=False),
+        nullable=False,
+    )
+
+
+class GRN(Base, TimestampMixin):
+    """Goods Receipt Note — records an incoming supplier delivery."""
+    __tablename__ = "grn"
+    __table_args__ = {"schema": "inventory"}
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    branch_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("inventory.branches.id"),
+        nullable=False,
+    )
+    supplier_name = Column(String(200), nullable=False)
+    invoice_reference = Column(String(100), nullable=True)
+    total_amount = Column(Float, default=0.0, nullable=False)
+    status = Column(String(50), default="completed", nullable=False)
+
+    items = relationship("GRNItem", back_populates="grn", cascade="all, delete-orphan")
+
+
+class GRNItem(Base, TimestampMixin):
+    """Individual line item within a GRN."""
+    __tablename__ = "grn_items"
+    __table_args__ = {"schema": "inventory"}
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    grn_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("inventory.grn.id"),
+        nullable=False,
+    )
+    product_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("inventory.products.id"),
+        nullable=False,
+    )
+    quantity_received = Column(Float, nullable=False)
+    cost_price = Column(Float, nullable=False)
+    subtotal = Column(Float, nullable=False)
+
+    grn = relationship("GRN", back_populates="items")

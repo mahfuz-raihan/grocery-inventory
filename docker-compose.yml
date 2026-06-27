@@ -87,7 +87,7 @@ services:
       - "traefik.http.routers.auth.rule=PathPrefix(`/api/v1/auth`)"
       - "traefik.http.routers.auth.entrypoints=web"
       - "traefik.http.services.auth.loadbalancer.server.port=8000"
-      - "traefik.docker.network=erp-network"
+      - "traefik.docker.network=erp_network"
 
   # --- INVENTORY SERVICE ---
   inventory-service:
@@ -110,7 +110,7 @@ services:
       - "traefik.http.routers.inventory.rule=PathPrefix(`/api/v1/inventory`)"
       - "traefik.http.routers.inventory.entrypoints=web"
       - "traefik.http.services.inventory.loadbalancer.server.port=8000"
-      - "traefik.docker.network=erp-network"
+      - "traefik.docker.network=erp_network"
     
 
   sales-service:
@@ -131,7 +131,9 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.sales.rule=PathPrefix(`/api/v1/sales`)"
+      - "traefik.http.routers.sales.entrypoints=web"
       - "traefik.http.services.sales.loadbalancer.server.port=8000"
+      - "traefik.docker.network=erp_network"
 
   # --- FRONTEND SERVICE ---
   frontend-service:
