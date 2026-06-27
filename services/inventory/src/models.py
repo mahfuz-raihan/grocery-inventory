@@ -1,20 +1,36 @@
 import enum
 import uuid
 
-from sqlalchemy import Boolean, Column, Enum as SAEnum, Float, ForeignKey, String, Text
-from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship
+from sqlalchemy import Boolean, Column, Enum as SAEnum, Float, ForeignKey, String, Text, DateTime
+from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy.orm import relationship, backref
 
 from shared.python.core import Base, TimestampMixin
 
 
 class MovementType(str, enum.Enum):
     """Describes why a stock ledger entry was created."""
-    sale = "sale"
-    receipt = "receipt"
-    adjustment = "adjustment"
-    transfer = "transfer"
+    purchase_receive = "purchase_receive"
+    stock_transfer = "stock_transfer"
+    production_consumption = "production_consumption"
+    production_completion = "production_completion"
+    sales_delivery = "sales_delivery"
+    return_item = "return"
     damage = "damage"
+    adjustment = "adjustment"
+
+
+class Supplier(Base, TimestampMixin):
+    """Product suppliers tracking."""
+    __tablename__ = "suppliers"
+    __table_args__ = {"schema": "inventory"}
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    name = Column(String(200), unique=True, nullable=False, index=True)
+    contact_person = Column(String(100), nullable=True)
+    phone = Column(String(20), nullable=True)
+    email = Column(String(100), nullable=True)
+    address = Column(Text, nullable=True)
 
 
 class Branch(Base, TimestampMixin):
@@ -27,6 +43,7 @@ class Branch(Base, TimestampMixin):
     address = Column(Text, nullable=True)
     phone = Column(String(20), nullable=True)
     is_head_office = Column(Boolean, default=False, nullable=False)
+    branch_type = Column(String(50), default="warehouse", nullable=False) # store, warehouse
 
 
 class Category(Base, TimestampMixin):
@@ -58,6 +75,44 @@ class Product(Base, TimestampMixin):
         nullable=True,
     )
     is_active = Column(Boolean, default=True, nullable=False)
+
+    # Variations (self-referencing parent-child structure)
+    parent_id = Column(UUID(as_uuid=True), ForeignKey("inventory.products.id"), nullable=True, index=True)
+
+    # Product Classification
+    product_type = Column(String(50), default="finished_product", nullable=False) # raw_material, finished_product, semi_finished_product, consumable, spare_parts
+
+    # Furniture / Spec Dimensions
+    material_type = Column(String(100), nullable=True)
+    wood_type = Column(String(100), nullable=True)
+    board_type = Column(String(100), nullable=True)
+    color = Column(String(50), nullable=True)
+    size = Column(String(50), nullable=True)
+    length = Column(Float, nullable=True)
+    width = Column(Float, nullable=True)
+    height = Column(Float, nullable=True)
+    thickness = Column(Float, nullable=True)
+    weight = Column(Float, nullable=True)
+
+    # Costing & Inventory thresholds
+    purchase_cost = Column(Float, default=0.0, nullable=False)
+    average_cost = Column(Float, default=0.0, nullable=False)
+    tax_rate = Column(Float, default=0.0, nullable=False)
+    min_stock_level = Column(Float, default=0.0, nullable=False)
+    max_stock_level = Column(Float, default=0.0, nullable=False)
+    reorder_quantity = Column(Float, default=0.0, nullable=False)
+
+    # Image
+    product_image = Column(String(500), nullable=True)
+
+    # Supplier Link
+    supplier_id = Column(UUID(as_uuid=True), ForeignKey("inventory.suppliers.id"), nullable=True)
+
+    # Dynamically specifiable properties (JSONB)
+    custom_attributes = Column(JSONB, nullable=True)
+
+    # Self reference
+    parent = relationship("Product", remote_side=[id], backref=backref("variants", cascade="all, delete-orphan"))
 
 
 class StockLedger(Base, TimestampMixin):
@@ -128,4 +183,45 @@ class GRNItem(Base, TimestampMixin):
     cost_price = Column(Float, nullable=False)
     subtotal = Column(Float, nullable=False)
 
+    # Added columns for specs
+    ordered_quantity = Column(Float, default=0.0, nullable=False)
+    damaged_quantity = Column(Float, default=0.0, nullable=False)
+    batch_number = Column(String(100), nullable=True)
+
     grn = relationship("GRN", back_populates="items")
+
+
+class StockTransfer(Base, TimestampMixin):
+    """Logs stock transfers between warehouses."""
+    __tablename__ = "stock_transfers"
+    __table_args__ = {"schema": "inventory"}
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    product_id = Column(UUID(as_uuid=True), ForeignKey("inventory.products.id"), nullable=False)
+    from_branch_id = Column(UUID(as_uuid=True), ForeignKey("inventory.branches.id"), nullable=False)
+    to_branch_id = Column(UUID(as_uuid=True), ForeignKey("inventory.branches.id"), nullable=False)
+    quantity = Column(Float, nullable=False)
+    status = Column(String(50), default="completed", nullable=False)
+    reference = Column(String(100), nullable=True)
+
+    product = relationship("Product")
+    from_branch = relationship("Branch", foreign_keys=[from_branch_id])
+    to_branch = relationship("Branch", foreign_keys=[to_branch_id])
+
+
+class StockAdjustment(Base, TimestampMixin):
+    """Logs manual stock corrections."""
+    __tablename__ = "stock_adjustments"
+    __table_args__ = {"schema": "inventory"}
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    product_id = Column(UUID(as_uuid=True), ForeignKey("inventory.products.id"), nullable=False)
+    branch_id = Column(UUID(as_uuid=True), ForeignKey("inventory.branches.id"), nullable=False)
+    current_quantity = Column(Float, nullable=False)
+    adjusted_quantity = Column(Float, nullable=False)
+    reason = Column(String(200), nullable=False)
+    notes = Column(Text, nullable=True)
+    approved_by = Column(String(100), nullable=False)
+
+    product = relationship("Product")
+    branch = relationship("Branch")

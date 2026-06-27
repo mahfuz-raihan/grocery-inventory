@@ -58,6 +58,9 @@ export default function RootLayout({
           <title>Premium ERP System</title>
           <link rel="manifest" href="/manifest.json" />
           <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+          <link rel="preconnect" href="https://fonts.googleapis.com" />
+          <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+          <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
           <script src="https://cdn.tailwindcss.com"></script>
         </head>
         <body className="bg-slate-900 text-slate-300 flex items-center justify-center h-screen">
@@ -75,6 +78,9 @@ export default function RootLayout({
           <title>Login - Premium ERP System</title>
           <link rel="manifest" href="/manifest.json" />
           <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+          <link rel="preconnect" href="https://fonts.googleapis.com" />
+          <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+          <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
           <script src="https://cdn.tailwindcss.com"></script>
         </head>
         <body className="bg-slate-900 text-slate-300 antialiased font-sans">
@@ -90,6 +96,9 @@ export default function RootLayout({
         <title>Premium ERP System</title>
         <link rel="manifest" href="/manifest.json" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
         <script src="https://cdn.tailwindcss.com"></script>
         <script
           dangerouslySetInnerHTML={{
@@ -97,6 +106,9 @@ export default function RootLayout({
               tailwind.config = {
                 theme: {
                   extend: {
+                    fontFamily: {
+                      sans: ['Inter', 'sans-serif'],
+                    },
                     colors: {
                       brand: { 500: '#3b82f6', 600: '#2563eb' },
                       surface: { DEFAULT: '#f8fafc', dark: '#0f172a' }
@@ -104,8 +116,7 @@ export default function RootLayout({
                   }
                 }
               }
-            }
-          `}}
+            `}}
         />
       </head>
       <body className="bg-surface text-slate-800 flex h-screen overflow-hidden antialiased font-sans">
@@ -125,6 +136,14 @@ export default function RootLayout({
               <a href="/dashboard" className={`flex items-center px-4 py-3 rounded-xl transition-all ${pathname === '/dashboard' ? 'text-white bg-brand-600 shadow-sm' : 'hover:bg-slate-800 hover:text-white'}`}>
                 <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
                 <span className="font-medium">Dashboard</span>
+              </a>
+            )}
+
+            {/* Show Inventory to Owner, Manager, Stock Handler */}
+            {userRole && ["owner", "manager", "stock_handler"].includes(userRole) && (
+              <a href="/inventory" className={`flex items-center px-4 py-3 rounded-xl transition-all ${pathname === '/inventory' ? 'text-white bg-brand-600 shadow-sm' : 'hover:bg-slate-800 hover:text-white'}`}>
+                <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
+                <span className="font-medium">Inventory</span>
               </a>
             )}
             
@@ -163,7 +182,7 @@ export default function RootLayout({
           <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 shadow-sm z-10 flex-shrink-0">
             <div className="flex items-center">
               <h2 className="text-xl font-semibold text-slate-800">
-                {pathname === '/dashboard' ? 'HQ Enterprise Dashboard' : pathname === '/users' ? 'User & Role Management' : 'Point of Sale Terminal'}
+                {pathname === '/dashboard' ? 'HQ Enterprise Dashboard' : pathname === '/users' ? 'User & Role Management' : pathname === '/inventory' ? 'Factory Inventory Control' : 'Point of Sale Terminal'}
               </h2>
             </div>
             <div className="flex items-center space-x-4">
