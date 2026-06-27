@@ -1,27 +1,37 @@
+/* 1. Tailwind Directives: Tells Tailwind to generate the necessary CSS */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* 2. CSS Variables: Think of these as "the theme settings" */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+--primary-color: 59 130 246;    /* Standard Blue */
+--bg-page: 248 250 252;         /* Light Slate */
+--text-main: 15 23 42;          /* Dark Slate */
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+/* 3. Base Styles: Sets the foundation for the whole app */
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+background-color: rgb(var(--bg-page));
+color: rgb(var(--text-main));
+font-family: sans-serif;
+-webkit-font-smoothing: antialiased;
 }
 
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
+/* 4. Component Library: Reusable styles for your ERP interface */
+@layer components {
+  /* Use this for all your main action buttons */
+  .btn-primary {
+    @apply px-4 py-2 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition-colors shadow-sm;
   }
+
+/* Use this for white cards that hold data/info */
+.erp-card {
+@apply bg-white p-6 rounded-xl border border-slate-200 shadow-sm;
+}
+
+/* Use this for text inputs */
+.erp-input {
+@apply block w-full px-3 py-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 outline-none;
+}
 }
