@@ -2,7 +2,7 @@ import datetime
 import enum
 import uuid
 
-from sqlalchemy import Boolean, Column, Date, Enum as SAEnum, Float, ForeignKey, String, Text, DateTime, func
+from sqlalchemy import Boolean, Column, Date, Enum as SAEnum, Float, ForeignKey, String, Text, DateTime, func, Integer
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import relationship, backref
 
@@ -158,6 +158,10 @@ class GRN(Base, TimestampMixin):
         nullable=False,
     )
     supplier_name = Column(String(200), nullable=False)
+    supplier_contact = Column(String(100), nullable=True)
+    supplier_phone = Column(String(50), nullable=True)
+    supplier_email = Column(String(100), nullable=True)
+    supplier_address = Column(Text, nullable=True)
     invoice_reference = Column(String(100), nullable=True)
     receiving_date = Column(Date, nullable=True, default=datetime.date.today)
     total_amount = Column(Float, default=0.0, nullable=False)
@@ -185,6 +189,8 @@ class GRNItem(Base, TimestampMixin):
     quantity_received = Column(Float, nullable=False)
     cost_price = Column(Float, nullable=False)
     subtotal = Column(Float, nullable=False)
+    unit_price = Column(Float, nullable=True)
+    commission = Column(Float, default=0.0, nullable=True)
 
     # Added columns for specs
     ordered_quantity = Column(Float, default=0.0, nullable=False)
@@ -228,3 +234,16 @@ class StockAdjustment(Base, TimestampMixin):
 
     product = relationship("Product")
     branch = relationship("Branch")
+
+
+class CompanyProfile(Base):
+    """Holds global settings for the company profile."""
+    __tablename__ = "company_profile"
+    __table_args__ = {"schema": "inventory"}
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String(200), default="Manor Furniture", nullable=False)
+    address = Column(Text, default="Bozlur Mor, Kushita", nullable=True)
+    phone = Column(String(50), default="01700000000", nullable=True)
+    email = Column(String(100), default="accounts@manorfurniture.com", nullable=True)
+    contact_person = Column(String(100), default="Manager", nullable=True)

@@ -40,6 +40,18 @@ interface Product {
   size?: string | null;
   current_stock: number;
   variants?: Product[];
+  category_id?: string | null;
+  supplier_id?: string | null;
+  tax_rate?: number;
+  product_image?: string | null;
+  length?: number | null;
+  width?: number | null;
+  height?: number | null;
+  thickness?: number | null;
+  weight?: number | null;
+  material_type?: string | null;
+  wood_type?: string | null;
+  board_type?: string | null;
 }
 
 interface Transfer {
@@ -140,6 +152,27 @@ const api = {
     });
     if (!response.ok) throw new Error("Failed to create category");
     return await response.json();
+  },
+  updateCategory: async (id: string, payload: any): Promise<any> => {
+    const response = await fetch(`${getApiBaseUrl()}/api/v1/inventory/categories/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.detail || "Failed to update category");
+    }
+    return await response.json();
+  },
+  deleteCategory: async (id: string): Promise<void> => {
+    const response = await fetch(`${getApiBaseUrl()}/api/v1/inventory/categories/${id}`, {
+      method: "DELETE",
+    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.detail || "Failed to delete category");
+    }
   },
   getGRNs: async (): Promise<any[]> => {
     const response = await fetch(`${getApiBaseUrl()}/api/v1/inventory/grn`);
@@ -252,6 +285,20 @@ const api = {
     const response = await fetch(url);
     if (!response.ok) throw new Error("Failed to fetch dead stock report");
     return await response.json();
+  },
+  getCompanyProfile: async (): Promise<any> => {
+    const response = await fetch(`${getApiBaseUrl()}/api/v1/inventory/company-profile`);
+    if (!response.ok) throw new Error("Failed to fetch company profile");
+    return await response.json();
+  },
+  updateCompanyProfile: async (payload: any): Promise<any> => {
+    const response = await fetch(`${getApiBaseUrl()}/api/v1/inventory/company-profile`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!response.ok) throw new Error("Failed to update company profile");
+    return await response.json();
   }
 };
 
@@ -263,6 +310,48 @@ export default function InventoryControlPage() {
   const [currency, setCurrency] = useState<"BDT" | "USD">("BDT");
   const USD_EXCHANGE_RATE = 117.0;
   const formatPrice = (priceInBDT: number) => currency === "USD" ? "$" + (priceInBDT / USD_EXCHANGE_RATE).toFixed(2) : "৳" + priceInBDT.toFixed(2);
+
+  // Custom types and CRUD modal states
+  const [productTypes, setProductTypes] = useState<{key: string, label: string}[]>([]);
+  const [materialTypes, setMaterialTypes] = useState<string[]>([]);
+  const [woodTypes, setWoodTypes] = useState<string[]>([]);
+  const [showProductTypesModal, setShowProductTypesModal] = useState(false);
+  const [showCategoriesModal, setShowCategoriesModal] = useState(false);
+  const [showMaterialTypesModal, setShowMaterialTypesModal] = useState(false);
+  const [showWoodTypesModal, setShowWoodTypesModal] = useState(false);
+  const [showAddProductModal, setShowAddProductModal] = useState(false);
+  const [showGRNModal, setShowGRNModal] = useState(false);
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [invoiceDiscount, setInvoiceDiscount] = useState("0");
+  const [activeGRN, setActiveGRN] = useState<any>(null);
+  const [grnSellingPrice, setGrnSellingPrice] = useState("");
+  const [companyProfile, setCompanyProfile] = useState<any>(null);
+  const [showCompanyModal, setShowCompanyModal] = useState(false);
+  const [companyName, setCompanyName] = useState("");
+  const [companyAddress, setCompanyAddress] = useState("");
+  const [companyPhone, setCompanyPhone] = useState("");
+  const [companyEmail, setCompanyEmail] = useState("");
+  const [companyContact, setCompanyContact] = useState("");
+  const [catalogSubTab, setCatalogSubTab] = useState<"catalog" | "by_product_type" | "by_category">("catalog");
+
+  const updateProductTypes = (newTypes: typeof productTypes) => {
+    setProductTypes(newTypes);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("product_types", JSON.stringify(newTypes));
+    }
+  };
+  const updateMaterialTypes = (newMats: typeof materialTypes) => {
+    setMaterialTypes(newMats);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("material_types", JSON.stringify(newMats));
+    }
+  };
+  const updateWoodTypesState = (newWoods: typeof woodTypes) => {
+    setWoodTypes(newWoods);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("wood_types", JSON.stringify(newWoods));
+    }
+  };
 
   // Notification state for low stock alerts
   const [showNotifications, setShowNotifications] = useState(false);
@@ -369,6 +458,10 @@ export default function InventoryControlPage() {
   const [selectedBranchId, setSelectedBranchId] = useState("");
   const [grnSupplierId, setGrnSupplierId] = useState("");
   const [grnSupplierName, setGrnSupplierName] = useState("");
+  const [grnSupplierContact, setGrnSupplierContact] = useState("");
+  const [grnSupplierPhone, setGrnSupplierPhone] = useState("");
+  const [grnSupplierEmail, setGrnSupplierEmail] = useState("");
+  const [grnSupplierAddress, setGrnSupplierAddress] = useState("");
   const [invoiceRef, setInvoiceRef] = useState("");
   const [selectedProductId, setSelectedProductId] = useState("");
   const [grnQty, setGrnQty] = useState("");
@@ -434,6 +527,42 @@ export default function InventoryControlPage() {
       setActiveTab("transfers");
     }
 
+    // Load custom types from localStorage
+    if (typeof window !== "undefined") {
+      const storedTypes = localStorage.getItem("product_types");
+      if (storedTypes) {
+        setProductTypes(JSON.parse(storedTypes));
+      } else {
+        const defaults = [
+          { key: "finished_product", label: "Finished Furniture Product" },
+          { key: "raw_material", label: "Raw Material (Wood/Board)" },
+          { key: "semi_finished_product", label: "Semi Finished Component" },
+          { key: "consumable", label: "Consumable Item" },
+          { key: "spare_parts", label: "Spare Parts" }
+        ];
+        setProductTypes(defaults);
+        localStorage.setItem("product_types", JSON.stringify(defaults));
+      }
+
+      const storedMats = localStorage.getItem("material_types");
+      if (storedMats) {
+        setMaterialTypes(JSON.parse(storedMats));
+      } else {
+        const defaults = ["Solid Wood", "Plywood", "MDF", "HDF", "Particle Board", "Veneer", "Metal", "Glass", "Plastic"];
+        setMaterialTypes(defaults);
+        localStorage.setItem("material_types", JSON.stringify(defaults));
+      }
+
+      const storedWoods = localStorage.getItem("wood_types");
+      if (storedWoods) {
+        setWoodTypes(JSON.parse(storedWoods));
+      } else {
+        const defaults = ["Teak", "Oak", "Mahogany", "Pine", "Maple", "Walnut", "Cherry", "Rosewood", "Garjan", "Gamari"];
+        setWoodTypes(defaults);
+        localStorage.setItem("wood_types", JSON.stringify(defaults));
+      }
+    }
+
     const loadData = async () => {
       try {
         const [branchesData, suppliersData, productsData, transfersData, adjustmentsData, valData, lowData, categoriesData, grnsData] = await Promise.all([
@@ -456,6 +585,18 @@ export default function InventoryControlPage() {
         setLowStock(lowData);
         setCategories(categoriesData);
         setGrns(grnsData);
+
+        try {
+          const companyData = await api.getCompanyProfile();
+          setCompanyProfile(companyData);
+          setCompanyName(companyData.name || "");
+          setCompanyAddress(companyData.address || "");
+          setCompanyPhone(companyData.phone || "");
+          setCompanyEmail(companyData.email || "");
+          setCompanyContact(companyData.contact_person || "");
+        } catch (companyErr) {
+          console.error("Could not fetch company profile", companyErr);
+        }
 
         if (branchesData.length > 0) {
           setTxFrom(branchesData[0].id);
@@ -541,34 +682,28 @@ export default function InventoryControlPage() {
 
   const handleCreateProduct = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newProductSku || !newProductName || !newProductPrice) return;
+    if (!newProductSku || !newProductName) return;
 
     setIsSubmittingProduct(true);
     setProductSuccessMessage("");
 
     try {
-      const finalPrice = currency === "USD"
-        ? parseFloat(newProductPrice) * USD_EXCHANGE_RATE
-        : parseFloat(newProductPrice);
-
-      const costValue = newProductCost ? (currency === "USD" ? parseFloat(newProductCost) * USD_EXCHANGE_RATE : parseFloat(newProductCost)) : 0.0;
-
       const payload = {
         sku: newProductSku,
         name: newProductName,
         unit: newProductUnit,
-        selling_price: finalPrice,
+        selling_price: 0.0, // default, updated on receive
         parent_id: newProductParentId || null,
         product_type: newProductType,
         color: newProductColor || null,
         size: newProductSize || null,
-        purchase_cost: costValue,
-        min_stock_level: newProductMinStock ? parseFloat(newProductMinStock) : 0.0,
-        max_stock_level: newProductMaxStock ? parseFloat(newProductMaxStock) : 0.0,
-        reorder_quantity: newProductReorderQty ? parseFloat(newProductReorderQty) : 0.0,
+        purchase_cost: 0.0, // default, updated on receive
+        min_stock_level: 0.0,
+        max_stock_level: 0.0,
+        reorder_quantity: 0.0,
         category_id: newProductCategory || null,
-        supplier_id: newProductSupplier || null,
-        tax_rate: newProductTaxRate ? parseFloat(newProductTaxRate) : 0.0,
+        supplier_id: null, // default, updated on receive
+        tax_rate: 0.0,
         product_image: newProductImage || null,
         length: newProductLength ? parseFloat(newProductLength) : null,
         width: newProductWidth ? parseFloat(newProductWidth) : null,
@@ -588,16 +723,9 @@ export default function InventoryControlPage() {
       // Reset
       setNewProductSku("");
       setNewProductName("");
-      setNewProductPrice("");
-      setNewProductCost("");
       setNewProductColor("");
       setNewProductSize("");
-      setNewProductMinStock("");
-      setNewProductMaxStock("");
-      setNewProductReorderQty("");
       setNewProductCategory("");
-      setNewProductSupplier("");
-      setNewProductTaxRate("");
       setNewProductImage("");
       setNewProductLength("");
       setNewProductWidth("");
@@ -608,6 +736,12 @@ export default function InventoryControlPage() {
       setNewProductWoodType("");
       setNewProductBoardType("");
       setNewProductParentId("");
+      
+      // Close modal on success
+      setTimeout(() => {
+        setShowAddProductModal(false);
+        setProductSuccessMessage("");
+      }, 1500);
     } catch (error: any) {
       console.error(error);
       alert(error.message || "Failed to create product. SKU might already exist.");
@@ -647,11 +781,11 @@ export default function InventoryControlPage() {
 
   const handleUpdateProduct = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editingProduct || !editSku || !editName || !editPrice) return;
+    if (!editingProduct || !editSku || !editName) return;
     setIsUpdatingProduct(true);
     try {
-      const finalPrice = currency === "USD" ? parseFloat(editPrice) * USD_EXCHANGE_RATE : parseFloat(editPrice);
-      const costValue = editCost ? (currency === "USD" ? parseFloat(editCost) * USD_EXCHANGE_RATE : parseFloat(editCost)) : 0.0;
+      const finalPrice = editPrice ? (currency === "USD" ? parseFloat(editPrice) * USD_EXCHANGE_RATE : parseFloat(editPrice)) : editingProduct.selling_price;
+      const costValue = editCost ? (currency === "USD" ? parseFloat(editCost) * USD_EXCHANGE_RATE : parseFloat(editCost)) : (editingProduct.purchase_cost || 0.0);
       const payload = {
         sku: editSku,
         name: editName,
@@ -662,12 +796,12 @@ export default function InventoryControlPage() {
         color: editColor || null,
         size: editSize || null,
         purchase_cost: costValue,
-        min_stock_level: editMinStock ? parseFloat(editMinStock) : 0.0,
-        max_stock_level: editMaxStock ? parseFloat(editMaxStock) : 0.0,
-        reorder_quantity: editReorderQty ? parseFloat(editReorderQty) : 0.0,
+        min_stock_level: editMinStock ? parseFloat(editMinStock) : (editingProduct.min_stock_level || 0.0),
+        max_stock_level: editMaxStock ? parseFloat(editMaxStock) : (editingProduct.max_stock_level || 0.0),
+        reorder_quantity: editReorderQty ? parseFloat(editReorderQty) : (editingProduct.reorder_quantity || 0.0),
         category_id: editCategory || null,
         supplier_id: editSupplier || null,
-        tax_rate: editTaxRate ? parseFloat(editTaxRate) : 0.0,
+        tax_rate: editTaxRate ? parseFloat(editTaxRate) : (editingProduct.tax_rate || 0.0),
         product_image: editImage || null,
         length: editLength ? parseFloat(editLength) : null,
         width: editWidth ? parseFloat(editWidth) : null,
@@ -729,29 +863,55 @@ export default function InventoryControlPage() {
       const netCost = rawPrice * (1 - commissionPct / 100);
       const finalCost = currency === "USD" ? netCost * USD_EXCHANGE_RATE : netCost;
 
+      const finalSellingPrice = grnSellingPrice
+        ? (currency === "USD" ? parseFloat(grnSellingPrice) * USD_EXCHANGE_RATE : parseFloat(grnSellingPrice))
+        : undefined;
+
       // Build payload — only include fields the backend GRNCreate schema accepts
       const payload = {
         branch_id: selectedBranchId,
         supplier_name: resolvedSupplierName,
+        supplier_contact: grnSupplierContact || undefined,
+        supplier_phone: grnSupplierPhone || undefined,
+        supplier_email: grnSupplierEmail || undefined,
+        supplier_address: grnSupplierAddress || undefined,
         invoice_reference: invoiceRef || undefined,
+        receiving_date: grnReceivingDate || undefined,
         items: [{
           product_id: selectedProductId,
           quantity_received: parseFloat(grnQty),
           cost_price: finalCost,
           ordered_quantity: grnOrderedQty ? parseFloat(grnOrderedQty) : parseFloat(grnQty),
           damaged_quantity: grnDamagedQty ? parseFloat(grnDamagedQty) : 0.0,
-          batch_number: grnBatchNumber || undefined
+          batch_number: grnBatchNumber || undefined,
+          selling_price: finalSellingPrice,
+          unit_price: currency === "USD" ? rawPrice * USD_EXCHANGE_RATE : rawPrice,
+          commission: commissionPct
         }]
       };
 
       const newGRN = await api.submitGRN(payload);
       setGrns(prev => [newGRN, ...prev]);
 
-      setGrnSuccessMessage(`✅ Successfully received ${grnQty} units from ${resolvedSupplierName}! Purchase Price: ${currency === "USD" ? "$" : "৳"}${netCost.toFixed(2)} per unit.`);
+      setGrnSuccessMessage(`✅ Successfully received ${grnQty} units from ${resolvedSupplierName}!`);
+      
+      // Auto open Invoice Preview Modal
+      setActiveGRN(newGRN);
+      const grossVal = (newGRN.items || []).reduce((sum: number, it: any) => sum + (it.quantity_received * (it.unit_price || it.cost_price)), 0);
+      const diffVal = grossVal - newGRN.total_amount;
+      setInvoiceDiscount(diffVal > 0.01 ? diffVal.toFixed(2) : "0");
+      setShowInvoiceModal(true);
+
+      // Reset
       setGrnSupplierId("");
       setGrnSupplierName("");
+      setGrnSupplierContact("");
+      setGrnSupplierPhone("");
+      setGrnSupplierEmail("");
+      setGrnSupplierAddress("");
       setGrnQty("");
       setGrnCostPrice("");
+      setGrnSellingPrice("");
       setGrnCommission("");
       setGrnReceivingDate(new Date().toISOString().split("T")[0]);
       setSelectedProductId(products.length > 0 ? products[0].id : "");
@@ -764,16 +924,189 @@ export default function InventoryControlPage() {
       const [updatedProducts, val, low] = await Promise.all([
         api.getProducts(),
         api.getValuationReport(),
-        api.getLowStockReport()
+        api.getLowStockReport(),
+        api.getAdjustments()
       ]);
       setProducts(updatedProducts);
       setValuation(val);
       setLowStock(low);
+      setAdjustments(adj => {
+        // Adjustments might have changed backend calculations, so reload
+        return adj;
+      });
+      // Close GRN form modal
+      setShowGRNModal(false);
     } catch (error: any) {
       console.error(error);
       alert(error.message || "Failed to submit GRN. Please check all fields and try again.");
     } finally {
       setIsSubmittingGRN(false);
+    }
+  };
+
+  const handlePrintInvoice = () => {
+    if (!activeGRN) return;
+    const printWindow = window.open("", "_blank", "width=800,height=900");
+    if (!printWindow) return;
+    const whName = branches.find(b => b.id === activeGRN.branch_id)?.name || "Warehouse";
+    const dateObj = new Date(activeGRN.created_at || activeGRN.receiving_date);
+    const dateStr = dateObj.toLocaleDateString() + " " + dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    
+    // Build items rows
+    const itemsHtml = (activeGRN.items || []).map((item: any) => {
+      const p = products.find(prod => prod.id === item.product_id);
+      const unitPriceVal = item.unit_price || item.cost_price;
+      return `
+        <tr style="border-bottom: 1px solid #e2e8f0;">
+          <td style="padding: 12px; text-align: left; font-size: 13px;">${p?.name || "Unknown Product"}</td>
+          <td style="padding: 12px; text-align: left; font-size: 13px; font-family: monospace;">${p?.sku || "—"}</td>
+          <td style="padding: 12px; text-align: center; font-size: 13px;">${item.ordered_quantity || item.quantity_received}</td>
+          <td style="padding: 12px; text-align: center; font-size: 13px; font-weight: bold; color: #16a34a;">${item.quantity_received}</td>
+          <td style="padding: 12px; text-align: right; font-size: 13px;">${formatPrice(unitPriceVal)}</td>
+          <td style="padding: 12px; text-align: right; font-size: 13px; font-weight: bold; color: #1e293b;">${formatPrice(item.quantity_received * unitPriceVal)}</td>
+        </tr>
+      `;
+    }).join("");
+
+    const grossTotal = (activeGRN.items || []).reduce((sum: number, item: any) => sum + (item.quantity_received * (item.unit_price || item.cost_price)), 0);
+    const discountAmount = parseFloat(invoiceDiscount || "0");
+    const netPayable = Math.max(0, grossTotal - discountAmount);
+    let summaryRowsHtml = "";
+    if (discountAmount > 0.01) {
+      summaryRowsHtml += `
+        <tr style="background-color: #f8fafc; font-weight: 500;">
+          <td colspan="4" style="padding: 10px 12px; text-align: right; font-size: 13px; color: #475569;">Gross Subtotal:</td>
+          <td colspan="2" style="padding: 10px 12px; text-align: right; font-size: 13px; font-weight: bold;">${formatPrice(grossTotal)}</td>
+        </tr>
+        <tr style="background-color: #f8fafc; font-weight: 500; color: #c2410c;">
+          <td colspan="4" style="padding: 10px 12px; text-align: right; font-size: 13px;">Less: Commission / Discounts:</td>
+          <td colspan="2" style="padding: 10px 12px; text-align: right; font-size: 13px; font-weight: bold;">− ${formatPrice(discountAmount)}</td>
+        </tr>
+      `;
+    }
+    summaryRowsHtml += `
+      <tr class="total-row">
+        <td colspan="4" style="padding: 16px 12px; text-align: right; font-size: 15px;">Grand Total (Net Payable):</td>
+        <td colspan="2" style="padding: 16px 12px; text-align: right; font-size: 18px; color: #1e3a8a;">${formatPrice(netPayable)}</td>
+      </tr>
+    `;
+
+    const html = `
+      <html>
+        <head>
+          <title>Invoice - ${activeGRN.invoice_reference}</title>
+          <style>
+            body { font-family: 'Inter', sans-serif; color: #1e293b; margin: 0; padding: 40px; }
+            .header { display: flex; justify-content: space-between; border-bottom: 2px solid #e2e8f0; padding-bottom: 20px; margin-bottom: 30px; }
+            .company-info h1 { margin: 0; font-size: 24px; color: #1e3a8a; }
+            .company-info p { margin: 4px 0 0 0; font-size: 14px; color: #64748b; }
+            .invoice-details { text-align: right; }
+            .invoice-details h2 { margin: 0; font-size: 20px; color: #334155; }
+            .invoice-details p { margin: 4px 0 0 0; font-size: 13px; color: #64748b; }
+            .bill-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 40px; }
+            .bill-box { background-color: #f8fafc; border: 1px solid #f1f5f9; padding: 16px; border-radius: 12px; }
+            .bill-box h3 { margin: 0 0 8px 0; font-size: 11px; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.05em; }
+            .bill-box p { margin: 4px 0; font-size: 14px; font-weight: 500; }
+            table { width: 100%; border-collapse: collapse; margin-bottom: 40px; }
+            th { background-color: #f1f5f9; color: #475569; font-weight: 600; font-size: 11px; text-transform: uppercase; padding: 12px; text-align: left; }
+            .total-row { border-top: 2px solid #cbd5e1; font-weight: bold; }
+            .footer { text-align: center; font-size: 12px; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 20px; margin-top: 60px; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div class="company-info">
+              <h1>${companyName || "Manor Furniture"}</h1>
+              <p>${companyAddress || "Bozlur Mor, Kushita"}</p>
+              <p>Contact: ${companyContact ? `${companyContact} (${companyEmail || companyPhone})` : (companyEmail || "accounts@manorfurniture.com")}</p>
+            </div>
+            <div class="invoice-details">
+              <h2>PURCHASE INVOICE</h2>
+              <p><strong>Invoice Ref:</strong> ${activeGRN.invoice_reference || "—"}</p>
+              <p><strong>Date Received:</strong> ${dateStr}</p>
+            </div>
+          </div>
+          <div class="bill-grid">
+            <div class="bill-box">
+              <h3>Supplier Details</h3>
+              <p><strong>Company:</strong> ${activeGRN.supplier_name}</p>
+              ${activeGRN.supplier_contact ? `<p><strong>Contact Person:</strong> ${activeGRN.supplier_contact}</p>` : ""}
+              ${activeGRN.supplier_phone || activeGRN.supplier_email ? `<p><strong>Contact Info:</strong> ${activeGRN.supplier_phone || ""} ${activeGRN.supplier_email ? `| ${activeGRN.supplier_email}` : ""}</p>` : ""}
+              ${activeGRN.supplier_address ? `<p><strong>Address:</strong> ${activeGRN.supplier_address}</p>` : ""}
+            </div>
+            <div class="bill-box">
+              <h3>Delivery Details</h3>
+              <p><strong>Warehouse Destination:</strong> ${whName}</p>
+              <p><strong>Status:</strong> Completed / Received</p>
+            </div>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th style="text-align: left;">Product</th>
+                <th style="text-align: left;">SKU</th>
+                <th style="text-align: center;">Ordered</th>
+                <th style="text-align: center;">Received</th>
+                <th style="text-align: right;">Unit Price (DP)</th>
+                <th style="text-align: right;">Total Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${itemsHtml}
+              ${summaryRowsHtml}
+            </tbody>
+          </table>
+          <div style="display: flex; justify-content: space-between; margin-top: 80px;">
+            <div style="text-align: center; width: 200px; border-top: 1px solid #cbd5e1; padding-top: 8px; font-size: 12px; color: #64748b;">
+              Authorized Signature
+            </div>
+            <div style="text-align: center; width: 200px; border-top: 1px solid #cbd5e1; padding-top: 8px; font-size: 12px; color: #64748b;">
+              Supplier Acknowledgment
+            </div>
+          </div>
+          <div class="footer">
+            Generated by ${companyName || "Manor Furniture"} ERP System &bull; ${new Date().toLocaleString()}
+          </div>
+          <script>
+            window.onload = function() {
+              window.print();
+            }
+          </script>
+        </body>
+      </html>
+    `;
+    printWindow.document.write(html);
+    printWindow.document.close();
+  };
+
+  const handleEmailInvoice = () => {
+    if (!activeGRN) return;
+    const grossTotal = (activeGRN.items || []).reduce((sum: number, item: any) => sum + (item.quantity_received * (item.unit_price || item.cost_price)), 0);
+    const discountAmount = parseFloat(invoiceDiscount || "0");
+    const netPayable = Math.max(0, grossTotal - discountAmount);
+    const subject = encodeURIComponent(`Purchase Invoice Reference: ${activeGRN.invoice_reference || "—"}`);
+    const body = encodeURIComponent(
+      `Dear Supplier,\n\nWe have successfully received the delivery for invoice reference ${activeGRN.invoice_reference || "—"} at Manor Furniture.\n\nTotal Received Amount: ${formatPrice(netPayable)}\nDate Received: ${new Date(activeGRN.receiving_date || activeGRN.created_at).toLocaleDateString()}\n\nPlease find the detailed invoice in the system portal.\n\nBest regards,\nManor Furniture`
+    );
+    window.open(`mailto:?subject=${subject}&body=${body}`);
+  };
+
+  const handleUpdateCompanyProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const payload = {
+        name: companyName,
+        address: companyAddress,
+        phone: companyPhone,
+        email: companyEmail,
+        contact_person: companyContact
+      };
+      const updated = await api.updateCompanyProfile(payload);
+      setCompanyProfile(updated);
+      setShowCompanyModal(false);
+      alert("✅ Company profile updated successfully!");
+    } catch (err: any) {
+      alert(err.message || "Failed to update company profile");
     }
   };
 
@@ -961,7 +1294,25 @@ export default function InventoryControlPage() {
           ))}
         </div>
         {/* Notification Bell */}
-        <div className="relative ml-4 flex-shrink-0">
+        <div className="flex items-center gap-2 ml-4 flex-shrink-0 relative">
+          {/* Company Profile Edit Button */}
+          <button
+            onClick={() => {
+              if (companyProfile) {
+                setCompanyName(companyProfile.name || "");
+                setCompanyAddress(companyProfile.address || "");
+                setCompanyPhone(companyProfile.phone || "");
+                setCompanyEmail(companyProfile.email || "");
+                setCompanyContact(companyProfile.contact_person || "");
+              }
+              setShowCompanyModal(true);
+            }}
+            className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl transition flex items-center gap-1.5 text-xs font-bold border border-gray-200 shadow-sm"
+            title="Update Company Profile"
+          >
+            🏢 Company Profile
+          </button>
+
           <button
             onClick={() => { setShowNotifications(!showNotifications); setNotificationsDismissed(true); }}
             className={`relative p-2.5 rounded-xl transition ${lowStock.length > 0 ? "bg-red-50 hover:bg-red-100 text-red-600" : "bg-gray-100 hover:bg-gray-200 text-gray-500"}`}
@@ -1164,360 +1515,84 @@ export default function InventoryControlPage() {
       })()}
 
       {activeTab === "products" && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 w-full mb-8">
-          {/* Left Column: Form to create product */}
-          <div className="bg-white p-6 rounded-xl border h-fit shadow-sm lg:col-span-1">
-            <h2 className="text-xl font-bold text-gray-800 mb-6">Add New Product to Catalog</h2>
-            {productSuccessMessage && <div className="mb-6 p-4 bg-green-50 text-green-700 rounded-lg">{productSuccessMessage}</div>}
-            <form onSubmit={handleCreateProduct} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">SKU Reference</label>
-                  <input type="text" className="w-full p-2.5 border rounded-lg" value={newProductSku} onChange={(e) => setNewProductSku(e.target.value)} placeholder="SKU (e.g., WD-CH-01)" required />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Product Unit</label>
-                  <select className="w-full p-2.5 border rounded-lg bg-white" value={newProductUnit} onChange={(e) => setNewProductUnit(e.target.value)}>
-                    <option value="Pieces">Pieces</option>
-                    <option value="Cubic Feet">Cubic Feet (cft)</option>
-                    <option value="Kg">Kilograms (kg)</option>
-                    <option value="Square Feet">Square Feet (sqft)</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Product Name</label>
-                <input type="text" className="w-full p-2.5 border rounded-lg" value={newProductName} onChange={(e) => setNewProductName(e.target.value)} placeholder="Product Name (e.g., Oak Wood Dining Chair)" required />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Product Type</label>
-                  <select className="w-full p-2.5 border rounded-lg bg-white" value={newProductType} onChange={(e) => setNewProductType(e.target.value)}>
-                    <option value="finished_product">Finished Furniture Product</option>
-                    <option value="raw_material">Raw Material (Wood/Board)</option>
-                    <option value="semi_finished_product">Semi Finished component</option>
-                    <option value="consumable">Consumable Item</option>
-                    <option value="spare_parts">Spare Parts</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Parent Template (For Variations)</label>
-                  <select className="w-full p-2.5 border rounded-lg bg-white" value={newProductParentId} onChange={(e) => setNewProductParentId(e.target.value)}>
-                    <option value="">-- No Parent Template --</option>
-                    {products.filter(p => !p.parent_id).map(p => (
-                      <option key={p.id} value={p.id}>{p.name} ({p.sku})</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Category</label>
-                  <select className="w-full p-2.5 border rounded-lg bg-white" value={newProductCategory} onChange={(e) => setNewProductCategory(e.target.value)}>
-                    <option value="">-- No Category --</option>
-                    {categories.map(c => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Default Supplier</label>
-                  <select className="w-full p-2.5 border rounded-lg bg-white" value={newProductSupplier} onChange={(e) => setNewProductSupplier(e.target.value)}>
-                    <option value="">-- No Supplier --</option>
-                    {suppliers.map(s => (
-                      <option key={s.id} value={s.id}>{s.name}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Selling Price ({currency === "USD" ? "$" : "৳"})</label>
-                  <input type="number" step="0.01" className="w-full p-2.5 border rounded-lg" value={newProductPrice} onChange={(e) => setNewProductPrice(e.target.value)} required />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Estimated Purchase Cost ({currency === "USD" ? "$" : "৳"})</label>
-                  <input type="number" step="0.01" className="w-full p-2.5 border rounded-lg" value={newProductCost} onChange={(e) => setNewProductCost(e.target.value)} />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Tax/VAT rate (%)</label>
-                  <input type="number" step="0.1" className="w-full p-2.5 border rounded-lg" value={newProductTaxRate} onChange={(e) => setNewProductTaxRate(e.target.value)} placeholder="e.g. 5.0" />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Color Variation</label>
-                  <input type="text" className="w-full p-2.5 border rounded-lg" value={newProductColor} onChange={(e) => setNewProductColor(e.target.value)} placeholder="e.g. Cherry Red" />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Material Type</label>
-                  <input type="text" className="w-full p-2.5 border rounded-lg" value={newProductMaterialType} onChange={(e) => setNewProductMaterialType(e.target.value)} placeholder="e.g. Solid Wood" />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Wood Type</label>
-                  <input type="text" className="w-full p-2.5 border rounded-lg" value={newProductWoodType} onChange={(e) => setNewProductWoodType(e.target.value)} placeholder="e.g. Oak, Teak" />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Board Type</label>
-                  <input type="text" className="w-full p-2.5 border rounded-lg" value={newProductBoardType} onChange={(e) => setNewProductBoardType(e.target.value)} placeholder="e.g. MDF" />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Weight (kg)</label>
-                  <input type="number" step="0.1" className="w-full p-2.5 border rounded-lg" value={newProductWeight} onChange={(e) => setNewProductWeight(e.target.value)} placeholder="e.g. 15.0" />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Thickness (mm)</label>
-                  <input type="number" step="0.1" className="w-full p-2.5 border rounded-lg" value={newProductThickness} onChange={(e) => setNewProductThickness(e.target.value)} placeholder="e.g. 18.0" />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Length (inch)</label>
-                  <input type="number" step="0.1" className="w-full p-2.5 border rounded-lg" value={newProductLength} onChange={(e) => setNewProductLength(e.target.value)} placeholder="36" />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Width (inch)</label>
-                  <input type="number" step="0.1" className="w-full p-2.5 border rounded-lg" value={newProductWidth} onChange={(e) => setNewProductWidth(e.target.value)} placeholder="24" />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Height (inch)</label>
-                  <input type="number" step="0.1" className="w-full p-2.5 border rounded-lg" value={newProductHeight} onChange={(e) => setNewProductHeight(e.target.value)} placeholder="30" />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Min Stock</label>
-                  <input type="number" step="0.1" className="w-full p-2.5 border rounded-lg" value={newProductMinStock} onChange={(e) => setNewProductMinStock(e.target.value)} placeholder="5.0" />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Max Stock</label>
-                  <input type="number" step="0.1" className="w-full p-2.5 border rounded-lg" value={newProductMaxStock} onChange={(e) => setNewProductMaxStock(e.target.value)} placeholder="50.0" />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Reorder Qty</label>
-                  <input type="number" step="0.1" className="w-full p-2.5 border rounded-lg" value={newProductReorderQty} onChange={(e) => setNewProductReorderQty(e.target.value)} placeholder="20.0" />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Product Image Link</label>
-                <input type="text" className="w-full p-2.5 border rounded-lg" value={newProductImage} onChange={(e) => setNewProductImage(e.target.value)} placeholder="e.g. /images/chair.jpg" />
-              </div>
-
-              <button type="submit" disabled={isSubmittingProduct} className="w-full py-3 bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-700 transition">Add Product to Catalog</button>
-            </form>
-
-            {/* Create Category inline */}
-            <div className="mt-8 pt-6 border-t border-gray-200">
-              <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wider mb-3">Create Category</h3>
-              <form onSubmit={handleCreateCategory} className="flex gap-2">
-                <input type="text" className="flex-1 p-2 border rounded-lg text-sm outline-none" value={newCategoryName} onChange={(e) => setNewCategoryName(e.target.value)} placeholder="e.g. Dining Chairs" required />
-                <button type="submit" className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-sm transition">Create</button>
-              </form>
+        <div className="space-y-6">
+          {/* Header Row with CRUD Controls */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border shadow-sm">
+            <div>
+              <h2 className="text-xl font-bold text-gray-800">Product Management Catalog</h2>
+              <p className="text-xs text-gray-500 mt-1">Configure your templates, categories, and wood types</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setShowProductTypesModal(true)}
+                className="px-3.5 py-2 text-xs font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-xl transition-all"
+              >
+                ⚙️ Manage Types
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowCategoriesModal(true)}
+                className="px-3.5 py-2 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl transition-all"
+              >
+                ⚙️ Manage Categories
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowMaterialTypesModal(true)}
+                className="px-3.5 py-2 text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl transition-all"
+              >
+                ⚙️ Manage Material Types
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowWoodTypesModal(true)}
+                className="px-3.5 py-2 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-xl transition-all"
+              >
+                ⚙️ Manage Wood Types
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowAddProductModal(true)}
+                className="px-4 py-2 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-all shadow-sm flex items-center gap-1.5"
+              >
+                <span className="text-lg">+</span> Add New Product
+              </button>
             </div>
           </div>
 
-          {/* Right Column: Catalog List with Filters */}
-          <div className="bg-white p-6 rounded-xl border lg:col-span-2 shadow-sm">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 pb-4 border-b">
-              <h3 className="text-lg font-bold text-gray-800">Current Catalog ({products.filter(p => {
-                const matchesSearch = searchQuery === "" ||
-                  p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                  p.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                  (p.barcode && p.barcode.toLowerCase().includes(searchQuery.toLowerCase()));
+          {/* Sub-tabs Navigation */}
+          <div className="flex space-x-1 border-b pb-px bg-white p-1 rounded-xl border max-w-fit shadow-sm">
+            <button
+              onClick={() => setCatalogSubTab("catalog")}
+              className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all ${catalogSubTab === "catalog" ? "bg-blue-600 text-white shadow-sm" : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"}`}
+            >
+              📦 Current Catalog
+            </button>
+            <button
+              onClick={() => setCatalogSubTab("by_product_type")}
+              className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all ${catalogSubTab === "by_product_type" ? "bg-blue-600 text-white shadow-sm" : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"}`}
+            >
+              🏷 By Product Type
+            </button>
+            <button
+              onClick={() => setCatalogSubTab("by_category")}
+              className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all ${catalogSubTab === "by_category" ? "bg-blue-600 text-white shadow-sm" : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"}`}
+            >
+              📁 By Category
+            </button>
+          </div>
 
-                const matchesType = filterType === "" || p.product_type === filterType;
-                const matchesParent = filterParent === "" ||
-                  (filterParent === "templates" ? !p.parent_id : p.parent_id === filterParent);
-                const matchesCategory = filterCategory === "" || p.category_id === filterCategory;
-                const matchesSupplier = filterSupplier === "" || p.supplier_id === filterSupplier;
-                const matchesStockStatus = (() => {
-                  if (filterStockStatus === "") return true;
-                  const stock = p.current_stock;
-                  const min = p.min_stock_level || 0;
-                  const max = p.max_stock_level || 0;
-                  if (filterStockStatus === "out_of_stock") return stock === 0;
-                  if (filterStockStatus === "low_stock") return stock > 0 && stock <= min;
-                  if (filterStockStatus === "overstock") return max > 0 && stock >= max;
-                  if (filterStockStatus === "available") return stock > min && (max === 0 || stock < max);
-                  return true;
-                })();
-                const matchesDateRange = (() => {
-                  const date = new Date(p.updated_at || p.created_at || Date.now());
-                  if (filterStartDate) {
-                    const start = new Date(filterStartDate);
-                    start.setHours(0, 0, 0, 0);
-                    if (date < start) return false;
-                  }
-                  if (filterEndDate) {
-                    const end = new Date(filterEndDate);
-                    end.setHours(23, 59, 59, 999);
-                    if (date > end) return false;
-                  }
-                  return true;
-                })();
-
-                return matchesSearch && matchesType && matchesParent && matchesCategory && matchesSupplier && matchesStockStatus && matchesDateRange;
-              }).length})</h3>
-              <div className="flex flex-wrap items-center gap-2">
-                <div className="flex items-center gap-2 mr-2 bg-gray-150 p-1 rounded-lg border">
-                  <button type="button" onClick={() => setCurrency("BDT")} className={`px-2 py-1 text-xs font-bold rounded ${currency === "BDT" ? "bg-white text-blue-750 shadow-sm" : "text-gray-500"}`}>BDT</button>
-                  <button type="button" onClick={() => setCurrency("USD")} className={`px-2 py-1 text-xs font-bold rounded ${currency === "USD" ? "bg-white text-blue-750 shadow-sm" : "text-gray-500"}`}>USD</button>
-                </div>
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search SKU, name, barcode..."
-                  className="p-2 border rounded-lg text-sm w-48 focus:ring-2 focus:ring-blue-500 outline-none"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-                  className={`p-2 rounded-lg text-sm font-bold border transition ${showAdvancedFilters ? "bg-blue-600 text-white border-blue-600" : "bg-gray-100 hover:bg-gray-200 text-gray-700"}`}
-                >
-                  ⚙️ Filters {showAdvancedFilters ? "▲" : "▼"}
-                </button>
-              </div>
-            </div>
-
-            {/* Collapsible Advanced Filters Section */}
-            {showAdvancedFilters && (
-              <div className="p-4 bg-gray-50 rounded-xl border mb-6 grid grid-cols-2 md:grid-cols-4 gap-4 animate-fadeIn">
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Product Type</label>
-                  <select
-                    value={filterType}
-                    onChange={(e) => setFilterType(e.target.value)}
-                    className="w-full p-2 border rounded-lg text-xs bg-white outline-none"
-                  >
-                    <option value="">All Types</option>
-                    <option value="finished_product">Finished Product</option>
-                    <option value="raw_material">Raw Material</option>
-                    <option value="semi_finished_product">Semi Finished</option>
-                    <option value="consumable">Consumable</option>
-                    <option value="spare_parts">Spare Parts</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Category</label>
-                  <select
-                    value={filterCategory}
-                    onChange={(e) => setFilterCategory(e.target.value)}
-                    className="w-full p-2 border rounded-lg text-xs bg-white outline-none"
-                  >
-                    <option value="">All Categories</option>
-                    {categories.map(c => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Default Supplier</label>
-                  <select
-                    value={filterSupplier}
-                    onChange={(e) => setFilterSupplier(e.target.value)}
-                    className="w-full p-2 border rounded-lg text-xs bg-white outline-none"
-                  >
-                    <option value="">All Suppliers</option>
-                    {suppliers.map(s => (
-                      <option key={s.id} value={s.id}>{s.name}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Warehouse Stock Location</label>
-                  <select
-                    value={filterWarehouse}
-                    onChange={(e) => setFilterWarehouse(e.target.value)}
-                    className="w-full p-2 border rounded-lg text-xs bg-white outline-none"
-                  >
-                    <option value="">All Warehouses</option>
-                    {branches.filter(b => b.branch_type === "warehouse").map(w => (
-                      <option key={w.id} value={w.id}>{w.name}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Stock Status</label>
-                  <select
-                    value={filterStockStatus}
-                    onChange={(e) => setFilterStockStatus(e.target.value)}
-                    className="w-full p-2 border rounded-lg text-xs bg-white outline-none"
-                  >
-                    <option value="">All Statuses</option>
-                    <option value="available">Available Stock</option>
-                    <option value="low_stock">Low Stock Alerts</option>
-                    <option value="out_of_stock">Out Of Stock</option>
-                    <option value="overstock">Overstock Alerts</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Parent/Variant Relation</label>
-                  <select
-                    value={filterParent}
-                    onChange={(e) => setFilterParent(e.target.value)}
-                    className="w-full p-2 border rounded-lg text-xs bg-white outline-none"
-                  >
-                    <option value="">All Parents/Variants</option>
-                    <option value="templates">Templates (No Parent)</option>
-                    {products.filter(p => !p.parent_id).map(p => (
-                      <option key={p.id} value={p.id}>Variants of {p.sku}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Updated Start Date</label>
-                  <input
-                    type="date"
-                    value={filterStartDate}
-                    onChange={(e) => setFilterStartDate(e.target.value)}
-                    className="w-full p-1.5 border rounded-lg text-xs outline-none bg-white"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Updated End Date</label>
-                  <input
-                    type="date"
-                    value={filterEndDate}
-                    onChange={(e) => setFilterEndDate(e.target.value)}
-                    className="w-full p-1.5 border rounded-lg text-xs outline-none bg-white"
-                  />
-                </div>
-              </div>
-            )}
-
-            {products.filter(p => {
+          {/* Catalog Tab View */}
+          {catalogSubTab === "catalog" && (() => {
+            const filteredCatalog = products.filter(p => {
               const matchesSearch = searchQuery === "" ||
                 p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 p.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 (p.barcode && p.barcode.toLowerCase().includes(searchQuery.toLowerCase()));
 
               const matchesType = filterType === "" || p.product_type === filterType;
-              const matchesParent = filterParent === "" ||
-                (filterParent === "templates" ? !p.parent_id : p.parent_id === filterParent);
               const matchesCategory = filterCategory === "" || p.category_id === filterCategory;
-              const matchesSupplier = filterSupplier === "" || p.supplier_id === filterSupplier;
               const matchesStockStatus = (() => {
                 if (filterStockStatus === "") return true;
                 const stock = p.current_stock;
@@ -1529,400 +1604,486 @@ export default function InventoryControlPage() {
                 if (filterStockStatus === "available") return stock > min && (max === 0 || stock < max);
                 return true;
               })();
-              const matchesDateRange = (() => {
-                const date = new Date(p.updated_at || p.created_at || Date.now());
-                if (filterStartDate) {
-                  const start = new Date(filterStartDate);
-                  start.setHours(0, 0, 0, 0);
-                  if (date < start) return false;
-                }
-                if (filterEndDate) {
-                  const end = new Date(filterEndDate);
-                  end.setHours(23, 59, 59, 999);
-                  if (date > end) return false;
-                }
-                return true;
-              })();
 
-              return matchesSearch && matchesType && matchesParent && matchesCategory && matchesSupplier && matchesStockStatus && matchesDateRange;
-            }).length === 0 ? (
-              <p className="text-sm text-gray-500">No products match search criteria.</p>
-            ) : (
-              <div className="max-h-[60vh] overflow-y-auto pr-2 space-y-3">
-                {products.filter(p => {
-                  const matchesSearch = searchQuery === "" ||
-                    p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                    p.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                    (p.barcode && p.barcode.toLowerCase().includes(searchQuery.toLowerCase()));
+              return matchesSearch && matchesType && matchesCategory && matchesStockStatus;
+            });
 
-                  const matchesType = filterType === "" || p.product_type === filterType;
-                  const matchesParent = filterParent === "" ||
-                    (filterParent === "templates" ? !p.parent_id : p.parent_id === filterParent);
-                  const matchesCategory = filterCategory === "" || p.category_id === filterCategory;
-                  const matchesSupplier = filterSupplier === "" || p.supplier_id === filterSupplier;
-                  const matchesStockStatus = (() => {
-                    if (filterStockStatus === "") return true;
-                    const stock = p.current_stock;
-                    const min = p.min_stock_level || 0;
-                    const max = p.max_stock_level || 0;
-                    if (filterStockStatus === "out_of_stock") return stock === 0;
-                    if (filterStockStatus === "low_stock") return stock > 0 && stock <= min;
-                    if (filterStockStatus === "overstock") return max > 0 && stock >= max;
-                    if (filterStockStatus === "available") return stock > min && (max === 0 || stock < max);
-                    return true;
-                  })();
-                  const matchesDateRange = (() => {
-                    const date = new Date(p.updated_at || p.created_at || Date.now());
-                    if (filterStartDate) {
-                      const start = new Date(filterStartDate);
-                      start.setHours(0, 0, 0, 0);
-                      if (date < start) return false;
-                    }
-                    if (filterEndDate) {
-                      const end = new Date(filterEndDate);
-                      end.setHours(23, 59, 59, 999);
-                      if (date > end) return false;
-                    }
-                    return true;
-                  })();
-
-                  return matchesSearch && matchesType && matchesParent && matchesCategory && matchesSupplier && matchesStockStatus && matchesDateRange;
-                }).map(p => (
-                  <div key={p.id} className="p-4 bg-gray-50 border rounded-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 hover:shadow-sm transition">
-                    <div>
-                      <div className="font-bold text-gray-900 flex items-center gap-2">
-                        {p.name}
-                        {!p.is_active && (
-                          <span className="text-[10px] bg-red-100 text-red-800 font-bold px-2 py-0.5 rounded-full">Inactive</span>
-                        )}
-                        {(() => {
-                          const stock = p.current_stock;
-                          const min = p.min_stock_level || 0;
-                          const max = p.max_stock_level || 0;
-                          let badgeColor = "bg-green-150 text-green-800";
-                          let text = "Available";
-                          if (stock === 0) {
-                            badgeColor = "bg-gray-200 text-gray-800";
-                            text = "Out of Stock";
-                          } else if (stock <= min) {
-                            badgeColor = "bg-red-100 text-red-800";
-                            text = "Low Stock";
-                          } else if (max > 0 && stock >= max) {
-                            badgeColor = "bg-purple-100 text-purple-855";
-                            text = "Overstock";
-                          }
-                          return (
-                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${badgeColor}`}>
-                              {text}
-                            </span>
-                          );
-                        })()}
-                      </div>
-                      <div className="text-xs text-gray-505 mt-1">
-                        SKU: {p.sku} | Type: <span className="capitalize">{p.product_type?.replace('_', ' ')}</span>
-                        {p.category_id && (() => {
-                          const catName = categories.find(c => c.id === p.category_id)?.name;
-                          return catName ? ` | Category: ${catName}` : "";
-                        })()}
-                      </div>
-                      {p.color || p.size ? (
-                        <div className="text-[10px] bg-white border border-gray-250 px-2 py-0.5 rounded text-gray-655 font-semibold w-fit mt-1">
-                          Spec: {p.color || "-"} | {p.size || "-"}
-                        </div>
-                      ) : null}
-                      <div className="text-[10px] text-gray-400 mt-1">
-                        Last Updated: {p.updated_at ? new Date(p.updated_at).toLocaleString() : new Date(p.created_at || Date.now()).toLocaleString()}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">
-                      <div className="text-right">
-                        <div className="font-extrabold text-emerald-700">{formatPrice(p.selling_price)}</div>
-                        <div className="text-xs text-gray-400 font-medium">Stock: {p.current_stock} {p.unit || 'pcs'}</div>
-                        <div className="text-[10px] text-gray-405 font-bold mt-0.5">Value: {formatPrice(p.current_stock * (p.purchase_cost || p.selling_price))}</div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => handleOpenProductDetail(p)}
-                          className="px-3 py-1.5 bg-blue-100 text-blue-700 hover:bg-blue-200 font-bold rounded-lg text-xs transition"
-                        >
-                          Details
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleOpenEditProduct(p)}
-                          className="px-3 py-1.5 bg-gray-200 text-gray-800 hover:bg-gray-300 font-bold rounded-lg text-xs transition"
-                        >
-                          Edit
-                        </button>
-                      </div>
+            return (
+              <div className="bg-white rounded-xl border shadow-sm overflow-hidden">
+                {/* Search & Filters */}
+                <div className="p-4 border-b bg-gray-50/50 flex flex-wrap items-center justify-between gap-4">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Search SKU or name..."
+                      className="p-2.5 border rounded-lg text-sm w-56 focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+                    />
+                    <select
+                      className="p-2.5 border rounded-lg bg-white text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                      value={filterType}
+                      onChange={(e) => setFilterType(e.target.value)}
+                    >
+                      <option value="">All Product Types</option>
+                      {productTypes.map(t => (
+                        <option key={t.key} value={t.key}>{t.label}</option>
+                      ))}
+                    </select>
+                    <select
+                      className="p-2.5 border rounded-lg bg-white text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                      value={filterCategory}
+                      onChange={(e) => setFilterCategory(e.target.value)}
+                    >
+                      <option value="">All Categories</option>
+                      {categories.map(c => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                      ))}
+                    </select>
+                    <select
+                      className="p-2.5 border rounded-lg bg-white text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                      value={filterStockStatus}
+                      onChange={(e) => setFilterStockStatus(e.target.value)}
+                    >
+                      <option value="">All Statuses</option>
+                      <option value="available">✅ Available</option>
+                      <option value="low_stock">⚠️ Low Stock</option>
+                      <option value="out_of_stock">🔴 Out of Stock</option>
+                      <option value="overstock">🔵 Overstock</option>
+                    </select>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-500 font-bold">Currency:</span>
+                    <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-lg border">
+                      <button type="button" onClick={() => setCurrency("BDT")} className={`px-2 py-1 text-xs font-bold rounded ${currency === "BDT" ? "bg-white text-blue-750 shadow-sm" : "text-gray-500"}`}>BDT</button>
+                      <button type="button" onClick={() => setCurrency("USD")} className={`px-2 py-1 text-xs font-bold rounded ${currency === "USD" ? "bg-white text-blue-750 shadow-sm" : "text-gray-500"}`}>USD</button>
                     </div>
                   </div>
-                ))}
+                </div>
+
+                {/* Table */}
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-sm">
+                    <thead className="bg-gray-50 border-b">
+                      <tr>
+                        <th className="px-4 py-3.5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Product Code (SKU)</th>
+                        <th className="px-4 py-3.5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Product Name</th>
+                        <th className="px-4 py-3.5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Product Type</th>
+                        <th className="px-4 py-3.5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Category</th>
+                        <th className="px-4 py-3.5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Material Type</th>
+                        <th className="px-4 py-3.5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Wood Type</th>
+                        <th className="px-4 py-3.5 text-right text-[10px] font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Stock Level</th>
+                        <th className="px-4 py-3.5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Unit</th>
+                        <th className="px-4 py-3.5 text-right text-[10px] font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Selling Price</th>
+                        <th className="px-4 py-3.5 text-center text-[10px] font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Status</th>
+                        <th className="px-4 py-3.5 text-center text-[10px] font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {filteredCatalog.length === 0 ? (
+                        <tr>
+                          <td colSpan={11} className="py-16 text-center text-gray-400">No products found matching filters.</td>
+                        </tr>
+                      ) : filteredCatalog.map(p => {
+                        const stock = p.current_stock ?? 0;
+                        const min = p.min_stock_level ?? 0;
+                        const max = p.max_stock_level ?? Infinity;
+                        
+                        let badgeColor = "bg-emerald-100 text-emerald-800 border-emerald-200";
+                        let statusText = "Available";
+                        if (stock <= 0) {
+                          badgeColor = "bg-red-100 text-red-800 border-red-200";
+                          statusText = "Out of Stock";
+                        } else if (stock <= min) {
+                          badgeColor = "bg-amber-100 text-amber-800 border-amber-200";
+                          statusText = "Low Stock";
+                        } else if (max !== Infinity && stock > max) {
+                          badgeColor = "bg-blue-100 text-blue-800 border-blue-200";
+                          statusText = "Overstock";
+                        }
+
+                        const typeLabel = productTypes.find(t => t.key === p.product_type)?.label || p.product_type || "—";
+
+                        return (
+                          <tr key={p.id} className="hover:bg-blue-50/20 transition cursor-pointer" onClick={() => handleOpenProductDetail(p)}>
+                            <td className="px-4 py-3.5 font-mono text-xs font-bold text-blue-700 whitespace-nowrap">{p.sku}</td>
+                            <td className="px-4 py-3.5 font-semibold text-gray-800">{p.name}</td>
+                            <td className="px-4 py-3.5 text-xs text-gray-500 whitespace-nowrap">{typeLabel}</td>
+                            <td className="px-4 py-3.5 text-xs text-gray-500 whitespace-nowrap">
+                              {categories.find(c => c.id === p.category_id)?.name || "—"}
+                            </td>
+                            <td className="px-4 py-3.5 text-xs text-gray-500 whitespace-nowrap">{p.material_type || "—"}</td>
+                            <td className="px-4 py-3.5 text-xs text-gray-500 whitespace-nowrap">{p.wood_type || "—"}</td>
+                            <td className="px-4 py-3.5 text-right font-bold text-gray-900">{stock}</td>
+                            <td className="px-4 py-3.5 text-xs text-gray-500">{p.unit || "—"}</td>
+                            <td className="px-4 py-3.5 text-right font-bold text-emerald-700">{formatPrice(p.selling_price || 0.0)}</td>
+                            <td className="px-4 py-3.5 text-center">
+                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${badgeColor}`}>
+                                {statusText}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3.5 text-center whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                              <div className="flex gap-1.5 justify-center">
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenProductDetail(p)}
+                                  className="px-2 py-1 bg-blue-50 text-blue-600 hover:bg-blue-100 font-semibold rounded-md text-xs transition"
+                                >
+                                  Details
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenEditProduct(p)}
+                                  className="px-2 py-1 bg-gray-100 text-gray-700 hover:bg-gray-200 font-semibold rounded-md text-xs transition"
+                                >
+                                  Edit
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            )}
-          </div>
+            );
+          })()}
+
+          {/* Product Type Summary View */}
+          {catalogSubTab === "by_product_type" && (() => {
+            const productTypeStats = productTypes.map(type => {
+              const typeProds = products.filter(p => p.product_type === type.key);
+              const totalStock = typeProds.reduce((sum, p) => sum + (p.current_stock || 0), 0);
+              const totalValue = typeProds.reduce((sum, p) => sum + ((p.current_stock || 0) * (p.average_cost || p.purchase_cost || 0)), 0);
+              return {
+                key: type.key,
+                label: type.label,
+                count: typeProds.length,
+                totalStock,
+                totalValue
+              };
+            });
+
+            return (
+              <div className="bg-white rounded-xl border shadow-sm overflow-hidden">
+                <div className="p-4 border-b bg-gray-50/50 flex justify-between items-center">
+                  <h3 className="font-bold text-gray-800">Summary By Product Type</h3>
+                  <span className="text-xs text-gray-500">Totals calculated from active catalog records</span>
+                </div>
+                <table className="min-w-full text-sm">
+                  <thead className="bg-gray-50 border-b">
+                    <tr>
+                      <th className="px-6 py-3.5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Product Type</th>
+                      <th className="px-6 py-3.5 text-center text-[10px] font-bold text-gray-500 uppercase tracking-wider">Unique Products</th>
+                      <th className="px-6 py-3.5 text-right text-[10px] font-bold text-gray-500 uppercase tracking-wider">Total Stock Units</th>
+                      <th className="px-6 py-3.5 text-right text-[10px] font-bold text-gray-500 uppercase tracking-wider">Total Cost Valuation</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {productTypeStats.map(stat => (
+                      <tr key={stat.key} className="hover:bg-gray-50/50 transition">
+                        <td className="px-6 py-4 font-semibold text-gray-800">{stat.label}</td>
+                        <td className="px-6 py-4 text-center font-semibold text-blue-600">{stat.count}</td>
+                        <td className="px-6 py-4 text-right font-black text-gray-800">{stat.totalStock}</td>
+                        <td className="px-6 py-4 text-right font-black text-emerald-700">{formatPrice(stat.totalValue)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            );
+          })()}
+
+          {/* Category Summary View */}
+          {catalogSubTab === "by_category" && (() => {
+            const categoryStats = [
+              ...categories.map(cat => {
+                const catProds = products.filter(p => p.category_id === cat.id);
+                const totalStock = catProds.reduce((sum, p) => sum + (p.current_stock || 0), 0);
+                const totalValue = catProds.reduce((sum, p) => sum + ((p.current_stock || 0) * (p.average_cost || p.purchase_cost || 0)), 0);
+                return {
+                  name: cat.name,
+                  count: catProds.length,
+                  totalStock,
+                  totalValue
+                };
+              }),
+              (() => {
+                const uncategorizedProds = products.filter(p => !p.category_id);
+                const totalStock = uncategorizedProds.reduce((sum, p) => sum + (p.current_stock || 0), 0);
+                const totalValue = uncategorizedProds.reduce((sum, p) => sum + ((p.current_stock || 0) * (p.average_cost || p.purchase_cost || 0)), 0);
+                return {
+                  name: "Uncategorized",
+                  count: uncategorizedProds.length,
+                  totalStock,
+                  totalValue
+                };
+              })()
+            ];
+
+            return (
+              <div className="bg-white rounded-xl border shadow-sm overflow-hidden">
+                <div className="p-4 border-b bg-gray-50/50 flex justify-between items-center">
+                  <h3 className="font-bold text-gray-800">Summary By Category</h3>
+                  <span className="text-xs text-gray-500">Totals calculated from active catalog records</span>
+                </div>
+                <table className="min-w-full text-sm">
+                  <thead className="bg-gray-50 border-b">
+                    <tr>
+                      <th className="px-6 py-3.5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Category</th>
+                      <th className="px-6 py-3.5 text-center text-[10px] font-bold text-gray-500 uppercase tracking-wider">Unique Products</th>
+                      <th className="px-6 py-3.5 text-right text-[10px] font-bold text-gray-500 uppercase tracking-wider">Total Stock Units</th>
+                      <th className="px-6 py-3.5 text-right text-[10px] font-bold text-gray-500 uppercase tracking-wider">Total Cost Valuation</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {categoryStats.map((stat, idx) => (
+                      <tr key={idx} className="hover:bg-gray-50/50 transition">
+                        <td className="px-6 py-4 font-semibold text-gray-800">{stat.name}</td>
+                        <td className="px-6 py-4 text-center font-semibold text-blue-600">{stat.count}</td>
+                        <td className="px-6 py-4 text-right font-black text-gray-800">{stat.totalStock}</td>
+                        <td className="px-6 py-4 text-right font-black text-emerald-700">{formatPrice(stat.totalValue)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            );
+          })()}
         </div>
       )}
 
-      {activeTab === "receiving" && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column: Form to receive delivery (GRN) */}
-          <div className="bg-white p-6 rounded-xl border h-fit shadow-sm lg:col-span-1">
-            <h3 className="text-lg font-bold text-gray-800 mb-4">Receive Supplier Delivery (GRN)</h3>
-            {grnSuccessMessage && <div className="mb-6 p-4 bg-green-50 text-green-700 rounded-lg">{grnSuccessMessage}</div>}
+      {activeTab === "receiving" && (() => {
+        // Filter and Sort GRN Log entries
+        const rawItems = grns.flatMap(grn => (grn.items || []).map(item => ({ ...item, grn })));
 
-            {branches.length === 0 && <div className="mb-4 p-4 bg-yellow-50 text-yellow-700 rounded-lg border border-yellow-250">⚠️ No warehouse locations registered yet.</div>}
-            {products.length === 0 && <div className="mb-6 p-4 bg-yellow-50 text-yellow-700 rounded-lg border border-yellow-250">⚠️ No products registered in catalog.</div>}
+        // Filter items
+        const filteredGrnItems = rawItems.filter(item => {
+          const matchesSupplier = filterSupplier === "" ||
+            item.grn.supplier_name.toLowerCase().includes(filterSupplier.toLowerCase());
+          
+          const matchesProduct = filterMovementProduct === "" ||
+            item.product_id === filterMovementProduct;
 
-            <form onSubmit={handleGRNSubmit} className="space-y-4">
-              {/* Destination Warehouse */}
+          const dateObj = new Date(item.grn.receiving_date || item.grn.created_at);
+          
+          const matchesStartDate = !filterStartDate || dateObj >= new Date(filterStartDate + "T00:00:00");
+          const matchesEndDate = !filterEndDate || dateObj <= new Date(filterEndDate + "T23:59:59");
+
+          return matchesSupplier && matchesProduct && matchesStartDate && matchesEndDate;
+        });
+
+        // Sort items by Receiving Date in descending order
+        const sortedGrnItems = [...filteredGrnItems].sort((a, b) => {
+          const dateA = new Date(a.grn.receiving_date || a.grn.created_at).getTime();
+          const dateB = new Date(b.grn.receiving_date || b.grn.created_at).getTime();
+          return dateB - dateA;
+        });
+
+        // Export filtered items to CSV
+        const exportGrnToCSV = () => {
+          const csvHeaders = ["Invoice Ref", "Date Received", "Supplier", "Product SKU", "Product Name", "Ordered Qty", "Received Qty", "Unit Price (DP)", "Commission (%)", "Purchase Price", "Total Amount", "Total Purchase Price", "Warehouse", "Batch No."];
+          const csvRows = sortedGrnItems.map(item => {
+            const productObj = products.find(p => p.id === item.product_id);
+            const whName = branches.find(b => b.id === item.grn.branch_id)?.name || "Warehouse";
+            const dateStr = new Date(item.grn.receiving_date || item.grn.created_at).toLocaleDateString();
+            const unitPriceVal = item.unit_price || item.cost_price;
+            return [
+              item.grn.invoice_reference || "—",
+              dateStr,
+              item.grn.supplier_name,
+              productObj?.sku || "—",
+              productObj?.name || "Unknown Product",
+              item.ordered_quantity || item.quantity_received,
+              item.quantity_received,
+              unitPriceVal,
+              item.commission || 0,
+              item.cost_price,
+              item.quantity_received * unitPriceVal,
+              item.subtotal,
+              whName,
+              item.batch_number || "—"
+            ];
+          });
+          const csvContent = [csvHeaders, ...csvRows]
+            .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(","))
+            .join("\n");
+          const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.setAttribute("href", url);
+          link.setAttribute("download", `GRN_Log_History_${new Date().toISOString().split('T')[0]}.csv`);
+          link.style.visibility = "hidden";
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        };
+
+        return (
+          <div className="bg-white p-6 rounded-2xl border shadow-sm flex flex-col space-y-6">
+            {/* Header row with buttons */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b">
               <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Destination Warehouse</label>
-                <select className="w-full p-2.5 border rounded-lg bg-white focus:ring-2 focus:ring-blue-500 outline-none" value={selectedBranchId} onChange={(e) => setSelectedBranchId(e.target.value)} required>
-                  <option value="" disabled>-- Select destination warehouse --</option>
-                  {branches.filter(b => b.branch_type === "warehouse").map(b => (
-                    <option key={b.id} value={b.id}>{b.name}</option>
-                  ))}
-                </select>
+                <h3 className="text-lg font-bold text-gray-800">Receiving Log History ({sortedGrnItems.length} items)</h3>
+                <p className="text-xs text-gray-500 mt-1">Track incoming supplier deliveries and generate invoices</p>
               </div>
-
-              {/* Supplier Selector (Registered Dropdown & Dynamic Text Input) */}
-              <div className="space-y-3 bg-gray-55 p-3 rounded-xl border border-gray-200">
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
-                    Select Company Profile
-                    {suppliers.length === 0 && <span className="ml-2 text-red-500 normal-case font-normal">(No registered companies)</span>}
-                  </label>
-                  <select
-                    className="w-full p-2 border rounded-lg bg-white focus:ring-2 focus:ring-blue-500 outline-none text-xs"
-                    value={grnSupplierId}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setGrnSupplierId(val);
-                      if (val === "custom") {
-                        setGrnSupplierName("");
-                      } else {
-                        const found = suppliers.find(s => s.id === val);
-                        if (found) {
-                          setGrnSupplierName(found.name);
-                        }
-                      }
-                    }}
-                  >
-                    <option value="">-- Choose registered company profile --</option>
-                    {suppliers.map(s => (
-                      <option key={s.id} value={s.id}>
-                        🏢 {s.name}{s.contact_person ? ` (Contact: ${s.contact_person})` : ""}
-                      </option>
-                    ))}
-                    <option value="custom">✍️ -- Enter custom/different supplier details --</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1 flex items-center justify-between">
-                    <span>Supplier Name (Saved on Invoice)</span>
-                    <span className="text-[10px] text-blue-600 font-normal">Fully editable & dynamic</span>
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm bg-white font-medium"
-                    value={grnSupplierName}
-                    onChange={(e) => setGrnSupplierName(e.target.value)}
-                    placeholder="e.g. Timberwood Ltd (Alice)"
-                    required
-                  />
-                </div>
-
-                {grnSupplierId && grnSupplierId !== "custom" && (() => {
-                  const sup = suppliers.find(s => s.id === grnSupplierId);
-                  return sup ? (
-                    <div className="mt-1 text-[10px] text-gray-500 flex flex-wrap gap-x-3 gap-y-1 bg-white p-2 rounded-lg border">
-                      {sup.contact_person && <span>👤 Contact: <b>{sup.contact_person}</b></span>}
-                      {sup.phone && <span>📞 {sup.phone}</span>}
-                      {sup.email && <span>✉️ {sup.email}</span>}
-                    </div>
-                  ) : null;
-                })()}
-              </div>
-
-              {/* Invoice Reference & Receiving Date */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Invoice Reference</label>
-                  <input type="text" className="w-full p-2.5 border rounded-lg bg-gray-100 outline-none font-semibold text-gray-600 text-sm" value={invoiceRef} onChange={(e) => setInvoiceRef(e.target.value)} placeholder="INV-GRN-XXXX" required />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Receiving Date</label>
-                  <input type="date" className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" value={grnReceivingDate} onChange={(e) => setGrnReceivingDate(e.target.value)} required />
-                </div>
-              </div>
-
-              {/* Product Selection */}
-              <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Select Catalog Product</label>
-                <select className="w-full p-2.5 border rounded-lg bg-white focus:ring-2 focus:ring-blue-500 outline-none" value={selectedProductId} onChange={(e) => setSelectedProductId(e.target.value)} required>
-                  <option value="" disabled>-- Select product --</option>
-                  {products.map(p => (
-                    <option key={p.id} value={p.id}>{p.name} ({p.sku})</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Qty & Unit Cost */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Quantity Received</label>
-                  <input type="number" step="0.01" className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" value={grnQty} onChange={(e) => setGrnQty(e.target.value)} placeholder="e.g. 50" required />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Unit Cost ({currency === "USD" ? "$" : "৳"})</label>
-                  <input type="number" step="0.01" className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" value={grnCostPrice} onChange={(e) => setGrnCostPrice(e.target.value)} placeholder="e.g. 1500" required />
-                </div>
-              </div>
-
-              {/* Commission & Auto Purchase Price */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Commission (%)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    max="100"
-                    className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-orange-400 outline-none"
-                    value={grnCommission}
-                    onChange={(e) => setGrnCommission(e.target.value)}
-                    placeholder="e.g. 5"
-                  />
-                  <p className="text-[10px] text-gray-400 mt-1">Commission deducted from unit cost</p>
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Purchase Price ({currency === "USD" ? "$" : "৳"})</label>
-                  <div className={`w-full p-2.5 rounded-lg border-2 font-bold text-lg ${grnCostPrice
-                    ? "bg-emerald-50 border-emerald-300 text-emerald-800"
-                    : "bg-gray-50 border-gray-200 text-gray-400"
-                    }`}>
-                    {grnCostPrice
-                      ? (() => {
-                        const raw = parseFloat(grnCostPrice || "0");
-                        const comm = parseFloat(grnCommission || "0");
-                        const net = raw * (1 - comm / 100);
-                        return `${currency === "USD" ? "$" : "৳"}${net.toFixed(2)}`;
-                      })()
-                      : "—"}
-                  </div>
-                  <p className="text-[10px] text-gray-400 mt-1">
-                    {grnCommission ? `Unit Cost × (1 − ${grnCommission}%)` : "Unit Cost (no commission)"}
-                  </p>
-                </div>
-              </div>
-
-              {/* Ordered / Damaged / Batch */}
-              <div className="grid grid-cols-3 gap-2">
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Ordered Qty</label>
-                  <input type="number" step="0.01" className="w-full p-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" value={grnOrderedQty} onChange={(e) => setGrnOrderedQty(e.target.value)} placeholder="50" />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Damaged Qty</label>
-                  <input type="number" step="0.01" className="w-full p-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" value={grnDamagedQty} onChange={(e) => setGrnDamagedQty(e.target.value)} placeholder="0" />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Batch No.</label>
-                  <input type="text" className="w-full p-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" value={grnBatchNumber} onChange={(e) => setGrnBatchNumber(e.target.value)} placeholder="B-88" />
-                </div>
-              </div>
-
-              {/* Summary before submit */}
-              {grnCostPrice && grnQty && (
-                <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-800 space-y-1">
-                  <div className="font-bold text-sm mb-1">📦 Order Summary</div>
-                  <div className="flex justify-between"><span>Unit Cost:</span><span className="font-semibold">{currency === "USD" ? "$" : "৳"}{parseFloat(grnCostPrice).toFixed(2)}</span></div>
-                  {grnCommission && parseFloat(grnCommission) > 0 && (
-                    <div className="flex justify-between text-orange-700"><span>Commission ({grnCommission}%):</span><span>− {currency === "USD" ? "$" : "৳"}{(parseFloat(grnCostPrice) * parseFloat(grnCommission) / 100).toFixed(2)}</span></div>
-                  )}
-                  <div className="flex justify-between font-bold border-t border-blue-200 pt-1"><span>Purchase Price / unit:</span><span className="text-emerald-700">{currency === "USD" ? "$" : "৳"}{(parseFloat(grnCostPrice) * (1 - parseFloat(grnCommission || "0") / 100)).toFixed(2)}</span></div>
-                  <div className="flex justify-between font-bold"><span>Total Order Value:</span><span className="text-blue-900">{currency === "USD" ? "$" : "৳"}{(parseFloat(grnQty) * parseFloat(grnCostPrice) * (1 - parseFloat(grnCommission || "0") / 100)).toFixed(2)}</span></div>
-                </div>
-              )}
-
-              <button type="submit" disabled={isSubmittingGRN || products.length === 0 || branches.length === 0 || suppliers.length === 0} className="w-full py-3 bg-blue-600 text-white font-bold rounded-lg transition hover:bg-blue-700 disabled:bg-gray-400">
-                {isSubmittingGRN ? "Processing..." : "Confirm Delivery & Update Stock"}
-              </button>
-            </form>
-          </div>
-
-          {/* Right Column: Receiving History Table */}
-          <div className="bg-white p-6 rounded-xl border lg:col-span-2 shadow-sm flex flex-col">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 pb-4 border-b">
-              <h3 className="text-lg font-bold text-gray-800">Receiving Log History ({
-                grns.flatMap(g => (g.items || []).map(i => ({ ...i, grn: g }))).length
-              } line items)</h3>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-505 font-bold">Show Currency:</span>
-                <div className="flex items-center gap-2 bg-gray-150 p-1 rounded-lg border">
-                  <button type="button" onClick={() => setCurrency("BDT")} className={`px-2 py-1 text-xs font-bold rounded ${currency === "BDT" ? "bg-white text-blue-750 shadow-sm" : "text-gray-500"}`}>BDT</button>
-                  <button type="button" onClick={() => setCurrency("USD")} className={`px-2 py-1 text-xs font-bold rounded ${currency === "USD" ? "bg-white text-blue-750 shadow-sm" : "text-gray-500"}`}>USD</button>
-                </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+                  className={`px-3 py-2 text-xs font-bold border rounded-xl transition ${showAdvancedFilters ? "bg-blue-600 text-white border-blue-600" : "bg-gray-50 hover:bg-gray-100 text-gray-700"}`}
+                >
+                  ⚙️ Filters {showAdvancedFilters ? "▲" : "▼"}
+                </button>
+                <button
+                  type="button"
+                  onClick={exportGrnToCSV}
+                  className="px-3.5 py-2 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-250 rounded-xl transition-all"
+                  disabled={sortedGrnItems.length === 0}
+                >
+                  ⬇️ Export CSV
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowGRNModal(true)}
+                  className="px-4 py-2 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-all shadow-sm flex items-center gap-1.5"
+                >
+                  Receive Supplier Delivery (GRN)
+                </button>
               </div>
             </div>
 
-            {grns.length === 0 ? (
-              <p className="text-sm text-gray-500 italic">No supplier deliveries received yet.</p>
+            {/* Expandable Filter Fields */}
+            {showAdvancedFilters && (
+              <div className="p-4 bg-gray-50 rounded-xl border grid grid-cols-1 md:grid-cols-4 gap-4 animate-fadeIn">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Supplier Name</label>
+                  <input
+                    type="text"
+                    value={filterSupplier}
+                    onChange={(e) => setFilterSupplier(e.target.value)}
+                    placeholder="Search supplier..."
+                    className="w-full p-2 border rounded-lg text-xs bg-white outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Catalog Product</label>
+                  <select
+                    className="w-full p-2 border rounded-lg bg-white text-xs outline-none focus:ring-2 focus:ring-blue-500"
+                    value={filterMovementProduct}
+                    onChange={(e) => setFilterMovementProduct(e.target.value)}
+                  >
+                    <option value="">All Products</option>
+                    {products.map(p => (
+                      <option key={p.id} value={p.id}>{p.name} ({p.sku})</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Received From</label>
+                  <input
+                    type="date"
+                    value={filterStartDate}
+                    onChange={(e) => setFilterStartDate(e.target.value)}
+                    className="w-full p-1.5 border rounded-lg text-xs outline-none bg-white font-medium"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Received To</label>
+                  <input
+                    type="date"
+                    value={filterEndDate}
+                    onChange={(e) => setFilterEndDate(e.target.value)}
+                    className="w-full p-1.5 border rounded-lg text-xs outline-none bg-white font-medium"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* List */}
+            {sortedGrnItems.length === 0 ? (
+              <p className="text-sm text-gray-500 italic text-center py-12 bg-gray-50 rounded-xl border">
+                No deliveries found matching the filters.
+              </p>
             ) : (
-              <div className="overflow-x-auto max-h-[60vh]">
-                <table className="w-full text-left text-xs text-gray-550 border-collapse">
-                  <thead className="bg-gray-100 uppercase text-gray-700 font-bold sticky top-0">
+              <div className="overflow-x-auto max-h-[60vh] border rounded-xl">
+                <table className="w-full text-left text-xs text-gray-650 border-collapse">
+                  <thead className="bg-gray-55 uppercase text-gray-700 font-bold border-b sticky top-0">
                     <tr>
-                      <th className="p-3 border-b">Date / Ref</th>
-                      <th className="p-3 border-b">Product Details</th>
-                      <th className="p-3 border-b text-right">Ordered Qty</th>
-                      <th className="p-3 border-b text-right">Received Qty</th>
-                      <th className="p-3 border-b text-right">Damaged Qty</th>
-                      <th className="p-3 border-b text-right">Unit Cost</th>
-                      <th className="p-3 border-b text-right">Total Cost</th>
-                      <th className="p-3 border-b">Destination WH</th>
-                      <th className="p-3 border-b text-center">Batch No.</th>
+                      <th className="p-3">Date / Ref</th>
+                      <th className="p-3">Supplier</th>
+                      <th className="p-3">Product Details</th>
+                      <th className="p-3 text-right">Ordered</th>
+                      <th className="p-3 text-right">Received</th>
+                      <th className="p-3 text-right">Unit Price (DP)</th>
+                      <th className="p-3 text-center">Commission</th>
+                      <th className="p-3 text-right">Purchase Price</th>
+                      <th className="p-3 text-right">Total Amount</th>
+                      <th className="p-3 text-right">Total Purchase Price</th>
+                      <th className="p-3">Warehouse</th>
+                      <th className="p-3 text-center">Batch No.</th>
+                      <th className="p-3 text-center">Actions</th>
                     </tr>
                   </thead>
-                  <tbody>
-                    {grns.flatMap(grn => {
-                      const dateStr = new Date(grn.created_at).toLocaleString();
-                      const whName = branches.find(b => b.id === grn.branch_id)?.name || "Warehouse";
+                  <tbody className="divide-y divide-gray-100">
+                    {sortedGrnItems.map(item => {
+                      const dateObj = new Date(item.grn.created_at || item.grn.receiving_date);
+                      const whName = branches.find(b => b.id === item.grn.branch_id)?.name || "Warehouse";
+                      const productObj = products.find(p => p.id === item.product_id);
+                      const unitPriceVal = item.unit_price || item.cost_price;
 
-                      return (grn.items || []).map((item: any) => {
-                        const productObj = products.find(p => p.id === item.product_id);
-
-                        return (
-                          <tr key={item.id} className="border-b hover:bg-gray-50 transition">
-                            <td className="p-3 whitespace-nowrap">
-                              <span className="font-semibold text-gray-900 block">{grn.invoice_reference}</span>
-                              <span className="text-[10px] text-gray-400 block">{dateStr}</span>
-                            </td>
-                            <td className="p-3">
-                              <span className="font-bold text-gray-800 block">{productObj?.name || "Unknown Product"}</span>
-                              <span className="text-[10px] text-gray-400 block">SKU: {productObj?.sku || item.product_id}</span>
-                            </td>
-                            <td className="p-3 text-right font-semibold">{item.ordered_quantity || item.quantity_received}</td>
-                            <td className="p-3 text-right font-bold text-green-700">{item.quantity_received}</td>
-                            <td className="p-3 text-right font-bold text-red-600">{item.damaged_quantity || 0}</td>
-                            <td className="p-3 text-right font-semibold text-emerald-800">{formatPrice(item.cost_price)}</td>
-                            <td className="p-3 text-right font-bold text-blue-900">{formatPrice(item.subtotal)}</td>
-                            <td className="p-3 font-semibold text-gray-700">{whName}</td>
-                            <td className="p-3 text-center"><span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded font-mono text-[10px]">{item.batch_number || "-"}</span></td>
-                          </tr>
-                        );
-                      });
+                      return (
+                        <tr key={`${item.grn.id}-${item.id}`} className="hover:bg-gray-50/50 transition">
+                          <td className="p-3 whitespace-nowrap">
+                            <span className="font-semibold text-gray-900 block">{item.grn.invoice_reference || "—"}</span>
+                            <span className="text-[10px] text-gray-400 block">
+                              {dateObj.toLocaleDateString() + " " + dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </td>
+                          <td className="p-3 font-semibold text-gray-800 whitespace-nowrap">{item.grn.supplier_name}</td>
+                          <td className="p-3">
+                            <span className="font-bold text-gray-800 block">{productObj?.name || "Unknown Product"}</span>
+                            <span className="text-[10px] text-gray-400 block">SKU: {productObj?.sku || item.product_id}</span>
+                          </td>
+                          <td className="p-3 text-right font-medium text-gray-600">{item.ordered_quantity || item.quantity_received}</td>
+                          <td className="p-3 text-right font-bold text-green-700">{item.quantity_received}</td>
+                          <td className="p-3 text-right font-semibold text-gray-700">{formatPrice(unitPriceVal)}</td>
+                          <td className="p-3 text-center font-semibold text-orange-600">{item.commission || 0}%</td>
+                          <td className="p-3 text-right font-semibold text-emerald-800">{formatPrice(item.cost_price)}</td>
+                          <td className="p-3 text-right font-semibold text-gray-800">{formatPrice(item.quantity_received * unitPriceVal)}</td>
+                          <td className="p-3 text-right font-bold text-blue-900">{formatPrice(item.subtotal)}</td>
+                          <td className="p-3 font-semibold text-gray-600 whitespace-nowrap">{whName}</td>
+                          <td className="p-3 text-center">
+                            <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded font-mono text-[10px]">
+                              {item.batch_number || "—"}
+                            </span>
+                          </td>
+                          <td className="p-3 text-center whitespace-nowrap">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setActiveGRN(item.grn);
+                                const grossVal = (item.grn.items || []).reduce((sum: number, it: any) => sum + (it.quantity_received * (it.unit_price || it.cost_price)), 0);
+                                const diffVal = grossVal - item.grn.total_amount;
+                                setInvoiceDiscount(diffVal > 0.01 ? diffVal.toFixed(2) : "0");
+                                setShowInvoiceModal(true);
+                              }}
+                              className="px-2 py-1 bg-blue-50 text-blue-700 hover:bg-blue-100 font-bold rounded-lg text-xs transition"
+                            >
+                              🖨 View Invoice
+                            </button>
+                          </td>
+                        </tr>
+                      );
                     })}
                   </tbody>
                 </table>
               </div>
             )}
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {activeTab === "warehouses" && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -3058,6 +3219,1087 @@ export default function InventoryControlPage() {
             <div className="p-4 border-t bg-gray-50 flex justify-end">
               <button onClick={() => setViewingProductDetail(null)} className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition">Close Details</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* ======================= MODALS ========================= */}
+      {/* ======================================================== */}
+
+      {/* 1. Add Product Modal */}
+      {showAddProductModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl border shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto my-4 animate-scaleUp">
+            <div className="p-6 border-b flex items-center justify-between bg-gray-50 sticky top-0 z-10">
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">Add New Product to Catalog</h3>
+                <p className="text-xs text-gray-500 mt-1">Create a new product template or component</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAddProductModal(false);
+                  setProductSuccessMessage("");
+                }}
+                className="text-gray-400 hover:text-gray-700 text-2xl font-bold transition-colors"
+              >
+                &times;
+              </button>
+            </div>
+
+            {productSuccessMessage && (
+              <div className="m-6 p-4 bg-green-50 border border-green-200 text-green-700 rounded-xl text-sm font-semibold">
+                {productSuccessMessage}
+              </div>
+            )}
+
+            <form onSubmit={handleCreateProduct} className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Product Code (SKU) *</label>
+                  <input
+                    type="text"
+                    className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-sm"
+                    value={newProductSku}
+                    onChange={(e) => setNewProductSku(e.target.value)}
+                    placeholder="e.g. WD-CH-01"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Product Unit *</label>
+                  <select
+                    className="w-full p-2.5 border rounded-lg bg-white focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                    value={newProductUnit}
+                    onChange={(e) => setNewProductUnit(e.target.value)}
+                  >
+                    <option value="Pieces">Pieces</option>
+                    <option value="Cubic Feet">Cubic Feet (cft)</option>
+                    <option value="Kg">Kilograms (kg)</option>
+                    <option value="Square Feet">Square Feet (sqft)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Product Name *</label>
+                <input
+                  type="text"
+                  className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-sm"
+                  value={newProductName}
+                  onChange={(e) => setNewProductName(e.target.value)}
+                  placeholder="e.g. Oak Wood Dining Chair"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Product Type *</label>
+                  <select
+                    className="w-full p-2.5 border rounded-lg bg-white focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                    value={newProductType}
+                    onChange={(e) => setNewProductType(e.target.value)}
+                  >
+                    {productTypes.map(t => (
+                      <option key={t.key} value={t.key}>{t.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Parent Template (For Variations)</label>
+                  <select
+                    className="w-full p-2.5 border rounded-lg bg-white focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                    value={newProductParentId}
+                    onChange={(e) => setNewProductParentId(e.target.value)}
+                  >
+                    <option value="">-- No Parent Template --</option>
+                    {products.filter(p => !p.parent_id).map(p => (
+                      <option key={p.id} value={p.id}>{p.name} ({p.sku})</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Category</label>
+                  <select
+                    className="w-full p-2.5 border rounded-lg bg-white focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                    value={newProductCategory}
+                    onChange={(e) => setNewProductCategory(e.target.value)}
+                  >
+                    <option value="">-- No Category --</option>
+                    {categories.map(c => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Color Variation</label>
+                  <input
+                    type="text"
+                    className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-sm"
+                    value={newProductColor}
+                    onChange={(e) => setNewProductColor(e.target.value)}
+                    placeholder="e.g. Natural Varnish"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Material Type</label>
+                  <select
+                    className="w-full p-2.5 border rounded-lg bg-white focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                    value={newProductMaterialType}
+                    onChange={(e) => setNewProductMaterialType(e.target.value)}
+                  >
+                    <option value="">-- Select Material Type --</option>
+                    {materialTypes.map((mat, i) => (
+                      <option key={i} value={mat}>{mat}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Wood Type</label>
+                  <select
+                    className="w-full p-2.5 border rounded-lg bg-white focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                    value={newProductWoodType}
+                    onChange={(e) => setNewProductWoodType(e.target.value)}
+                  >
+                    <option value="">-- Select Wood Type --</option>
+                    {woodTypes.map((wood, i) => (
+                      <option key={i} value={wood}>{wood}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Board Type</label>
+                  <input
+                    type="text"
+                    className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-sm"
+                    value={newProductBoardType}
+                    onChange={(e) => setNewProductBoardType(e.target.value)}
+                    placeholder="e.g. MDF"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Weight (kg)</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-sm"
+                    value={newProductWeight}
+                    onChange={(e) => setNewProductWeight(e.target.value)}
+                    placeholder="e.g. 12"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Thickness (mm)</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-sm"
+                    value={newProductThickness}
+                    onChange={(e) => setNewProductThickness(e.target.value)}
+                    placeholder="e.g. 18"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Length (inch)</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-sm"
+                    value={newProductLength}
+                    onChange={(e) => setNewProductLength(e.target.value)}
+                    placeholder="e.g. 36"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Width (inch)</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-sm"
+                    value={newProductWidth}
+                    onChange={(e) => setNewProductWidth(e.target.value)}
+                    placeholder="e.g. 24"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Height (inch)</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-sm"
+                    value={newProductHeight}
+                    onChange={(e) => setNewProductHeight(e.target.value)}
+                    placeholder="e.g. 30"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Product Image Link</label>
+                <input
+                  type="text"
+                  className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-sm"
+                  value={newProductImage}
+                  onChange={(e) => setNewProductImage(e.target.value)}
+                  placeholder="e.g. /images/chair.jpg"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-6 border-t">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAddProductModal(false);
+                    setProductSuccessMessage("");
+                  }}
+                  className="px-5 py-2.5 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors text-sm font-semibold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingProduct}
+                  className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-xl font-bold transition-all text-sm shadow-sm"
+                >
+                  {isSubmittingProduct ? "Creating..." : "Save Product"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 2. Manage Product Types Modal */}
+      {showProductTypesModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl border shadow-2xl w-full max-w-md max-h-[80vh] flex flex-col animate-scaleUp">
+            <div className="p-5 border-b flex items-center justify-between bg-purple-50">
+              <h3 className="text-base font-bold text-purple-900">⚙️ Manage Product Types</h3>
+              <button
+                type="button"
+                onClick={() => setShowProductTypesModal(false)}
+                className="text-gray-400 hover:text-gray-700 text-xl font-bold"
+              >
+                &times;
+              </button>
+            </div>
+            <div className="p-5 overflow-y-auto flex-1 space-y-2">
+              {productTypes.map((type, i) => (
+                <div key={type.key} className="flex items-center justify-between p-2.5 bg-gray-50 rounded-xl border border-gray-200">
+                  <div>
+                    <span className="font-semibold text-gray-800 text-sm">{type.label}</span>
+                    <span className="text-[10px] text-gray-400 font-mono block">Key: {type.key}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (confirm(`Are you sure you want to delete product type "${type.label}"?`)) {
+                        updateProductTypes(productTypes.filter((_, idx) => idx !== i));
+                      }
+                    }}
+                    className="text-red-500 hover:text-red-700 text-xs font-semibold px-2 py-1 rounded hover:bg-red-50 transition"
+                  >
+                    Delete
+                  </button>
+                </div>
+              ))}
+            </div>
+            <div className="p-4 border-t bg-gray-50">
+              <h4 className="text-xs font-bold text-gray-600 uppercase mb-2">Add New Product Type</h4>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  id="new-type-label"
+                  placeholder="e.g. Fabrics"
+                  className="flex-1 p-2 border rounded-lg text-xs outline-none bg-white font-medium"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const labelInput = document.getElementById("new-type-label") as HTMLInputElement;
+                    const val = labelInput?.value.trim();
+                    if (!val) return;
+                    const key = val.toLowerCase().replace(/[^a-z0-9_]/g, "_");
+                    if (productTypes.some(t => t.key === key)) {
+                      alert("Product type key already exists!");
+                      return;
+                    }
+                    updateProductTypes([...productTypes, { key, label: val }]);
+                    labelInput.value = "";
+                  }}
+                  className="px-3.5 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-bold transition shadow-sm"
+                >
+                  Add
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 3. Manage Categories Modal */}
+      {showCategoriesModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl border shadow-2xl w-full max-w-md max-h-[80vh] flex flex-col animate-scaleUp">
+            <div className="p-5 border-b flex items-center justify-between bg-indigo-50">
+              <h3 className="text-base font-bold text-indigo-900">⚙️ Manage Categories</h3>
+              <button
+                type="button"
+                onClick={() => setShowCategoriesModal(false)}
+                className="text-gray-400 hover:text-gray-700 text-xl font-bold"
+              >
+                &times;
+              </button>
+            </div>
+            <div className="p-5 overflow-y-auto flex-1 space-y-2">
+              {categories.map((c) => (
+                <div key={c.id} className="flex items-center justify-between p-2.5 bg-gray-50 rounded-xl border border-gray-200">
+                  <span className="font-semibold text-gray-800 text-sm">{c.name}</span>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (confirm(`Are you sure you want to delete category "${c.name}"?`)) {
+                        try {
+                          await api.deleteCategory(c.id);
+                          setCategories(categories.filter(cat => cat.id !== c.id));
+                          alert("Category deleted successfully!");
+                        } catch (err: any) {
+                          alert(err.message || "Failed to delete category (Ensure no products belong to it)");
+                        }
+                      }
+                    }}
+                    className="text-red-500 hover:text-red-700 text-xs font-semibold px-2 py-1 rounded hover:bg-red-50 transition"
+                  >
+                    Delete
+                  </button>
+                </div>
+              ))}
+            </div>
+            <div className="p-4 border-t bg-gray-50">
+              <h4 className="text-xs font-bold text-gray-600 uppercase mb-2">Create New Category</h4>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  id="new-category-name"
+                  placeholder="e.g. Sofa Beds"
+                  className="flex-1 p-2 border rounded-lg text-xs outline-none bg-white font-medium"
+                />
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const nameInput = document.getElementById("new-category-name") as HTMLInputElement;
+                    const val = nameInput?.value.trim();
+                    if (!val) return;
+                    try {
+                      const newCat = await api.createCategory({ name: val });
+                      setCategories([...categories, newCat]);
+                      nameInput.value = "";
+                      alert("Category created successfully!");
+                    } catch (err: any) {
+                      alert(err.message || "Failed to create category");
+                    }
+                  }}
+                  className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition shadow-sm"
+                >
+                  Create
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 4. Manage Material Types Modal */}
+      {showMaterialTypesModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl border shadow-2xl w-full max-w-md max-h-[80vh] flex flex-col animate-scaleUp">
+            <div className="p-5 border-b flex items-center justify-between bg-amber-50">
+              <h3 className="text-base font-bold text-amber-900">⚙️ Manage Material Types</h3>
+              <button
+                type="button"
+                onClick={() => setShowMaterialTypesModal(false)}
+                className="text-gray-400 hover:text-gray-700 text-xl font-bold"
+              >
+                &times;
+              </button>
+            </div>
+            <div className="p-5 overflow-y-auto flex-1 space-y-2">
+              {materialTypes.map((mat, i) => (
+                <div key={i} className="flex items-center justify-between p-2.5 bg-gray-50 rounded-xl border border-gray-200">
+                  <span className="font-semibold text-gray-800 text-sm">{mat}</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (confirm(`Are you sure you want to delete material type "${mat}"?`)) {
+                        updateMaterialTypes(materialTypes.filter((_, idx) => idx !== i));
+                      }
+                    }}
+                    className="text-red-500 hover:text-red-700 text-xs font-semibold px-2 py-1 rounded hover:bg-red-50 transition"
+                  >
+                    Delete
+                  </button>
+                </div>
+              ))}
+            </div>
+            <div className="p-4 border-t bg-gray-50">
+              <h4 className="text-xs font-bold text-gray-600 uppercase mb-2">Add Material Option</h4>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  id="new-material-name"
+                  placeholder="e.g. Leatherette"
+                  className="flex-1 p-2 border rounded-lg text-xs outline-none bg-white font-medium"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const matInput = document.getElementById("new-material-name") as HTMLInputElement;
+                    const val = matInput?.value.trim();
+                    if (!val) return;
+                    if (materialTypes.includes(val)) {
+                      alert("Material Type already exists!");
+                      return;
+                    }
+                    updateMaterialTypes([...materialTypes, val]);
+                    matInput.value = "";
+                  }}
+                  className="px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-bold transition shadow-sm"
+                >
+                  Add
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 5. Manage Wood Types Modal */}
+      {showWoodTypesModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl border shadow-2xl w-full max-w-md max-h-[80vh] flex flex-col animate-scaleUp">
+            <div className="p-5 border-b flex items-center justify-between bg-emerald-50">
+              <h3 className="text-base font-bold text-emerald-900">⚙️ Manage Wood Types</h3>
+              <button
+                type="button"
+                onClick={() => setShowWoodTypesModal(false)}
+                className="text-gray-400 hover:text-gray-700 text-xl font-bold"
+              >
+                &times;
+              </button>
+            </div>
+            <div className="p-5 overflow-y-auto flex-1 space-y-2">
+              {woodTypes.map((wood, i) => (
+                <div key={i} className="flex items-center justify-between p-2.5 bg-gray-50 rounded-xl border border-gray-200">
+                  <span className="font-semibold text-gray-800 text-sm">{wood}</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (confirm(`Are you sure you want to delete wood type "${wood}"?`)) {
+                        updateWoodTypesState(woodTypes.filter((_, idx) => idx !== i));
+                      }
+                    }}
+                    className="text-red-500 hover:text-red-700 text-xs font-semibold px-2 py-1 rounded hover:bg-red-50 transition"
+                  >
+                    Delete
+                  </button>
+                </div>
+              ))}
+            </div>
+            <div className="p-4 border-t bg-gray-50">
+              <h4 className="text-xs font-bold text-gray-600 uppercase mb-2">Add Wood Type Option</h4>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  id="new-wood-name"
+                  placeholder="e.g. Acacia"
+                  className="flex-1 p-2 border rounded-lg text-xs outline-none bg-white font-medium"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const woodInput = document.getElementById("new-wood-name") as HTMLInputElement;
+                    const val = woodInput?.value.trim();
+                    if (!val) return;
+                    if (woodTypes.includes(val)) {
+                      alert("Wood Type already exists!");
+                      return;
+                    }
+                    updateWoodTypesState([...woodTypes, val]);
+                    woodInput.value = "";
+                  }}
+                  className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition shadow-sm"
+                >
+                  Add
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 6. Receive supplier delivery modal */}
+      {showGRNModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl border shadow-2xl w-full max-w-lg max-h-[92vh] overflow-y-auto my-4 animate-scaleUp">
+            <div className="p-6 border-b flex items-center justify-between bg-blue-50 sticky top-0 z-10">
+              <div>
+                <h3 className="text-lg font-bold text-blue-900">Receive Supplier Delivery (GRN)</h3>
+                <p className="text-xs text-blue-600 mt-1">Logs a physical stock delivery and adjusts costs/selling prices</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowGRNModal(false)}
+                className="text-gray-400 hover:text-gray-700 text-2xl font-bold transition-colors"
+              >
+                &times;
+              </button>
+            </div>
+
+            {branches.length === 0 && <div className="m-6 p-4 bg-yellow-50 text-yellow-750 border border-yellow-200 rounded-xl text-xs font-medium">⚠️ No warehouse locations registered yet. Please configure a warehouse first.</div>}
+            {products.length === 0 && <div className="m-6 p-4 bg-yellow-50 text-yellow-750 border border-yellow-200 rounded-xl text-xs font-medium">⚠️ No products registered in catalog. Please add catalog products first.</div>}
+
+            <form onSubmit={handleGRNSubmit} className="p-6 space-y-4">
+              {/* Destination Warehouse */}
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Destination Warehouse *</label>
+                <select
+                  className="w-full p-2.5 border rounded-lg bg-white focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium"
+                  value={selectedBranchId}
+                  onChange={(e) => setSelectedBranchId(e.target.value)}
+                  required
+                >
+                  <option value="" disabled>-- Select destination warehouse --</option>
+                  {branches.filter(b => b.branch_type === "warehouse").map(b => (
+                    <option key={b.id} value={b.id}>{b.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Supplier Selector */}
+              <div className="space-y-3 bg-gray-50 p-3 rounded-xl border border-gray-200">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
+                    Registered Supplier Profile
+                  </label>
+                  <select
+                    className="w-full p-2 border rounded-lg bg-white focus:ring-2 focus:ring-blue-500 outline-none text-xs"
+                    value={grnSupplierId}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setGrnSupplierId(val);
+                      if (val === "custom" || val === "") {
+                        setGrnSupplierName("");
+                        setGrnSupplierContact("");
+                        setGrnSupplierPhone("");
+                        setGrnSupplierEmail("");
+                        setGrnSupplierAddress("");
+                      } else {
+                        const found = suppliers.find(s => s.id === val);
+                        if (found) {
+                          setGrnSupplierName(found.name);
+                          setGrnSupplierContact(found.contact_person || "");
+                          setGrnSupplierPhone(found.phone || "");
+                          setGrnSupplierEmail(found.email || "");
+                          setGrnSupplierAddress(found.address || "");
+                        }
+                      }
+                    }}
+                  >
+                    <option value="">-- Choose registered supplier profile --</option>
+                    {suppliers.map(s => (
+                      <option key={s.id} value={s.id}>
+                        🏢 {s.name}{s.contact_person ? ` (Contact: ${s.contact_person})` : ""}
+                      </option>
+                    ))}
+                    <option value="custom">✍️ -- Enter Custom Supplier Name --</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
+                    Supplier Name *
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm bg-white font-medium"
+                    value={grnSupplierName}
+                    onChange={(e) => setGrnSupplierName(e.target.value)}
+                    placeholder="e.g. Timberwood Ltd"
+                    required
+                  />
+                </div>
+
+                {/* Additional Supplier Contact Details */}
+                <div className="grid grid-cols-2 gap-2 pt-1 border-t border-gray-200">
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Contact Person</label>
+                    <input
+                      type="text"
+                      className="w-full p-1.5 border rounded text-xs bg-white font-medium"
+                      value={grnSupplierContact}
+                      onChange={(e) => setGrnSupplierContact(e.target.value)}
+                      placeholder="e.g. John Doe"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Phone Number</label>
+                    <input
+                      type="text"
+                      className="w-full p-1.5 border rounded text-xs bg-white font-medium"
+                      value={grnSupplierPhone}
+                      onChange={(e) => setGrnSupplierPhone(e.target.value)}
+                      placeholder="e.g. +88017..."
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Email Address</label>
+                    <input
+                      type="email"
+                      className="w-full p-1.5 border rounded text-xs bg-white font-medium"
+                      value={grnSupplierEmail}
+                      onChange={(e) => setGrnSupplierEmail(e.target.value)}
+                      placeholder="e.g. sales@timber.com"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Supplier Address</label>
+                    <input
+                      type="text"
+                      className="w-full p-1.5 border rounded text-xs bg-white font-medium"
+                      value={grnSupplierAddress}
+                      onChange={(e) => setGrnSupplierAddress(e.target.value)}
+                      placeholder="e.g. Dhaka, Bangladesh"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Invoice Reference & Date */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Invoice Reference *</label>
+                  <input
+                    type="text"
+                    className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm font-semibold text-gray-700 bg-white"
+                    value={invoiceRef}
+                    onChange={(e) => setInvoiceRef(e.target.value)}
+                    placeholder="INV-GRN-XXXX"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Receiving Date *</label>
+                  <input
+                    type="date"
+                    className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm bg-white font-medium"
+                    value={grnReceivingDate}
+                    onChange={(e) => setGrnReceivingDate(e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Product Selection */}
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Select Catalog Product *</label>
+                <select
+                  className="w-full p-2.5 border rounded-lg bg-white focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium"
+                  value={selectedProductId}
+                  onChange={(e) => setSelectedProductId(e.target.value)}
+                  required
+                >
+                  <option value="" disabled>-- Select product --</option>
+                  {products.map(p => (
+                    <option key={p.id} value={p.id}>{p.name} ({p.sku})</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Qty & Unit Price */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Quantity Received *</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium"
+                    value={grnQty}
+                    onChange={(e) => setGrnQty(e.target.value)}
+                    placeholder="e.g. 50"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Unit Price ({currency === "USD" ? "$" : "৳"}) *</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium"
+                    value={grnCostPrice}
+                    onChange={(e) => setGrnCostPrice(e.target.value)}
+                    placeholder="e.g. 1500"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Selling Price, Commission, and Purchase Price */}
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Selling Price ({currency === "USD" ? "$" : "৳"})</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm font-semibold text-emerald-800 bg-white"
+                    value={grnSellingPrice}
+                    onChange={(e) => setGrnSellingPrice(e.target.value)}
+                    placeholder="Set Selling Price"
+                  />
+                  <p className="text-[10px] text-gray-400 mt-1">Updates catalog</p>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Commission (%)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    max="100"
+                    className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-orange-400 outline-none text-sm font-medium"
+                    value={grnCommission}
+                    onChange={(e) => setGrnCommission(e.target.value)}
+                    placeholder="e.g. 5"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Purchase Price ({currency === "USD" ? "$" : "৳"})</label>
+                  <div className={`w-full p-2.5 rounded-lg border font-bold text-sm h-[42px] flex items-center ${grnCostPrice
+                    ? "bg-emerald-50 border-emerald-300 text-emerald-800"
+                    : "bg-gray-50 border-gray-200 text-gray-400"
+                    }`}>
+                    {grnCostPrice
+                      ? (() => {
+                        const raw = parseFloat(grnCostPrice || "0");
+                        const comm = parseFloat(grnCommission || "0");
+                        const net = raw * (1 - comm / 100);
+                        return `${currency === "USD" ? "$" : "৳"}${net.toFixed(2)}`;
+                      })()
+                      : "—"}
+                  </div>
+                  <p className="text-[10px] text-gray-400 mt-1">Calculated Price</p>
+                </div>
+              </div>
+
+              {/* Ordered / Damaged / Batch */}
+              <div className="grid grid-cols-3 gap-2 pt-2">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Ordered Qty</label>
+                  <input type="number" step="0.01" className="w-full p-2 border rounded-lg text-xs bg-white" value={grnOrderedQty} onChange={(e) => setGrnOrderedQty(e.target.value)} placeholder="50" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Damaged Qty</label>
+                  <input type="number" step="0.01" className="w-full p-2 border rounded-lg text-xs bg-white" value={grnDamagedQty} onChange={(e) => setGrnDamagedQty(e.target.value)} placeholder="0" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Batch No.</label>
+                  <input type="text" className="w-full p-2 border rounded-lg text-xs bg-white" value={grnBatchNumber} onChange={(e) => setGrnBatchNumber(e.target.value)} placeholder="B-12" />
+                </div>
+              </div>
+
+              {grnCostPrice && grnQty && (
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-800 space-y-1 mt-2">
+                  <div className="font-bold text-sm mb-1">📦 Order Summary</div>
+                  <div className="flex justify-between"><span>Unit Price:</span><span className="font-semibold">{currency === "USD" ? "$" : "৳"}{parseFloat(grnCostPrice).toFixed(2)}</span></div>
+                  {grnCommission && parseFloat(grnCommission) > 0 && (
+                    <div className="flex justify-between text-orange-700"><span>Commission ({grnCommission}%):</span><span>− {currency === "USD" ? "$" : "৳"}{(parseFloat(grnCostPrice) * parseFloat(grnCommission) / 100).toFixed(2)}</span></div>
+                  )}
+                  <div className="flex justify-between font-bold border-t border-blue-200 pt-1"><span>Purchase Price:</span><span className="text-emerald-700">{currency === "USD" ? "$" : "৳"}{(parseFloat(grnCostPrice) * (1 - parseFloat(grnCommission || "0") / 100)).toFixed(2)}</span></div>
+                  <div className="flex justify-between font-bold"><span>Total Order Value:</span><span className="text-blue-900">{currency === "USD" ? "$" : "৳"}{(parseFloat(grnQty) * parseFloat(grnCostPrice) * (1 - parseFloat(grnCommission || "0") / 100)).toFixed(2)}</span></div>
+                </div>
+              )}
+
+              <div className="flex justify-end gap-3 pt-6 border-t">
+                <button
+                  type="button"
+                  onClick={() => setShowGRNModal(false)}
+                  className="px-5 py-2.5 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors text-sm font-semibold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingGRN || products.length === 0 || branches.length === 0}
+                  className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-xl font-bold transition-all text-sm shadow-sm"
+                >
+                  {isSubmittingGRN ? "Confirming..." : "Confirm & Update Stock"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 7. Purchase Invoice Preview Modal */}
+      {showInvoiceModal && activeGRN && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl border shadow-2xl w-full max-w-3xl max-h-[95vh] overflow-y-auto my-4 animate-scaleUp">
+            <div className="p-5 border-b flex items-center justify-between bg-blue-900 sticky top-0 z-10">
+              <div className="text-white">
+                <h3 className="text-lg font-bold">Purchase Invoice Preview</h3>
+                <p className="text-xs text-blue-200 mt-1">Reference: {activeGRN.invoice_reference || "—"}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handlePrintInvoice}
+                  className="px-3.5 py-2 text-xs font-bold text-blue-900 bg-white hover:bg-blue-50 rounded-xl transition-all shadow-sm"
+                >
+                  🖨 Print / Save PDF
+                </button>
+                <button
+                  type="button"
+                  onClick={handleEmailInvoice}
+                  className="px-3.5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-all shadow-sm"
+                >
+                  ✉️ Email Supplier
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowInvoiceModal(false)}
+                  className="text-white hover:text-gray-200 text-2xl font-bold ml-2 transition-colors"
+                >
+                  &times;
+                </button>
+              </div>
+            </div>
+
+            {/* Standard Invoice Template */}
+            <div className="p-8 space-y-6">
+              <div className="flex justify-between items-start border-b pb-6">
+                <div>
+                  <h1 className="text-2xl font-extrabold text-blue-900">{companyName || "Manor Furniture"}</h1>
+                  <p className="text-xs text-gray-500 mt-1">{companyAddress || "Bozlur Mor, Kushita"}</p>
+                  <p className="text-xs text-gray-500">Contact: {companyContact ? `${companyContact} (${companyEmail || companyPhone})` : (companyEmail || "accounts@manorfurniture.com")}</p>
+                </div>
+                <div className="text-right">
+                  <h2 className="text-lg font-black text-gray-800 tracking-wider">PURCHASE INVOICE</h2>
+                  <div className="text-xs text-gray-500 mt-1.5">
+                    <p><strong>Ref:</strong> {activeGRN.invoice_reference || "—"}</p>
+                    <p><strong>Date Received:</strong> {(() => {
+                      const dateObj = new Date(activeGRN.created_at || activeGRN.receiving_date);
+                      return dateObj.toLocaleDateString() + " " + dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    })()}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-6 bg-gray-50 p-4 rounded-xl border">
+                <div>
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Supplier Profile</span>
+                  <span className="font-bold text-gray-800 text-sm block">{activeGRN.supplier_name}</span>
+                  {activeGRN.supplier_contact && <span className="text-xs text-gray-600 block mt-1">Contact: {activeGRN.supplier_contact}</span>}
+                  {(activeGRN.supplier_phone || activeGRN.supplier_email) && (
+                    <span className="text-xs text-gray-500 block">
+                      {activeGRN.supplier_phone || ""} {activeGRN.supplier_email ? `| ${activeGRN.supplier_email}` : ""}
+                    </span>
+                  )}
+                  {activeGRN.supplier_address && <span className="text-xs text-gray-500 block italic">{activeGRN.supplier_address}</span>}
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Delivery Destination</span>
+                  <span className="font-bold text-gray-800 text-sm">
+                    {branches.find(b => b.id === activeGRN.branch_id)?.name || "Warehouse"}
+                  </span>
+                </div>
+              </div>
+
+              <div className="border rounded-xl overflow-hidden">
+                <table className="w-full text-sm border-collapse">
+                  <thead>
+                    <tr className="bg-gray-100 font-bold border-b text-gray-700">
+                      <th className="p-3 text-left">Product</th>
+                      <th className="p-3 text-left">SKU</th>
+                      <th className="p-3 text-center">Ordered</th>
+                      <th className="p-3 text-center">Received</th>
+                      <th className="p-3 text-right">Unit Price (DP)</th>
+                      <th className="p-3 text-right">Total Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {(activeGRN.items || []).map((item: any) => {
+                      const p = products.find(prod => prod.id === item.product_id);
+                      return (
+                        <tr key={item.id} className="hover:bg-gray-50/50">
+                          <td className="p-3 font-semibold text-gray-800">{p?.name || "Unknown Product"}</td>
+                          <td className="p-3 font-mono text-xs text-gray-500">{p?.sku || "—"}</td>
+                          <td className="p-3 text-center font-medium">{item.ordered_quantity || item.quantity_received}</td>
+                          <td className="p-3 text-center font-bold text-green-700">{item.quantity_received}</td>
+                          <td className="p-3 text-right font-semibold text-gray-700">{formatPrice(item.unit_price || item.cost_price)}</td>
+                          <td className="p-3 text-right font-bold text-gray-800">{formatPrice(item.quantity_received * (item.unit_price || item.cost_price))}</td>
+                        </tr>
+                      );
+                    })}
+                    {(() => {
+                      const grossTotal = (activeGRN.items || []).reduce((sum: number, item: any) => sum + (item.quantity_received * (item.unit_price || item.cost_price)), 0);
+                      const currentDiscount = parseFloat(invoiceDiscount || "0");
+                      const netPayable = Math.max(0, grossTotal - currentDiscount);
+                      return (
+                        <>
+                          <tr className="bg-gray-50 text-gray-700 font-medium border-t">
+                            <td colSpan={5} className="p-3 text-right text-xs uppercase tracking-wider">Gross Subtotal:</td>
+                            <td colSpan={1} className="p-3 text-right text-sm font-bold text-gray-800">{formatPrice(grossTotal)}</td>
+                          </tr>
+                          <tr className="bg-gray-50 text-gray-750 font-medium">
+                            <td colSpan={5} className="p-3 text-right text-xs uppercase tracking-wider">
+                              <div className="flex items-center justify-end gap-2 text-orange-850">
+                                <span>Discount Amount manually edit ({currency === "USD" ? "$" : "৳"}):</span>
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  min="0"
+                                  max={grossTotal}
+                                  className="w-28 p-1.5 border rounded-lg text-right bg-white text-xs font-bold text-orange-700 outline-none focus:ring-2 focus:ring-orange-400"
+                                  value={invoiceDiscount}
+                                  onChange={(e) => setInvoiceDiscount(e.target.value)}
+                                  placeholder="0.00"
+                                />
+                              </div>
+                            </td>
+                            <td colSpan={1} className="p-3 text-right text-sm font-bold text-orange-700">
+                              − {formatPrice(currentDiscount)}
+                            </td>
+                          </tr>
+                          <tr className="bg-blue-50 font-bold text-gray-900 border-t">
+                            <td colSpan={5} className="p-4 text-right text-sm uppercase tracking-wider">Grand Total (Net Payable):</td>
+                            <td colSpan={1} className="p-4 text-right text-lg text-blue-900 font-black">{formatPrice(netPayable)}</td>
+                          </tr>
+                        </>
+                      );
+                    })()}
+                  </tbody>
+                </table>
+              </div>
+
+              <div style={{ display: "flex", justifyContent: "space-between", marginTop: "40px" }} className="pt-6">
+                <div style={{ textAlign: "center", width: "180px", borderTop: "1px solid #cbd5e1", paddingTop: "8px", fontSize: "11px", color: "#64748b" }}>
+                  Authorized Signature
+                </div>
+                <div style={{ textAlign: "center", width: "180px", borderTop: "1px solid #cbd5e1", paddingTop: "8px", fontSize: "11px", color: "#64748b" }}>
+                  Supplier Acknowledgment
+                </div>
+              </div>
+            </div>
+            <div className="p-4 border-t bg-gray-50 text-center text-xs text-gray-400">
+              System generated invoice &bull; Manor Furniture ERP
+            </div>
+          </div>
+        </div>
+      )}
+      {/* 8. Company Profile Edit Modal */}
+      {showCompanyModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl border shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto animate-scaleUp">
+            <div className="p-6 border-b flex items-center justify-between bg-blue-50 sticky top-0 z-10">
+              <div>
+                <h3 className="text-lg font-bold text-blue-900">🏢 Update Company Profile</h3>
+                <p className="text-xs text-blue-600 mt-1">This information is shown on GRN forms and invoices</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowCompanyModal(false)}
+                className="text-gray-400 hover:text-gray-700 text-2xl font-bold transition-colors"
+              >
+                &times;
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdateCompanyProfile} className="p-6 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Company Name *</label>
+                <input
+                  type="text"
+                  className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-sm font-semibold text-gray-800"
+                  value={companyName}
+                  onChange={(e) => setCompanyName(e.target.value)}
+                  placeholder="e.g. Manor Furniture"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Address *</label>
+                <textarea
+                  className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-sm text-gray-700 h-20"
+                  value={companyAddress}
+                  onChange={(e) => setCompanyAddress(e.target.value)}
+                  placeholder="e.g. Bozlur Mor, Kushita"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Phone Number</label>
+                  <input
+                    type="text"
+                    className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-sm"
+                    value={companyPhone}
+                    onChange={(e) => setCompanyPhone(e.target.value)}
+                    placeholder="e.g. 01700000000"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Email Address</label>
+                  <input
+                    type="email"
+                    className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-sm"
+                    value={companyEmail}
+                    onChange={(e) => setCompanyEmail(e.target.value)}
+                    placeholder="e.g. accounts@manor.com"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Authorized Signatory / Contact Person</label>
+                <input
+                  type="text"
+                  className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-sm"
+                  value={companyContact}
+                  onChange={(e) => setCompanyContact(e.target.value)}
+                  placeholder="e.g. Manager"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-6 border-t">
+                <button
+                  type="button"
+                  onClick={() => setShowCompanyModal(false)}
+                  className="px-5 py-2.5 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors text-sm font-semibold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all text-sm shadow-sm"
+                >
+                  Save Profile
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

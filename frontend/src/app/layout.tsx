@@ -15,6 +15,7 @@ export default function RootLayout({
   const [isClient, setIsClient] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
@@ -122,44 +123,65 @@ export default function RootLayout({
       <body className="bg-surface text-slate-800 flex h-screen overflow-hidden antialiased font-sans">
         
         {/* Sidebar */}
-        <aside className="w-64 bg-surface-dark text-slate-300 flex-shrink-0 hidden md:flex flex-col shadow-xl z-20">
-          <div className="h-16 flex items-center px-6 border-b border-slate-700/50 bg-slate-900/50">
-            <span className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
-              <svg className="w-6 h-6 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
-              ERP Pro
-            </span>
+        <aside className={`${isSidebarCollapsed ? 'w-20' : 'w-64'} bg-surface-dark text-slate-300 flex-shrink-0 hidden md:flex flex-col shadow-xl z-20 transition-all duration-300`}>
+          <div className={`h-16 flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-between px-5'} border-b border-slate-700/50 bg-slate-900/50`}>
+            {isSidebarCollapsed ? (
+              <button
+                onClick={() => setIsSidebarCollapsed(false)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition flex items-center justify-center"
+                title="Expand Sidebar"
+              >
+                <svg className="w-6 h-6 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
+              </button>
+            ) : (
+              <>
+                <div className="flex items-center gap-2 min-w-0">
+                  <svg className="w-6 h-6 text-brand-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
+                  <span className="text-xl font-bold tracking-tight text-white truncate animate-fadeIn">ERP Pro</span>
+                </div>
+                <button
+                  onClick={() => setIsSidebarCollapsed(true)}
+                  className="p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-slate-800 transition"
+                  title="Collapse Sidebar"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7M19 19l-7-7 7-7" />
+                  </svg>
+                </button>
+              </>
+            )}
           </div>
           
           <nav className="flex-1 py-6 px-4 space-y-2 overflow-y-auto">
             {/* Show Dashboard to Owner, Manager, Stock Handler */}
             {userRole && ["owner", "manager", "stock_handler"].includes(userRole) && (
-              <a href="/dashboard" className={`flex items-center px-4 py-3 rounded-xl transition-all ${pathname === '/dashboard' ? 'text-white bg-brand-600 shadow-sm' : 'hover:bg-slate-800 hover:text-white'}`}>
-                <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
-                <span className="font-medium">Dashboard</span>
+              <a href="/dashboard" title={isSidebarCollapsed ? "Dashboard" : ""} className={`flex items-center ${isSidebarCollapsed ? 'justify-center py-3.5 px-0' : 'px-4 py-3'} rounded-xl transition-all ${pathname === '/dashboard' ? 'text-white bg-brand-600 shadow-sm' : 'hover:bg-slate-800 hover:text-white'}`}>
+                <svg className={`w-5 h-5 ${isSidebarCollapsed ? '' : 'mr-3'} flex-shrink-0`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
+                {!isSidebarCollapsed && <span className="font-medium animate-fadeIn">Dashboard</span>}
               </a>
             )}
 
             {/* Show Inventory to Owner, Manager, Stock Handler */}
             {userRole && ["owner", "manager", "stock_handler"].includes(userRole) && (
-              <a href="/inventory" className={`flex items-center px-4 py-3 rounded-xl transition-all ${pathname === '/inventory' ? 'text-white bg-brand-600 shadow-sm' : 'hover:bg-slate-800 hover:text-white'}`}>
-                <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
-                <span className="font-medium">Inventory</span>
+              <a href="/inventory" title={isSidebarCollapsed ? "Inventory" : ""} className={`flex items-center ${isSidebarCollapsed ? 'justify-center py-3.5 px-0' : 'px-4 py-3'} rounded-xl transition-all ${pathname === '/inventory' ? 'text-white bg-brand-600 shadow-sm' : 'hover:bg-slate-800 hover:text-white'}`}>
+                <svg className={`w-5 h-5 ${isSidebarCollapsed ? '' : 'mr-3'} flex-shrink-0`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
+                {!isSidebarCollapsed && <span className="font-medium animate-fadeIn">Inventory</span>}
               </a>
             )}
             
             {/* Show POS to Owner, Manager, Cashier */}
             {userRole && ["owner", "manager", "cashier"].includes(userRole) && (
-              <a href="/" className={`flex items-center px-4 py-3 rounded-xl transition-all ${pathname === '/' ? 'text-white bg-brand-600 shadow-sm' : 'hover:bg-slate-800 hover:text-white'}`}>
-                <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
-                <span className="font-medium">Point of Sale</span>
+              <a href="/" title={isSidebarCollapsed ? "Point of Sale" : ""} className={`flex items-center ${isSidebarCollapsed ? 'justify-center py-3.5 px-0' : 'px-4 py-3'} rounded-xl transition-all ${pathname === '/' ? 'text-white bg-brand-600 shadow-sm' : 'hover:bg-slate-800 hover:text-white'}`}>
+                <svg className={`w-5 h-5 ${isSidebarCollapsed ? '' : 'mr-3'} flex-shrink-0`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                {!isSidebarCollapsed && <span className="font-medium animate-fadeIn">Point of Sale</span>}
               </a>
             )}
 
             {/* Show Users page to Owner only */}
             {userRole && ["owner"].includes(userRole) && (
-              <a href="/users" className={`flex items-center px-4 py-3 rounded-xl transition-all ${pathname === '/users' ? 'text-white bg-brand-600 shadow-sm' : 'hover:bg-slate-800 hover:text-white'}`}>
-                <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
-                <span className="font-medium">Users</span>
+              <a href="/users" title={isSidebarCollapsed ? "Users" : ""} className={`flex items-center ${isSidebarCollapsed ? 'justify-center py-3.5 px-0' : 'px-4 py-3'} rounded-xl transition-all ${pathname === '/users' ? 'text-white bg-brand-600 shadow-sm' : 'hover:bg-slate-800 hover:text-white'}`}>
+                <svg className={`w-5 h-5 ${isSidebarCollapsed ? '' : 'mr-3'} flex-shrink-0`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                {!isSidebarCollapsed && <span className="font-medium animate-fadeIn">Users</span>}
               </a>
             )}
           </nav>
@@ -167,12 +189,13 @@ export default function RootLayout({
           <div className="p-4 border-t border-slate-700/50">
             <button 
               onClick={handleLogout}
-              className="w-full flex items-center px-4 py-3 text-red-400 hover:bg-red-950/30 hover:text-red-300 rounded-xl transition-all font-medium"
+              title={isSidebarCollapsed ? "Logout" : ""}
+              className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center py-3 px-0' : 'px-4 py-3'} text-red-400 hover:bg-red-950/30 hover:text-red-300 rounded-xl transition-all font-medium`}
             >
-              <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className={`w-5 h-5 ${isSidebarCollapsed ? '' : 'mr-3'} flex-shrink-0`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
               </svg>
-              Logout
+              {!isSidebarCollapsed && <span className="animate-fadeIn">Logout</span>}
             </button>
           </div>
         </aside>
@@ -180,7 +203,16 @@ export default function RootLayout({
         {/* Content Wrapper */}
         <div className="flex-1 flex flex-col min-w-0 bg-surface">
           <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 shadow-sm z-10 flex-shrink-0">
-            <div className="flex items-center">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+                className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-slate-700 transition hidden md:block"
+                title={isSidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
               <h2 className="text-xl font-semibold text-slate-800">
                 {pathname === '/dashboard' ? 'HQ Enterprise Dashboard' : pathname === '/users' ? 'User & Role Management' : pathname === '/inventory' ? 'Factory Inventory Control' : 'Point of Sale Terminal'}
               </h2>

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, date
 from typing import Optional, Any, Dict
 import uuid
 from pydantic import BaseModel, ConfigDict, Field
@@ -111,11 +111,20 @@ class GRNItemCreate(BaseModel):
     ordered_quantity: float = Field(default=0.0, ge=0)
     damaged_quantity: float = Field(default=0.0, ge=0)
     batch_number: Optional[str] = None
+    selling_price: Optional[float] = Field(None, ge=0, description="Update product selling price on receive")
+    unit_price: Optional[float] = Field(None, ge=0)
+    commission: Optional[float] = Field(0.0, ge=0)
+
 
 class GRNCreate(BaseModel):
     branch_id: uuid.UUID
     supplier_name: str = Field(..., min_length=2, max_length=200)
+    supplier_contact: Optional[str] = Field(None, max_length=100)
+    supplier_phone: Optional[str] = Field(None, max_length=50)
+    supplier_email: Optional[str] = Field(None, max_length=100)
+    supplier_address: Optional[str] = None
     invoice_reference: Optional[str] = Field(None, max_length=100)
+    receiving_date: Optional[date] = None
     items: list[GRNItemCreate] = Field(..., min_length=1)
 
 class GRNItemResponse(BaseModel):
@@ -127,13 +136,20 @@ class GRNItemResponse(BaseModel):
     ordered_quantity: float
     damaged_quantity: float
     batch_number: Optional[str]
+    unit_price: Optional[float] = None
+    commission: Optional[float] = 0.0
     model_config = ConfigDict(from_attributes=True)
 
 class GRNResponse(BaseModel):
     id: uuid.UUID
     branch_id: uuid.UUID
     supplier_name: str
+    supplier_contact: Optional[str] = None
+    supplier_phone: Optional[str] = None
+    supplier_email: Optional[str] = None
+    supplier_address: Optional[str] = None
     invoice_reference: Optional[str]
+    receiving_date: Optional[date]
     total_amount: float
     status: str
     created_at: datetime
@@ -247,3 +263,20 @@ class DeadStockResponse(BaseModel):
     current_stock: float
     last_movement_date: Optional[datetime] = None
     model_config = ConfigDict(from_attributes=True)
+
+
+class CompanyProfileResponse(BaseModel):
+    name: str
+    address: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    contact_person: Optional[str] = None
+    model_config = ConfigDict(from_attributes=True)
+
+
+class CompanyProfileUpdate(BaseModel):
+    name: str
+    address: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    contact_person: Optional[str] = None

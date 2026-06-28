@@ -14,7 +14,7 @@ from sqlalchemy.exc import IntegrityError
 from shared.python.core import DatabaseManager, MessagingManager, log, Base
 
 # Import all updated models
-from src.models import Product, Branch, Category, StockLedger, MovementType, GRN, GRNItem, Supplier, StockTransfer, StockAdjustment
+from src.models import Product, Branch, Category, StockLedger, MovementType, GRN, GRNItem, Supplier, StockTransfer, StockAdjustment, CompanyProfile
 
 # Import all updated schemas
 from src.schemas import (
@@ -24,7 +24,8 @@ from src.schemas import (
     SupplierCreate, SupplierResponse,
     StockTransferCreate, StockTransferResponse,
     StockAdjustmentCreate, StockAdjustmentResponse,
-    ProductUpdate, StockMovementResponse, ConsumptionReportResponse, DeadStockResponse
+    ProductUpdate, StockMovementResponse, ConsumptionReportResponse, DeadStockResponse,
+    CompanyProfileResponse, CompanyProfileUpdate
 )
 from src.config import settings
 
@@ -44,13 +45,37 @@ async def lifespan(app: FastAPI):
         except Exception as e:
             log.warning(f"Could not drop unique index: {e}")
 
-        # Ensure receiving_date column exists on grn table
+        # Ensure receiving_date and supplier details columns exist on grn table
         try:
             await conn.execute(text("ALTER TABLE inventory.grn ADD COLUMN IF NOT EXISTS receiving_date DATE NULL"))
+            await conn.execute(text("ALTER TABLE inventory.grn ADD COLUMN IF NOT EXISTS supplier_contact VARCHAR(100) NULL"))
+            await conn.execute(text("ALTER TABLE inventory.grn ADD COLUMN IF NOT EXISTS supplier_phone VARCHAR(50) NULL"))
+            await conn.execute(text("ALTER TABLE inventory.grn ADD COLUMN IF NOT EXISTS supplier_email VARCHAR(100) NULL"))
+            await conn.execute(text("ALTER TABLE inventory.grn ADD COLUMN IF NOT EXISTS supplier_address TEXT NULL"))
         except Exception as e:
-            log.warning(f"Could not add receiving_date column to grn table: {e}")
+            log.warning(f"Could not add columns to grn table: {e}")
+
+        # Ensure unit_price and commission columns exist on grn_items table
+        try:
+            await conn.execute(text("ALTER TABLE inventory.grn_items ADD COLUMN IF NOT EXISTS unit_price DOUBLE PRECISION NULL"))
+            await conn.execute(text("ALTER TABLE inventory.grn_items ADD COLUMN IF NOT EXISTS commission DOUBLE PRECISION NULL"))
+        except Exception as e:
+            log.warning(f"Could not add columns to grn_items table: {e}")
 
         await conn.run_sync(Base.metadata.create_all)
+
+        # Seed default company profile if empty
+        try:
+            profile_count_res = await conn.execute(text("SELECT COUNT(*) FROM inventory.company_profile"))
+            count = profile_count_res.scalar()
+            if count == 0:
+                await conn.execute(text("""
+                    INSERT INTO inventory.company_profile (name, address, phone, email, contact_person) 
+                    VALUES ('Manor Furniture', 'Bozlur Mor, Kushita', '01700000000', 'accounts@manorfurniture.com', 'Manager')
+                """))
+                log.info("Default company profile seeded.")
+        except Exception as e:
+            log.warning(f"Could not seed default company profile: {e}")
 
         # Create non-unique index
         try:
@@ -124,6 +149,32 @@ async def create_category(category: CategoryCreate, session: AsyncSession = Depe
 async def get_categories(session: AsyncSession = Depends(db_manager.get_session)):
     result = await session.execute(select(Category).order_by(Category.name.asc()))
     return result.scalars().all()
+
+@app.put("/api/v1/inventory/categories/{category_id}", response_model=CategoryResponse)
+async def update_category(category_id: uuid.UUID, category: CategoryCreate, session: AsyncSession = Depends(db_manager.get_session)):
+    cat = await session.get(Category, category_id)
+    if not cat:
+        raise HTTPException(status_code=404, detail="Category not found")
+    cat.name = category.name
+    try:
+        await session.commit()
+        await session.refresh(cat)
+        return cat
+    except IntegrityError:
+        await session.rollback()
+        raise HTTPException(status_code=400, detail="Category name already exists.")
+
+@app.delete("/api/v1/inventory/categories/{category_id}", status_code=204)
+async def delete_category(category_id: uuid.UUID, session: AsyncSession = Depends(db_manager.get_session)):
+    cat = await session.get(Category, category_id)
+    if not cat:
+        raise HTTPException(status_code=404, detail="Category not found")
+    # Check if any product uses this category
+    result = await session.execute(select(Product).where(Product.category_id == category_id).limit(1))
+    if result.scalar_one_or_none():
+        raise HTTPException(status_code=400, detail="Cannot delete category: products are assigned to it.")
+    await session.delete(cat)
+    await session.commit()
 
 
 # --- PRODUCT & VARIANT ENDPOINTS ---
@@ -424,7 +475,12 @@ async def create_grn(grn_data: GRNCreate, session: AsyncSession = Depends(db_man
     new_grn = GRN(
         branch_id=grn_data.branch_id,
         supplier_name=grn_data.supplier_name,
+        supplier_contact=grn_data.supplier_contact,
+        supplier_phone=grn_data.supplier_phone,
+        supplier_email=grn_data.supplier_email,
+        supplier_address=grn_data.supplier_address,
         invoice_reference=grn_data.invoice_reference,
+        receiving_date=grn_data.receiving_date,
         total_amount=total_amount,
         status="completed"
     )
@@ -440,7 +496,9 @@ async def create_grn(grn_data: GRNCreate, session: AsyncSession = Depends(db_man
             subtotal=item.quantity_received * item.cost_price,
             ordered_quantity=item.ordered_quantity,
             damaged_quantity=item.damaged_quantity,
-            batch_number=item.batch_number
+            batch_number=item.batch_number,
+            unit_price=item.unit_price,
+            commission=item.commission
         )
         session.add(new_item)
 
@@ -469,6 +527,9 @@ async def create_grn(grn_data: GRNCreate, session: AsyncSession = Depends(db_man
                 product_obj.average_cost = ((existing_stock * old_avg_cost) + (new_qty * new_cost)) / (existing_stock + new_qty)
             else:
                 product_obj.average_cost = new_cost
+            # Update selling price if explicitly provided in the GRN item
+            if item.selling_price is not None and item.selling_price > 0:
+                product_obj.selling_price = item.selling_price
 
         event = StockUpdateEvent(
             product_id=item.product_id,
@@ -770,3 +831,31 @@ async def import_products_csv(file: UploadFile = File(...), session: AsyncSessio
 
     await session.commit()
     return {"message": f"Successfully imported {imported_count} products!"}
+
+
+@app.get("/api/v1/inventory/company-profile", response_model=CompanyProfileResponse)
+async def get_company_profile(session: AsyncSession = Depends(db_manager.get_session)):
+    result = await session.execute(select(CompanyProfile).order_by(CompanyProfile.id.asc()))
+    profile = result.scalars().first()
+    if not profile:
+        raise HTTPException(status_code=404, detail="Company profile not found")
+    return profile
+
+
+@app.put("/api/v1/inventory/company-profile", response_model=CompanyProfileResponse)
+async def update_company_profile(profile_data: CompanyProfileUpdate, session: AsyncSession = Depends(db_manager.get_session)):
+    result = await session.execute(select(CompanyProfile).order_by(CompanyProfile.id.asc()))
+    profile = result.scalars().first()
+    if not profile:
+        profile = CompanyProfile()
+        session.add(profile)
+    
+    profile.name = profile_data.name
+    profile.address = profile_data.address
+    profile.phone = profile_data.phone
+    profile.email = profile_data.email
+    profile.contact_person = profile_data.contact_person
+    
+    await session.commit()
+    await session.refresh(profile)
+    return profile
