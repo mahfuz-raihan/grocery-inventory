@@ -171,6 +171,12 @@ export default function Dashboard() {
       return;
     }
 
+    // Redirect new specialized roles to inventory panel — they don't use the dashboard
+    if (["purchase_user", "production_user", "sales_user"].includes(role || "")) {
+      router.push("/inventory");
+      return;
+    }
+
     // Default tab based on role permissions
     setActiveTab("analytics");
 

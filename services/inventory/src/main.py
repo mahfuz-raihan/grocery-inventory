@@ -37,7 +37,27 @@ async def lifespan(app: FastAPI):
     log.info("Starting Inventory Service...")
     async with db_manager.engine.begin() as conn:
         await conn.execute(text("CREATE SCHEMA IF NOT EXISTS inventory"))
+        
+        # Drop unique index/constraint on supplier name if it exists to allow duplicates dynamically
+        try:
+            await conn.execute(text("DROP INDEX IF EXISTS inventory.ix_inventory_suppliers_name CASCADE"))
+        except Exception as e:
+            log.warning(f"Could not drop unique index: {e}")
+
+        # Ensure receiving_date column exists on grn table
+        try:
+            await conn.execute(text("ALTER TABLE inventory.grn ADD COLUMN IF NOT EXISTS receiving_date DATE NULL"))
+        except Exception as e:
+            log.warning(f"Could not add receiving_date column to grn table: {e}")
+
         await conn.run_sync(Base.metadata.create_all)
+
+        # Create non-unique index
+        try:
+            await conn.execute(text("CREATE INDEX IF NOT EXISTS ix_inventory_suppliers_name ON inventory.suppliers (name)"))
+        except Exception as e:
+            log.warning(f"Could not create non-unique index: {e}")
+
         log.info("Database schema (Stock Ledger) initialized successfully.")
         
     await msg_manager.connect()
@@ -62,9 +82,9 @@ async def create_supplier(supplier: SupplierCreate, session: AsyncSession = Depe
         await session.commit()
         await session.refresh(new_supplier)
         return new_supplier
-    except IntegrityError:
+    except IntegrityError as e:
         await session.rollback()
-        raise HTTPException(status_code=400, detail="Supplier name already exists.")
+        raise HTTPException(status_code=400, detail=f"Database integrity error: {str(e.orig)}")
 
 @app.get("/api/v1/inventory/suppliers", response_model=list[SupplierResponse])
 async def get_suppliers(session: AsyncSession = Depends(db_manager.get_session)):
@@ -424,6 +444,11 @@ async def create_grn(grn_data: GRNCreate, session: AsyncSession = Depends(db_man
         )
         session.add(new_item)
 
+        # Retrieve existing stock before writing the new ledger entry
+        stock_query = select(func.coalesce(func.sum(StockLedger.quantity_change), 0.0)).where(StockLedger.product_id == item.product_id)
+        stock_result = await session.execute(stock_query)
+        existing_stock = stock_result.scalar_one()
+
         ledger_entry = StockLedger(
             branch_id=grn_data.branch_id,
             product_id=item.product_id,
@@ -436,8 +461,14 @@ async def create_grn(grn_data: GRNCreate, session: AsyncSession = Depends(db_man
         product_obj = await session.get(Product, item.product_id)
         if product_obj:
             product_obj.purchase_cost = item.cost_price
-            # Simplified average cost calculation
-            product_obj.average_cost = (product_obj.average_cost + item.cost_price) / 2 if product_obj.average_cost > 0 else item.cost_price
+            # Weighted Average Cost (WAC) = (existing stock × old avg cost + new qty × new cost) / (existing stock + new qty)
+            old_avg_cost = product_obj.average_cost or 0.0
+            new_qty = item.quantity_received
+            new_cost = item.cost_price
+            if existing_stock + new_qty > 0:
+                product_obj.average_cost = ((existing_stock * old_avg_cost) + (new_qty * new_cost)) / (existing_stock + new_qty)
+            else:
+                product_obj.average_cost = new_cost
 
         event = StockUpdateEvent(
             product_id=item.product_id,

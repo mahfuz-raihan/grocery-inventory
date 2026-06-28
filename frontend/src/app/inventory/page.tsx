@@ -159,7 +159,7 @@ const api = {
     return await response.json();
   },
   getProducts: async (branchId?: string): Promise<Product[]> => {
-    const url = branchId 
+    const url = branchId
       ? `${getApiBaseUrl()}/api/v1/inventory/products?branch_id=${branchId}`
       : `${getApiBaseUrl()}/api/v1/inventory/products`;
     const response = await fetch(url);
@@ -257,12 +257,21 @@ const api = {
 
 export default function InventoryControlPage() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<"products" | "warehouses" | "suppliers" | "transfers" | "adjustments" | "reports">("products");
+  const [activeTab, setActiveTab] = useState<string>("products");
   const [userRole, setUserRole] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string>("");
   const [currency, setCurrency] = useState<"BDT" | "USD">("BDT");
   const USD_EXCHANGE_RATE = 117.0;
   const formatPrice = (priceInBDT: number) => currency === "USD" ? "$" + (priceInBDT / USD_EXCHANGE_RATE).toFixed(2) : "৳" + priceInBDT.toFixed(2);
+
+  // Notification state for low stock alerts
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [notificationsDismissed, setNotificationsDismissed] = useState(false);
+
+  // Stock List view state
+  const [stockListSearch, setStockListSearch] = useState("");
+  const [stockListTypeFilter, setStockListTypeFilter] = useState("");
+  const [stockListStatusFilter, setStockListStatusFilter] = useState("");
 
   // States
   const [branches, setBranches] = useState<Branch[]>([]);
@@ -411,9 +420,18 @@ export default function InventoryControlPage() {
     setUserRole(role);
     setUserEmail(email);
 
-    if (role && !["owner", "manager", "stock_handler"].includes(role)) {
+    if (role && !["owner", "manager", "stock_handler", "purchase_user", "production_user", "sales_user"].includes(role)) {
       router.push("/");
       return;
+    }
+
+    // Set default tab based on role
+    if (role === "sales_user") {
+      setActiveTab("stock_list");
+    } else if (role === "purchase_user") {
+      setActiveTab("receiving");
+    } else if (role === "production_user") {
+      setActiveTab("transfers");
     }
 
     const loadData = async () => {
@@ -524,52 +542,52 @@ export default function InventoryControlPage() {
   const handleCreateProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newProductSku || !newProductName || !newProductPrice) return;
-    
+
     setIsSubmittingProduct(true);
     setProductSuccessMessage("");
-    
+
     try {
-      const finalPrice = currency === "USD" 
-        ? parseFloat(newProductPrice) * USD_EXCHANGE_RATE 
+      const finalPrice = currency === "USD"
+        ? parseFloat(newProductPrice) * USD_EXCHANGE_RATE
         : parseFloat(newProductPrice);
-        
+
       const costValue = newProductCost ? (currency === "USD" ? parseFloat(newProductCost) * USD_EXCHANGE_RATE : parseFloat(newProductCost)) : 0.0;
 
-      const payload = { 
-          sku: newProductSku, 
-          name: newProductName,
-          unit: newProductUnit,
-          selling_price: finalPrice,
-          parent_id: newProductParentId || null,
-          product_type: newProductType,
-          color: newProductColor || null,
-          size: newProductSize || null,
-          purchase_cost: costValue,
-          min_stock_level: newProductMinStock ? parseFloat(newProductMinStock) : 0.0,
-          max_stock_level: newProductMaxStock ? parseFloat(newProductMaxStock) : 0.0,
-          reorder_quantity: newProductReorderQty ? parseFloat(newProductReorderQty) : 0.0,
-          category_id: newProductCategory || null,
-          supplier_id: newProductSupplier || null,
-          tax_rate: newProductTaxRate ? parseFloat(newProductTaxRate) : 0.0,
-          product_image: newProductImage || null,
-          length: newProductLength ? parseFloat(newProductLength) : null,
-          width: newProductWidth ? parseFloat(newProductWidth) : null,
-          height: newProductHeight ? parseFloat(newProductHeight) : null,
-          thickness: newProductThickness ? parseFloat(newProductThickness) : null,
-          weight: newProductWeight ? parseFloat(newProductWeight) : null,
-          material_type: newProductMaterialType || null,
-          wood_type: newProductWoodType || null,
-          board_type: newProductBoardType || null
+      const payload = {
+        sku: newProductSku,
+        name: newProductName,
+        unit: newProductUnit,
+        selling_price: finalPrice,
+        parent_id: newProductParentId || null,
+        product_type: newProductType,
+        color: newProductColor || null,
+        size: newProductSize || null,
+        purchase_cost: costValue,
+        min_stock_level: newProductMinStock ? parseFloat(newProductMinStock) : 0.0,
+        max_stock_level: newProductMaxStock ? parseFloat(newProductMaxStock) : 0.0,
+        reorder_quantity: newProductReorderQty ? parseFloat(newProductReorderQty) : 0.0,
+        category_id: newProductCategory || null,
+        supplier_id: newProductSupplier || null,
+        tax_rate: newProductTaxRate ? parseFloat(newProductTaxRate) : 0.0,
+        product_image: newProductImage || null,
+        length: newProductLength ? parseFloat(newProductLength) : null,
+        width: newProductWidth ? parseFloat(newProductWidth) : null,
+        height: newProductHeight ? parseFloat(newProductHeight) : null,
+        thickness: newProductThickness ? parseFloat(newProductThickness) : null,
+        weight: newProductWeight ? parseFloat(newProductWeight) : null,
+        material_type: newProductMaterialType || null,
+        wood_type: newProductWoodType || null,
+        board_type: newProductBoardType || null
       };
 
       const newProduct = await api.createProduct(payload);
-      
+
       setProducts(prev => [...prev, newProduct]);
       setProductSuccessMessage(`✅ Product "${newProductName}" created successfully!`);
-      
+
       // Reset
-      setNewProductSku(""); 
-      setNewProductName(""); 
+      setNewProductSku("");
+      setNewProductName("");
       setNewProductPrice("");
       setNewProductCost("");
       setNewProductColor("");
@@ -688,7 +706,18 @@ export default function InventoryControlPage() {
 
   const handleGRNSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedProductId || !grnQty || !grnCostPrice || !grnSupplierId || !selectedBranchId) return;
+
+    // Validate all required fields with clear user feedback
+    if (!selectedBranchId) { alert("Please select a destination warehouse."); return; }
+    if (!grnSupplierName || grnSupplierName.trim().length < 2) {
+      alert("Please select a supplier company or enter a Supplier Name (at least 2 characters).");
+      return;
+    }
+    if (!selectedProductId) { alert("Please select a product."); return; }
+    if (!grnQty || parseFloat(grnQty) <= 0) { alert("Please enter a valid received quantity."); return; }
+    if (!grnCostPrice || parseFloat(grnCostPrice) <= 0) { alert("Please enter a valid unit cost."); return; }
+
+    const resolvedSupplierName = grnSupplierName.trim();
 
     setIsSubmittingGRN(true);
     setGrnSuccessMessage("");
@@ -700,14 +729,11 @@ export default function InventoryControlPage() {
       const netCost = rawPrice * (1 - commissionPct / 100);
       const finalCost = currency === "USD" ? netCost * USD_EXCHANGE_RATE : netCost;
 
-      const selectedSupplier = suppliers.find(s => s.id === grnSupplierId);
-      const resolvedSupplierName = selectedSupplier?.name || "";
-
+      // Build payload — only include fields the backend GRNCreate schema accepts
       const payload = {
         branch_id: selectedBranchId,
         supplier_name: resolvedSupplierName,
-        invoice_reference: invoiceRef,
-        receiving_date: grnReceivingDate || new Date().toISOString().split("T")[0],
+        invoice_reference: invoiceRef || undefined,
         items: [{
           product_id: selectedProductId,
           quantity_received: parseFloat(grnQty),
@@ -720,7 +746,7 @@ export default function InventoryControlPage() {
 
       const newGRN = await api.submitGRN(payload);
       setGrns(prev => [newGRN, ...prev]);
-      
+
       setGrnSuccessMessage(`✅ Successfully received ${grnQty} units from ${resolvedSupplierName}! Purchase Price: ${currency === "USD" ? "$" : "৳"}${netCost.toFixed(2)} per unit.`);
       setGrnSupplierId("");
       setGrnSupplierName("");
@@ -733,7 +759,7 @@ export default function InventoryControlPage() {
       setGrnDamagedQty("");
       setGrnBatchNumber("");
       setInvoiceRef(generateInvoiceRef());
-      
+
       // Reload products, valuation & reports to show latest stocks & values
       const [updatedProducts, val, low] = await Promise.all([
         api.getProducts(),
@@ -745,7 +771,7 @@ export default function InventoryControlPage() {
       setLowStock(low);
     } catch (error: any) {
       console.error(error);
-      alert(error.message || "Failed to submit GRN. Check details.");
+      alert(error.message || "Failed to submit GRN. Please check all fields and try again.");
     } finally {
       setIsSubmittingGRN(false);
     }
@@ -822,12 +848,12 @@ export default function InventoryControlPage() {
       setTransfers(prev => [newTx, ...prev]);
       setTxQty("");
       setTxRef("");
-      
+
       // Reload valuation & low stock report to show dynamic changes
       const [val, low] = await Promise.all([api.getValuationReport(), api.getLowStockReport()]);
       setValuation(val);
       setLowStock(low);
-      
+
       alert("✅ Inventory transfer complete!");
     } catch (err: any) {
       alert(err.message || "Failed to transfer inventory");
@@ -853,7 +879,7 @@ export default function InventoryControlPage() {
       setAdjReason("");
       setAdjNotes("");
       setAdjCurrent("");
-      
+
       const [val, low] = await Promise.all([api.getValuationReport(), api.getLowStockReport()]);
       setValuation(val);
       setLowStock(low);
@@ -874,34 +900,269 @@ export default function InventoryControlPage() {
 
   const activeWarehouses = branches.filter(b => b.branch_type === "warehouse");
 
+  // Role-based tab visibility
+  const allTabs = [
+    { id: "stock_list", label: "📋 Stock List", roles: ["owner", "manager", "stock_handler", "purchase_user", "production_user", "sales_user"] },
+    { id: "products", label: "Manage Products", roles: ["owner", "manager", "stock_handler"] },
+    { id: "receiving", label: "Stock Receiving", roles: ["owner", "manager", "stock_handler", "purchase_user"] },
+    { id: "warehouses", label: "Warehouses", roles: ["owner", "manager"] },
+    { id: "suppliers", label: "Suppliers", roles: ["owner", "manager", "purchase_user"] },
+    { id: "transfers", label: "Stock Transfers", roles: ["owner", "manager", "stock_handler", "production_user"] },
+    { id: "adjustments", label: "Adjustments Log", roles: ["owner", "manager"] },
+    { id: "reports", label: "Valuation & Reports", roles: ["owner", "manager", "stock_handler"] }
+  ];
+  const visibleTabs = allTabs.filter(tab => !userRole || tab.roles.includes(userRole));
+
   return (
     <div className="min-h-screen bg-gray-50 text-gray-800">
-      {/* Tabs */}
-      <div className="flex space-x-2 mb-8 border-b pb-px">
-        {([
-          { id: "products", label: "Manage Products" },
-          { id: "receiving", label: "Stock Receiving" },
-          { id: "warehouses", label: "Warehouses" },
-          { id: "suppliers", label: "Suppliers" },
-          { id: "transfers", label: "Stock Transfers" },
-          { id: "adjustments", label: "Adjustments Log" },
-          { id: "reports", label: "Valuation & Reports" }
-        ] as const).map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`px-6 py-3 font-semibold border-b-2 transition-all ${
-              activeTab === tab.id
+      {/* Low Stock Notification Banner */}
+      {lowStock.length > 0 && !notificationsDismissed && (
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl flex items-center justify-between gap-4 animate-pulse-once">
+          <div className="flex items-center gap-3">
+            <span className="text-red-600 text-lg">🚨</span>
+            <div>
+              <span className="font-bold text-red-800 text-sm">{lowStock.length} product{lowStock.length > 1 ? "s" : ""} below minimum stock level!</span>
+              <span className="ml-2 text-red-600 text-xs">
+                {lowStock.slice(0, 3).map(l => l.name).join(", ")}{lowStock.length > 3 ? ` +${lowStock.length - 3} more` : ""}
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setActiveTab("reports")}
+              className="px-3 py-1 bg-red-600 text-white text-xs font-bold rounded-lg hover:bg-red-700 transition whitespace-nowrap"
+            >
+              View Alerts
+            </button>
+            <button
+              onClick={() => setNotificationsDismissed(true)}
+              className="text-red-400 hover:text-red-700 text-lg font-bold"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Tabs + Notification Bell */}
+      <div className="flex items-center justify-between mb-8 border-b pb-px">
+        <div className="flex space-x-1 overflow-x-auto">
+          {visibleTabs.map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`px-4 py-3 font-semibold border-b-2 transition-all whitespace-nowrap text-sm ${activeTab === tab.id
                 ? "border-blue-600 text-blue-600 font-bold"
                 : "border-transparent text-gray-500 hover:text-gray-700"
-            }`}
+                }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+        {/* Notification Bell */}
+        <div className="relative ml-4 flex-shrink-0">
+          <button
+            onClick={() => { setShowNotifications(!showNotifications); setNotificationsDismissed(true); }}
+            className={`relative p-2.5 rounded-xl transition ${lowStock.length > 0 ? "bg-red-50 hover:bg-red-100 text-red-600" : "bg-gray-100 hover:bg-gray-200 text-gray-500"}`}
           >
-            {tab.label}
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+            </svg>
+            {lowStock.length > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                {lowStock.length > 9 ? "9+" : lowStock.length}
+              </span>
+            )}
           </button>
-        ))}
+          {/* Notification Dropdown */}
+          {showNotifications && (
+            <div className="absolute right-0 top-12 w-80 bg-white border border-gray-200 rounded-2xl shadow-2xl z-50 overflow-hidden">
+              <div className="p-4 border-b bg-gray-50 flex items-center justify-between">
+                <span className="font-bold text-gray-800 text-sm">Low Stock Alerts</span>
+                <span className="bg-red-100 text-red-700 text-xs font-bold px-2 py-0.5 rounded-full">{lowStock.length} items</span>
+              </div>
+              {lowStock.length === 0 ? (
+                <div className="p-6 text-center text-gray-400 text-sm">✓ All items above safety thresholds</div>
+              ) : (
+                <div className="max-h-64 overflow-y-auto divide-y">
+                  {lowStock.map(l => (
+                    <div key={l.product_id} className="p-3 hover:bg-red-50 transition">
+                      <div className="font-semibold text-gray-800 text-xs">{l.name}</div>
+                      <div className="flex justify-between mt-1 text-[10px] text-gray-500">
+                        <span>SKU: {l.sku}</span>
+                        <span className="text-red-600 font-bold">Stock: {l.current_stock} (Min: {l.min_stock_level})</span>
+                      </div>
+                      <div className="mt-1 text-[10px] text-blue-600">Reorder: {l.reorder_quantity} units needed</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="p-3 border-t bg-gray-50">
+                <button onClick={() => { setActiveTab("reports"); setShowNotifications(false); }} className="w-full text-xs text-blue-600 font-bold hover:underline">
+                  View Full Low Stock Report →
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Tab Panels */}
+
+      {/* ────────────── STOCK LIST TAB ────────────── */}
+      {activeTab === "stock_list" && (() => {
+        // Compute stock status for each product
+        const getStockStatus = (p: Product) => {
+          const stock = p.current_stock ?? 0;
+          const min = p.min_stock_level ?? 0;
+          const max = p.max_stock_level ?? Infinity;
+          if (stock <= 0) return "out_of_stock";
+          if (stock <= min) return "low_stock";
+          if (max !== Infinity && stock > max) return "overstock";
+          return "available";
+        };
+
+        const statusConfig: Record<string, { label: string; color: string }> = {
+          available: { label: "Available", color: "bg-emerald-100 text-emerald-800 border-emerald-200" },
+          low_stock: { label: "Low Stock", color: "bg-amber-100 text-amber-800 border-amber-200" },
+          out_of_stock: { label: "Out of Stock", color: "bg-red-100 text-red-800 border-red-200" },
+          overstock: { label: "Overstock", color: "bg-blue-100 text-blue-800 border-blue-200" }
+        };
+
+        const stockListFiltered = products.filter(p => {
+          const matchesSearch = !stockListSearch ||
+            p.name.toLowerCase().includes(stockListSearch.toLowerCase()) ||
+            p.sku.toLowerCase().includes(stockListSearch.toLowerCase()) ||
+            (p.barcode || "").toLowerCase().includes(stockListSearch.toLowerCase());
+          const matchesType = !stockListTypeFilter || p.product_type === stockListTypeFilter;
+          const matchesStatus = !stockListStatusFilter || getStockStatus(p) === stockListStatusFilter;
+          return matchesSearch && matchesType && matchesStatus;
+        });
+
+        const totalStockValue = stockListFiltered.reduce((sum, p) => {
+          const cost = p.average_cost ?? p.purchase_cost ?? 0;
+          return sum + (p.current_stock ?? 0) * cost;
+        }, 0);
+
+        return (
+          <div className="space-y-6">
+            {/* Summary KPI bar */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {[
+                { label: "Total Products", value: stockListFiltered.length, color: "blue" },
+                { label: "Total Stock Units", value: stockListFiltered.reduce((s, p) => s + (p.current_stock ?? 0), 0).toLocaleString(), color: "indigo" },
+                { label: "Portfolio Value", value: formatPrice(totalStockValue), color: "emerald" },
+                { label: "Low / Out of Stock", value: stockListFiltered.filter(p => ["low_stock", "out_of_stock"].includes(getStockStatus(p))).length, color: "red" }
+              ].map(kpi => (
+                <div key={kpi.label} className={`bg-white rounded-xl p-4 border shadow-sm border-l-4 border-l-${kpi.color}-400`}>
+                  <div className={`text-xs font-bold text-${kpi.color}-600 uppercase mb-1`}>{kpi.label}</div>
+                  <div className="text-2xl font-black text-gray-800">{kpi.value}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Filters */}
+            <div className="bg-white rounded-xl border shadow-sm p-4">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                <div className="md:col-span-2">
+                  <input
+                    type="text"
+                    placeholder="🔍 Search by name, SKU or barcode..."
+                    className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    value={stockListSearch}
+                    onChange={e => setStockListSearch(e.target.value)}
+                  />
+                </div>
+                <select className="p-2.5 border rounded-lg bg-white focus:ring-2 focus:ring-blue-500 outline-none" value={stockListTypeFilter} onChange={e => setStockListTypeFilter(e.target.value)}>
+                  <option value="">All Product Types</option>
+                  <option value="raw_material">Raw Material</option>
+                  <option value="finished_product">Finished Product</option>
+                  <option value="semi_finished">Semi-Finished</option>
+                  <option value="consumable">Consumable</option>
+                  <option value="spare_parts">Spare Parts</option>
+                </select>
+                <select className="p-2.5 border rounded-lg bg-white focus:ring-2 focus:ring-blue-500 outline-none" value={stockListStatusFilter} onChange={e => setStockListStatusFilter(e.target.value)}>
+                  <option value="">All Statuses</option>
+                  <option value="available">✅ Available</option>
+                  <option value="low_stock">⚠️ Low Stock</option>
+                  <option value="out_of_stock">🔴 Out of Stock</option>
+                  <option value="overstock">🔵 Overstock</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Full Enterprise Stock Table */}
+            <div className="bg-white rounded-xl border shadow-sm overflow-hidden">
+              <div className="p-4 border-b flex items-center justify-between">
+                <h3 className="font-bold text-gray-800">Inventory Stock List ({stockListFiltered.length} products)</h3>
+                <span className="text-xs text-gray-500">Prices in {currency} · Last refreshed on load</span>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-sm">
+                  <thead className="bg-gray-50 border-b">
+                    <tr>
+                      {[
+                        "Product", "SKU", "Type", "Category",
+                        "Current Stock", "Available Qty", "Reserved Qty", "Incoming Qty",
+                        "Purchase Cost", "Avg Cost", "Stock Value",
+                        "Warehouse", "Status", "Last Updated"
+                      ].map(h => (
+                        <th key={h} className="px-3 py-3 text-left text-[10px] font-bold text-gray-500 uppercase whitespace-nowrap">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {stockListFiltered.length === 0 ? (
+                      <tr>
+                        <td colSpan={14} className="py-16 text-center text-gray-400 text-sm">No products match your filters.</td>
+                      </tr>
+                    ) : stockListFiltered.map(p => {
+                      const status = getStockStatus(p);
+                      const conf = statusConfig[status];
+                      const avgCost = p.average_cost ?? p.purchase_cost ?? 0;
+                      const stockValue = (p.current_stock ?? 0) * avgCost;
+                      // Reserved = 0, Incoming = qty from pending GRNs (we approximate as 0 without a dedicated API)
+                      const availableQty = Math.max(0, p.current_stock ?? 0);
+                      return (
+                        <tr key={p.id} className="hover:bg-blue-50/30 transition cursor-pointer" onClick={() => setViewingProductDetail(p)}>
+                          <td className="px-3 py-3">
+                            <div className="font-semibold text-gray-800 text-xs whitespace-nowrap">{p.name}</div>
+                          </td>
+                          <td className="px-3 py-3 text-xs font-mono text-gray-600 whitespace-nowrap">{p.sku}</td>
+                          <td className="px-3 py-3 text-xs text-gray-500 whitespace-nowrap">{(p.product_type || "").replace("_", " ")}</td>
+                          <td className="px-3 py-3 text-xs text-gray-500 whitespace-nowrap">—</td>
+                          <td className={`px-3 py-3 text-xs font-bold whitespace-nowrap ${status === "low_stock" || status === "out_of_stock" ? "text-red-700" : "text-gray-800"}`}>
+                            {p.current_stock ?? 0} {p.unit || ""}
+                          </td>
+                          <td className="px-3 py-3 text-xs text-emerald-700 font-semibold whitespace-nowrap">{availableQty} {p.unit || ""}</td>
+                          <td className="px-3 py-3 text-xs text-gray-500 whitespace-nowrap">0</td>
+                          <td className="px-3 py-3 text-xs text-blue-600 whitespace-nowrap">—</td>
+                          <td className="px-3 py-3 text-xs whitespace-nowrap">{p.purchase_cost != null ? formatPrice(p.purchase_cost) : "—"}</td>
+                          <td className="px-3 py-3 text-xs font-semibold text-indigo-700 whitespace-nowrap">
+                            {avgCost > 0 ? formatPrice(avgCost) : "—"}
+                          </td>
+                          <td className="px-3 py-3 text-xs font-bold text-gray-900 whitespace-nowrap">{stockValue > 0 ? formatPrice(stockValue) : "—"}</td>
+                          <td className="px-3 py-3 text-xs text-gray-500 whitespace-nowrap">
+                            {branches.find(b => b.branch_type === "warehouse")?.name || "—"}
+                          </td>
+                          <td className="px-3 py-3 whitespace-nowrap">
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${conf.color}`}>{conf.label}</span>
+                          </td>
+                          <td className="px-3 py-3 text-[10px] text-gray-400 whitespace-nowrap">
+                            {new Date().toLocaleDateString()}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       {activeTab === "products" && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 w-full mb-8">
           {/* Left Column: Form to create product */}
@@ -924,7 +1185,7 @@ export default function InventoryControlPage() {
                   </select>
                 </div>
               </div>
-              
+
               <div>
                 <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Product Name</label>
                 <input type="text" className="w-full p-2.5 border rounded-lg" value={newProductName} onChange={(e) => setNewProductName(e.target.value)} placeholder="Product Name (e.g., Oak Wood Dining Chair)" required />
@@ -944,7 +1205,7 @@ export default function InventoryControlPage() {
                 <div>
                   <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Parent Template (For Variations)</label>
                   <select className="w-full p-2.5 border rounded-lg bg-white" value={newProductParentId} onChange={(e) => setNewProductParentId(e.target.value)}>
-                    <option value="">-- No Parent (Simple or Master Template) --</option>
+                    <option value="">-- No Parent Template --</option>
                     {products.filter(p => !p.parent_id).map(p => (
                       <option key={p.id} value={p.id}>{p.name} ({p.sku})</option>
                     ))}
@@ -1073,13 +1334,13 @@ export default function InventoryControlPage() {
           <div className="bg-white p-6 rounded-xl border lg:col-span-2 shadow-sm">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 pb-4 border-b">
               <h3 className="text-lg font-bold text-gray-800">Current Catalog ({products.filter(p => {
-                const matchesSearch = searchQuery === "" || 
-                  p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                const matchesSearch = searchQuery === "" ||
+                  p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                   p.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
                   (p.barcode && p.barcode.toLowerCase().includes(searchQuery.toLowerCase()));
-                  
+
                 const matchesType = filterType === "" || p.product_type === filterType;
-                const matchesParent = filterParent === "" || 
+                const matchesParent = filterParent === "" ||
                   (filterParent === "templates" ? !p.parent_id : p.parent_id === filterParent);
                 const matchesCategory = filterCategory === "" || p.category_id === filterCategory;
                 const matchesSupplier = filterSupplier === "" || p.supplier_id === filterSupplier;
@@ -1108,7 +1369,7 @@ export default function InventoryControlPage() {
                   }
                   return true;
                 })();
-                  
+
                 return matchesSearch && matchesType && matchesParent && matchesCategory && matchesSupplier && matchesStockStatus && matchesDateRange;
               }).length})</h3>
               <div className="flex flex-wrap items-center gap-2">
@@ -1247,13 +1508,13 @@ export default function InventoryControlPage() {
             )}
 
             {products.filter(p => {
-              const matchesSearch = searchQuery === "" || 
-                p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+              const matchesSearch = searchQuery === "" ||
+                p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 p.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 (p.barcode && p.barcode.toLowerCase().includes(searchQuery.toLowerCase()));
-                
+
               const matchesType = filterType === "" || p.product_type === filterType;
-              const matchesParent = filterParent === "" || 
+              const matchesParent = filterParent === "" ||
                 (filterParent === "templates" ? !p.parent_id : p.parent_id === filterParent);
               const matchesCategory = filterCategory === "" || p.category_id === filterCategory;
               const matchesSupplier = filterSupplier === "" || p.supplier_id === filterSupplier;
@@ -1282,20 +1543,20 @@ export default function InventoryControlPage() {
                 }
                 return true;
               })();
-                
+
               return matchesSearch && matchesType && matchesParent && matchesCategory && matchesSupplier && matchesStockStatus && matchesDateRange;
             }).length === 0 ? (
               <p className="text-sm text-gray-500">No products match search criteria.</p>
             ) : (
               <div className="max-h-[60vh] overflow-y-auto pr-2 space-y-3">
                 {products.filter(p => {
-                  const matchesSearch = searchQuery === "" || 
-                    p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                  const matchesSearch = searchQuery === "" ||
+                    p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                     p.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
                     (p.barcode && p.barcode.toLowerCase().includes(searchQuery.toLowerCase()));
-                    
+
                   const matchesType = filterType === "" || p.product_type === filterType;
-                  const matchesParent = filterParent === "" || 
+                  const matchesParent = filterParent === "" ||
                     (filterParent === "templates" ? !p.parent_id : p.parent_id === filterParent);
                   const matchesCategory = filterCategory === "" || p.category_id === filterCategory;
                   const matchesSupplier = filterSupplier === "" || p.supplier_id === filterSupplier;
@@ -1324,7 +1585,7 @@ export default function InventoryControlPage() {
                     }
                     return true;
                   })();
-                    
+
                   return matchesSearch && matchesType && matchesParent && matchesCategory && matchesSupplier && matchesStockStatus && matchesDateRange;
                 }).map(p => (
                   <div key={p.id} className="p-4 bg-gray-50 border rounded-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 hover:shadow-sm transition">
@@ -1410,10 +1671,10 @@ export default function InventoryControlPage() {
           <div className="bg-white p-6 rounded-xl border h-fit shadow-sm lg:col-span-1">
             <h3 className="text-lg font-bold text-gray-800 mb-4">Receive Supplier Delivery (GRN)</h3>
             {grnSuccessMessage && <div className="mb-6 p-4 bg-green-50 text-green-700 rounded-lg">{grnSuccessMessage}</div>}
-            
+
             {branches.length === 0 && <div className="mb-4 p-4 bg-yellow-50 text-yellow-700 rounded-lg border border-yellow-250">⚠️ No warehouse locations registered yet.</div>}
             {products.length === 0 && <div className="mb-6 p-4 bg-yellow-50 text-yellow-700 rounded-lg border border-yellow-250">⚠️ No products registered in catalog.</div>}
-            
+
             <form onSubmit={handleGRNSubmit} className="space-y-4">
               {/* Destination Warehouse */}
               <div>
@@ -1426,29 +1687,59 @@ export default function InventoryControlPage() {
                 </select>
               </div>
 
-              {/* Supplier Dropdown (registered suppliers only) */}
-              <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">
-                  Select Supplier
-                  {suppliers.length === 0 && <span className="ml-2 text-red-500 normal-case font-normal">(No suppliers registered yet)</span>}
-                </label>
-                <select
-                  className="w-full p-2.5 border rounded-lg bg-white focus:ring-2 focus:ring-blue-500 outline-none"
-                  value={grnSupplierId}
-                  onChange={(e) => setGrnSupplierId(e.target.value)}
-                  required
-                >
-                  <option value="" disabled>-- Select registered supplier --</option>
-                  {suppliers.map(s => (
-                    <option key={s.id} value={s.id}>
-                      {s.name}{s.contact_person ? ` — ${s.contact_person}` : ""}
-                    </option>
-                  ))}
-                </select>
-                {grnSupplierId && (() => {
+              {/* Supplier Selector (Registered Dropdown & Dynamic Text Input) */}
+              <div className="space-y-3 bg-gray-55 p-3 rounded-xl border border-gray-200">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
+                    Select Company Profile
+                    {suppliers.length === 0 && <span className="ml-2 text-red-500 normal-case font-normal">(No registered companies)</span>}
+                  </label>
+                  <select
+                    className="w-full p-2 border rounded-lg bg-white focus:ring-2 focus:ring-blue-500 outline-none text-xs"
+                    value={grnSupplierId}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setGrnSupplierId(val);
+                      if (val === "custom") {
+                        setGrnSupplierName("");
+                      } else {
+                        const found = suppliers.find(s => s.id === val);
+                        if (found) {
+                          setGrnSupplierName(found.name);
+                        }
+                      }
+                    }}
+                  >
+                    <option value="">-- Choose registered company profile --</option>
+                    {suppliers.map(s => (
+                      <option key={s.id} value={s.id}>
+                        🏢 {s.name}{s.contact_person ? ` (Contact: ${s.contact_person})` : ""}
+                      </option>
+                    ))}
+                    <option value="custom">✍️ -- Enter custom/different supplier details --</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1 flex items-center justify-between">
+                    <span>Supplier Name (Saved on Invoice)</span>
+                    <span className="text-[10px] text-blue-600 font-normal">Fully editable & dynamic</span>
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm bg-white font-medium"
+                    value={grnSupplierName}
+                    onChange={(e) => setGrnSupplierName(e.target.value)}
+                    placeholder="e.g. Timberwood Ltd (Alice)"
+                    required
+                  />
+                </div>
+
+                {grnSupplierId && grnSupplierId !== "custom" && (() => {
                   const sup = suppliers.find(s => s.id === grnSupplierId);
                   return sup ? (
-                    <div className="mt-1 text-[10px] text-gray-500 flex gap-3">
+                    <div className="mt-1 text-[10px] text-gray-500 flex flex-wrap gap-x-3 gap-y-1 bg-white p-2 rounded-lg border">
+                      {sup.contact_person && <span>👤 Contact: <b>{sup.contact_person}</b></span>}
                       {sup.phone && <span>📞 {sup.phone}</span>}
                       {sup.email && <span>✉️ {sup.email}</span>}
                     </div>
@@ -1509,18 +1800,17 @@ export default function InventoryControlPage() {
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Purchase Price ({currency === "USD" ? "$" : "৳"})</label>
-                  <div className={`w-full p-2.5 rounded-lg border-2 font-bold text-lg ${
-                    grnCostPrice
-                      ? "bg-emerald-50 border-emerald-300 text-emerald-800"
-                      : "bg-gray-50 border-gray-200 text-gray-400"
-                  }`}>
+                  <div className={`w-full p-2.5 rounded-lg border-2 font-bold text-lg ${grnCostPrice
+                    ? "bg-emerald-50 border-emerald-300 text-emerald-800"
+                    : "bg-gray-50 border-gray-200 text-gray-400"
+                    }`}>
                     {grnCostPrice
                       ? (() => {
-                          const raw = parseFloat(grnCostPrice || "0");
-                          const comm = parseFloat(grnCommission || "0");
-                          const net = raw * (1 - comm / 100);
-                          return `${currency === "USD" ? "$" : "৳"}${net.toFixed(2)}`;
-                        })()
+                        const raw = parseFloat(grnCostPrice || "0");
+                        const comm = parseFloat(grnCommission || "0");
+                        const net = raw * (1 - comm / 100);
+                        return `${currency === "USD" ? "$" : "৳"}${net.toFixed(2)}`;
+                      })()
                       : "—"}
                   </div>
                   <p className="text-[10px] text-gray-400 mt-1">
@@ -1601,10 +1891,10 @@ export default function InventoryControlPage() {
                     {grns.flatMap(grn => {
                       const dateStr = new Date(grn.created_at).toLocaleString();
                       const whName = branches.find(b => b.id === grn.branch_id)?.name || "Warehouse";
-                      
+
                       return (grn.items || []).map((item: any) => {
                         const productObj = products.find(p => p.id === item.product_id);
-                        
+
                         return (
                           <tr key={item.id} className="border-b hover:bg-gray-50 transition">
                             <td className="p-3 whitespace-nowrap">
@@ -1767,6 +2057,7 @@ export default function InventoryControlPage() {
                       <th className="p-3">Contact</th>
                       <th className="p-3">Phone</th>
                       <th className="p-3">Email</th>
+                      <th className="p-3">Office Address</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1776,6 +2067,7 @@ export default function InventoryControlPage() {
                         <td className="p-3">{s.contact_person || "-"}</td>
                         <td className="p-3">{s.phone || "-"}</td>
                         <td className="p-3">{s.email || "-"}</td>
+                        <td className="p-3 text-xs text-gray-500 max-w-xs truncate">{s.address || "-"}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -2035,11 +2327,10 @@ export default function InventoryControlPage() {
               <button
                 key={tab.id}
                 onClick={() => setReportsNestedTab(tab.id)}
-                className={`px-4 py-2 text-sm font-semibold rounded-md transition-all ${
-                  reportsNestedTab === tab.id
-                    ? "bg-blue-600 text-white shadow-sm font-bold"
-                    : "text-gray-500 hover:text-gray-700 hover:bg-gray-105"
-                }`}
+                className={`px-4 py-2 text-sm font-semibold rounded-md transition-all ${reportsNestedTab === tab.id
+                  ? "bg-blue-600 text-white shadow-sm font-bold"
+                  : "text-gray-500 hover:text-gray-700 hover:bg-gray-105"
+                  }`}
               >
                 {tab.label}
               </button>
@@ -2499,18 +2790,17 @@ export default function InventoryControlPage() {
               </div>
               <button onClick={() => setViewingProductDetail(null)} className="text-gray-400 hover:text-gray-655 text-2xl font-bold">×</button>
             </div>
-            
+
             {/* Tabs inside details */}
             <div className="flex border-b bg-gray-50 px-6">
               {(["overview", "inventory", "transactions"] as const).map(tab => (
                 <button
                   key={tab}
                   onClick={() => setDetailActiveTab(tab)}
-                  className={`px-4 py-3 font-semibold text-sm border-b-2 transition-all capitalize ${
-                    detailActiveTab === tab
-                      ? "border-blue-600 text-blue-600 font-bold"
-                      : "border-transparent text-gray-500 hover:text-gray-700"
-                  }`}
+                  className={`px-4 py-3 font-semibold text-sm border-b-2 transition-all capitalize ${detailActiveTab === tab
+                    ? "border-blue-600 text-blue-600 font-bold"
+                    : "border-transparent text-gray-500 hover:text-gray-700"
+                    }`}
                 >
                   {tab}
                 </button>
@@ -2533,6 +2823,15 @@ export default function InventoryControlPage() {
                       <span className="text-xs text-gray-500 uppercase font-bold block mb-1">Purchase Cost</span>
                       <span className="text-2xl font-bold text-purple-950">{formatPrice(viewingProductDetail.product.purchase_cost || 0)}</span>
                     </div>
+                    <div className="p-4 bg-indigo-50/50 rounded-xl border border-indigo-100">
+                      <span className="text-xs text-gray-500 uppercase font-bold block mb-0.5">Average Cost</span>
+                      <span className="text-2xl font-bold text-indigo-900">
+                        {viewingProductDetail.product.average_cost != null && viewingProductDetail.product.average_cost > 0
+                          ? formatPrice(viewingProductDetail.product.average_cost)
+                          : formatPrice(viewingProductDetail.product.purchase_cost || 0)}
+                      </span>
+                      <span className="text-[10px] text-indigo-500 block mt-0.5">Weighted average of all GRNs</span>
+                    </div>
                     <div className="p-4 bg-orange-50/50 rounded-xl border border-orange-100">
                       <span className="text-xs text-gray-500 uppercase font-bold block mb-1">Min Stock Limit</span>
                       <span className="text-2xl font-bold text-orange-955">{viewingProductDetail.product.min_stock_level || 0}</span>
@@ -2546,10 +2845,10 @@ export default function InventoryControlPage() {
                       <p className="text-xs text-blue-700">Compute cumulative stock level up to a specific historical date.</p>
                     </div>
                     <div className="flex gap-2 items-center">
-                      <input 
-                        type="date" 
-                        value={historicalDate} 
-                        onChange={(e) => setHistoricalDate(e.target.value)} 
+                      <input
+                        type="date"
+                        value={historicalDate}
+                        onChange={(e) => setHistoricalDate(e.target.value)}
                         className="flex-1 p-2 border rounded-lg text-sm bg-white outline-none"
                       />
                       <div className="bg-blue-600 text-white font-bold px-4 py-2 rounded-lg text-sm whitespace-nowrap shadow-sm text-center">
@@ -2629,9 +2928,9 @@ export default function InventoryControlPage() {
                   {viewingProductDetail.product.product_image && (
                     <div className="mb-4">
                       <span className="text-xs text-gray-500 uppercase font-bold block mb-1">Product Image</span>
-                      <img 
-                        src={viewingProductDetail.product.product_image} 
-                        alt={viewingProductDetail.product.name} 
+                      <img
+                        src={viewingProductDetail.product.product_image}
+                        alt={viewingProductDetail.product.name}
                         className="w-full max-w-xs h-40 object-cover rounded-xl border bg-gray-100"
                         onError={(e) => {
                           (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1524758631624-e2822e304c36?auto=format&fit=crop&w=400&q=80";
@@ -2647,7 +2946,7 @@ export default function InventoryControlPage() {
                       <div>
                         <span className="text-gray-400">Category:</span>{" "}
                         <span className="font-semibold text-gray-800">
-                          {viewingProductDetail.product.category_id 
+                          {viewingProductDetail.product.category_id
                             ? (categories.find(c => c.id === viewingProductDetail.product.category_id)?.name || "Uncategorized")
                             : "None"}
                         </span>
@@ -2655,7 +2954,7 @@ export default function InventoryControlPage() {
                       <div>
                         <span className="text-gray-400">Default Supplier:</span>{" "}
                         <span className="font-semibold text-gray-800">
-                          {viewingProductDetail.product.supplier_id 
+                          {viewingProductDetail.product.supplier_id
                             ? (suppliers.find(s => s.id === viewingProductDetail.product.supplier_id)?.name || "None")
                             : "None"}
                         </span>
@@ -2755,7 +3054,7 @@ export default function InventoryControlPage() {
                 </div>
               )}
             </div>
-            
+
             <div className="p-4 border-t bg-gray-50 flex justify-end">
               <button onClick={() => setViewingProductDetail(null)} className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition">Close Details</button>
             </div>

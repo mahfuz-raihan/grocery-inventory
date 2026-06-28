@@ -68,6 +68,8 @@ export default function LoginPage() {
       // Role-based routing
       if (data.role === "cashier") {
         router.push("/");
+      } else if (["purchase_user", "production_user", "sales_user"].includes(data.role)) {
+        router.push("/inventory");
       } else {
         router.push("/dashboard");
       }

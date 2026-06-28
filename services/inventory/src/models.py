@@ -1,7 +1,8 @@
+import datetime
 import enum
 import uuid
 
-from sqlalchemy import Boolean, Column, Enum as SAEnum, Float, ForeignKey, String, Text, DateTime
+from sqlalchemy import Boolean, Column, Date, Enum as SAEnum, Float, ForeignKey, String, Text, DateTime, func
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import relationship, backref
 
@@ -26,7 +27,7 @@ class Supplier(Base, TimestampMixin):
     __table_args__ = {"schema": "inventory"}
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    name = Column(String(200), unique=True, nullable=False, index=True)
+    name = Column(String(200), nullable=False, index=True)
     contact_person = Column(String(100), nullable=True)
     phone = Column(String(20), nullable=True)
     email = Column(String(100), nullable=True)
@@ -112,7 +113,8 @@ class Product(Base, TimestampMixin):
     custom_attributes = Column(JSONB, nullable=True)
 
     # Self reference
-    parent = relationship("Product", remote_side=[id], backref=backref("variants", cascade="all, delete-orphan"))
+    parent = relationship("Product", remote_side=[id], back_populates="variants")
+    variants = relationship("Product", back_populates="parent", cascade="all, delete-orphan")
 
 
 class StockLedger(Base, TimestampMixin):
@@ -157,6 +159,7 @@ class GRN(Base, TimestampMixin):
     )
     supplier_name = Column(String(200), nullable=False)
     invoice_reference = Column(String(100), nullable=True)
+    receiving_date = Column(Date, nullable=True, default=datetime.date.today)
     total_amount = Column(Float, default=0.0, nullable=False)
     status = Column(String(50), default="completed", nullable=False)
 

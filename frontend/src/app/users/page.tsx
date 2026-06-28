@@ -216,10 +216,13 @@ export default function UsersPage() {
                 value={newUserRole}
                 onChange={(e) => setNewUserRole(e.target.value)}
               >
-                <option value="owner">Owner</option>
-                <option value="manager">Manager</option>
-                <option value="cashier">Cashier</option>
-                <option value="stock_handler">Stock Handler</option>
+                <option value="owner">🔑 Owner (Full Access)</option>
+                <option value="manager">👔 Manager</option>
+                <option value="stock_handler">📦 Stock Handler</option>
+                <option value="purchase_user">🛒 Purchase User (Receive Products)</option>
+                <option value="production_user">🏭 Production User (Consume Materials)</option>
+                <option value="sales_user">🛍️ Sales User (View Finished Goods)</option>
+                <option value="cashier">🧾 Cashier (POS)</option>
               </select>
             </div>
 
@@ -258,11 +261,14 @@ export default function UsersPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[550px] overflow-y-auto pr-2">
             {users.map(u => {
-              const roleColors = {
+              const roleColors: Record<string, string> = {
                 owner: "bg-indigo-50 text-indigo-700 border-indigo-200",
                 manager: "bg-blue-50 text-blue-700 border-blue-200",
                 cashier: "bg-emerald-50 text-emerald-700 border-emerald-200",
-                stock_handler: "bg-amber-50 text-amber-700 border-amber-200"
+                stock_handler: "bg-amber-50 text-amber-700 border-amber-200",
+                purchase_user: "bg-orange-50 text-orange-700 border-orange-200",
+                production_user: "bg-violet-50 text-violet-700 border-violet-200",
+                sales_user: "bg-teal-50 text-teal-700 border-teal-200"
               };
 
               const branchName = branches.find(b => b.id === u.branch_id)?.name || "All Branches";

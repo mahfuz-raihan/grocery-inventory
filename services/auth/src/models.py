@@ -13,6 +13,9 @@ class Role(str, enum.Enum):
     manager = "manager"
     cashier = "cashier"
     stock_handler = "stock_handler"
+    purchase_user = "purchase_user"
+    production_user = "production_user"
+    sales_user = "sales_user"
 
 
 class User(Base, TimestampMixin):
