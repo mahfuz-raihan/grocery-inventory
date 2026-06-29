@@ -98,6 +98,8 @@ class Product(Base, TimestampMixin):
 
     # Costing & Inventory thresholds
     purchase_cost = Column(Float, default=0.0, nullable=False)
+    commission = Column(Float, default=0.0, nullable=False)
+    additional_cost = Column(Float, default=0.0, nullable=False)
     average_cost = Column(Float, default=0.0, nullable=False)
     tax_rate = Column(Float, default=0.0, nullable=False)
     min_stock_level = Column(Float, default=0.0, nullable=False)

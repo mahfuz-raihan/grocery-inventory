@@ -84,6 +84,8 @@ class ProductBase(BaseModel):
     
     # Costs & Thresholds
     purchase_cost: float = Field(default=0.0, ge=0)
+    commission: float = Field(default=0.0, ge=0)
+    additional_cost: float = Field(default=0.0, ge=0)
     average_cost: float = Field(default=0.0, ge=0)
     tax_rate: float = Field(default=0.0, ge=0)
     min_stock_level: float = Field(default=0.0, ge=0)
@@ -236,6 +238,8 @@ class ProductUpdate(BaseModel):
     thickness: Optional[float] = None
     weight: Optional[float] = None
     purchase_cost: Optional[float] = None
+    commission: Optional[float] = None
+    additional_cost: Optional[float] = None
     average_cost: Optional[float] = None
     tax_rate: Optional[float] = None
     min_stock_level: Optional[float] = None

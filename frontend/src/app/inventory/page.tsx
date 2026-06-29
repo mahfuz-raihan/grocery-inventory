@@ -30,6 +30,8 @@ interface Product {
   unit?: string | null;
   selling_price: number;
   purchase_cost?: number;
+  commission?: number;
+  additional_cost?: number;
   average_cost?: number;
   min_stock_level?: number;
   max_stock_level?: number;
@@ -439,6 +441,8 @@ export default function InventoryControlPage() {
   const [editType, setEditType] = useState("finished_product");
   const [editParentId, setEditParentId] = useState("");
   const [editCost, setEditCost] = useState("");
+  const [editCommission, setEditCommission] = useState("");
+  const [editAdditionalCost, setEditAdditionalCost] = useState("");
   const [editColor, setEditColor] = useState("");
   const [editSize, setEditSize] = useState("");
   const [editMinStock, setEditMinStock] = useState("");
@@ -498,6 +502,7 @@ export default function InventoryControlPage() {
 
   // Additional catalog filters
   const [filterSupplier, setFilterSupplier] = useState("");
+  const [filterCatalogSupplier, setFilterCatalogSupplier] = useState("");
   const [filterWarehouse, setFilterWarehouse] = useState("");
   const [filterStockStatus, setFilterStockStatus] = useState("");
   const [filterStartDate, setFilterStartDate] = useState("");
@@ -783,6 +788,8 @@ export default function InventoryControlPage() {
     setEditType(p.product_type || "finished_product");
     setEditParentId(p.parent_id || "");
     setEditCost(p.purchase_cost ? (currency === "USD" ? (p.purchase_cost / USD_EXCHANGE_RATE).toFixed(2) : p.purchase_cost.toString()) : "");
+    setEditCommission(p.commission != null ? p.commission.toString() : "0");
+    setEditAdditionalCost(p.additional_cost != null ? p.additional_cost.toString() : "0");
     setEditColor(p.color || "");
     setEditSize(p.size || "");
     setEditMinStock(p.min_stock_level ? p.min_stock_level.toString() : "");
@@ -820,6 +827,8 @@ export default function InventoryControlPage() {
         color: editColor || null,
         size: editSize || null,
         purchase_cost: costValue,
+        commission: editCommission ? parseFloat(editCommission) : 0.0,
+        additional_cost: editAdditionalCost ? parseFloat(editAdditionalCost) : 0.0,
         min_stock_level: editMinStock ? parseFloat(editMinStock) : (editingProduct.min_stock_level || 0.0),
         max_stock_level: editMaxStock ? parseFloat(editMaxStock) : (editingProduct.max_stock_level || 0.0),
         reorder_quantity: editReorderQty ? parseFloat(editReorderQty) : (editingProduct.reorder_quantity || 0.0),
@@ -1657,20 +1666,9 @@ export default function InventoryControlPage() {
                 (p.barcode && p.barcode.toLowerCase().includes(searchQuery.toLowerCase()));
 
               const matchesType = filterType === "" || p.product_type === filterType;
-              const matchesCategory = filterCategory === "" || p.category_id === filterCategory;
-              const matchesStockStatus = (() => {
-                if (filterStockStatus === "") return true;
-                const stock = p.current_stock;
-                const min = p.min_stock_level || 0;
-                const max = p.max_stock_level || 0;
-                if (filterStockStatus === "out_of_stock") return stock === 0;
-                if (filterStockStatus === "low_stock") return stock > 0 && stock <= min;
-                if (filterStockStatus === "overstock") return max > 0 && stock >= max;
-                if (filterStockStatus === "available") return stock > min && (max === 0 || stock < max);
-                return true;
-              })();
+              const matchesCatalogSupplier = filterCatalogSupplier === "" || p.supplier_id === filterCatalogSupplier;
 
-              return matchesSearch && matchesType && matchesCategory && matchesStockStatus;
+              return matchesSearch && matchesType && matchesCatalogSupplier;
             });
 
             return (
@@ -1682,11 +1680,21 @@ export default function InventoryControlPage() {
                       type="text"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Search SKU or name..."
-                      className="p-2.5 border rounded-lg text-sm w-56 focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+                      placeholder="Search by product name/code..."
+                      className="p-2.5 border rounded-lg text-sm w-64 focus:ring-2 focus:ring-blue-500 outline-none bg-white font-medium"
                     />
                     <select
-                      className="p-2.5 border rounded-lg bg-white text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                      className="p-2.5 border rounded-lg bg-white text-sm focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-gray-700"
+                      value={filterCatalogSupplier}
+                      onChange={(e) => setFilterCatalogSupplier(e.target.value)}
+                    >
+                      <option value="">All Suppliers</option>
+                      {suppliers.map(s => (
+                        <option key={s.id} value={s.id}>{s.name}</option>
+                      ))}
+                    </select>
+                    <select
+                      className="p-2.5 border rounded-lg bg-white text-sm focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-gray-700"
                       value={filterType}
                       onChange={(e) => setFilterType(e.target.value)}
                     >
@@ -1694,27 +1702,6 @@ export default function InventoryControlPage() {
                       {productTypes.map(t => (
                         <option key={t.key} value={t.key}>{t.label}</option>
                       ))}
-                    </select>
-                    <select
-                      className="p-2.5 border rounded-lg bg-white text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                      value={filterCategory}
-                      onChange={(e) => setFilterCategory(e.target.value)}
-                    >
-                      <option value="">All Categories</option>
-                      {categories.map(c => (
-                        <option key={c.id} value={c.id}>{c.name}</option>
-                      ))}
-                    </select>
-                    <select
-                      className="p-2.5 border rounded-lg bg-white text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                      value={filterStockStatus}
-                      onChange={(e) => setFilterStockStatus(e.target.value)}
-                    >
-                      <option value="">All Statuses</option>
-                      <option value="available">✅ Available</option>
-                      <option value="low_stock">⚠️ Low Stock</option>
-                      <option value="out_of_stock">🔴 Out of Stock</option>
-                      <option value="overstock">🔵 Overstock</option>
                     </select>
                   </div>
                   <div className="flex items-center gap-2">
@@ -1731,14 +1718,17 @@ export default function InventoryControlPage() {
                   <table className="min-w-full text-sm">
                     <thead className="bg-gray-50 border-b">
                       <tr>
-                        <th className="px-4 py-3.5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Product Code (SKU)</th>
                         <th className="px-4 py-3.5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Product Name</th>
+                        <th className="px-4 py-3.5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Supplier</th>
+                        <th className="px-4 py-3.5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Product Code (SKU)</th>
                         <th className="px-4 py-3.5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Product Type</th>
                         <th className="px-4 py-3.5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Category</th>
-                        <th className="px-4 py-3.5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Material Type</th>
-                        <th className="px-4 py-3.5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Wood Type</th>
-                        <th className="px-4 py-3.5 text-right text-[10px] font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Stock Level</th>
+                        <th className="px-4 py-3.5 text-right text-[10px] font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Stock Level(QTY)</th>
                         <th className="px-4 py-3.5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Unit</th>
+                        <th className="px-4 py-3.5 text-right text-[10px] font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Unit Price</th>
+                        <th className="px-4 py-3.5 text-center text-[10px] font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Commission(%)</th>
+                        <th className="px-4 py-3.5 text-right text-[10px] font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Purchased Price</th>
+                        <th className="px-4 py-3.5 text-right text-[10px] font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Additional Cost</th>
                         <th className="px-4 py-3.5 text-right text-[10px] font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Selling Price</th>
                         <th className="px-4 py-3.5 text-center text-[10px] font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Status</th>
                         <th className="px-4 py-3.5 text-center text-[10px] font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Actions</th>
@@ -1747,7 +1737,7 @@ export default function InventoryControlPage() {
                     <tbody className="divide-y divide-gray-100">
                       {filteredCatalog.length === 0 ? (
                         <tr>
-                          <td colSpan={11} className="py-16 text-center text-gray-400">No products found matching filters.</td>
+                          <td colSpan={14} className="py-16 text-center text-gray-400">No products found matching filters.</td>
                         </tr>
                       ) : filteredCatalog.map(p => {
                         const stock = p.current_stock ?? 0;
@@ -1768,20 +1758,28 @@ export default function InventoryControlPage() {
                         }
 
                         const typeLabel = productTypes.find(t => t.key === p.product_type)?.label || p.product_type || "—";
+                        const supplierNameStr = suppliers.find(s => s.id === p.supplier_id)?.name || "—";
+                        const unitPrice = p.purchase_cost || 0.0;
+                        const commVal = p.commission || 0.0;
+                        const purchasePrice = unitPrice * (1 - commVal / 100);
+                        const addCost = p.additional_cost || 0.0;
 
                         return (
                           <tr key={p.id} className="hover:bg-blue-50/20 transition cursor-pointer" onClick={() => handleOpenProductDetail(p)}>
-                            <td className="px-4 py-3.5 font-mono text-xs font-bold text-blue-700 whitespace-nowrap">{p.sku}</td>
-                            <td className="px-4 py-3.5 font-semibold text-gray-800">{p.name}</td>
+                            <td className="px-4 py-3.5 font-semibold text-gray-900">{p.name}</td>
+                            <td className="px-4 py-3.5 text-xs text-gray-500 whitespace-nowrap">{supplierNameStr}</td>
+                            <td className="px-4 py-3.5 font-mono text-xs font-bold text-blue-750 whitespace-nowrap">{p.sku}</td>
                             <td className="px-4 py-3.5 text-xs text-gray-500 whitespace-nowrap">{typeLabel}</td>
                             <td className="px-4 py-3.5 text-xs text-gray-500 whitespace-nowrap">
                               {categories.find(c => c.id === p.category_id)?.name || "—"}
                             </td>
-                            <td className="px-4 py-3.5 text-xs text-gray-500 whitespace-nowrap">{p.material_type || "—"}</td>
-                            <td className="px-4 py-3.5 text-xs text-gray-500 whitespace-nowrap">{p.wood_type || "—"}</td>
                             <td className="px-4 py-3.5 text-right font-bold text-gray-900">{stock}</td>
                             <td className="px-4 py-3.5 text-xs text-gray-500">{p.unit || "—"}</td>
-                            <td className="px-4 py-3.5 text-right font-bold text-emerald-700">{formatPrice(p.selling_price || 0.0)}</td>
+                            <td className="px-4 py-3.5 text-right font-bold text-gray-700">{formatPrice(unitPrice)}</td>
+                            <td className="px-4 py-3.5 text-center text-xs font-semibold text-gray-600">{commVal}%</td>
+                            <td className="px-4 py-3.5 text-right font-bold text-emerald-700">{formatPrice(purchasePrice)}</td>
+                            <td className="px-4 py-3.5 text-right font-semibold text-orange-600">{formatPrice(addCost)}</td>
+                            <td className="px-4 py-3.5 text-right font-bold text-slate-800">{formatPrice(p.selling_price || 0.0)}</td>
                             <td className="px-4 py-3.5 text-center">
                               <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${badgeColor}`}>
                                 {statusText}
@@ -2983,12 +2981,22 @@ export default function InventoryControlPage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Selling Price ({currency === "USD" ? "$" : "৳"})</label>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Selling Price ({currency === "USD" ? "$" : "৳"}) *</label>
                   <input type="number" step="0.01" className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" value={editPrice} onChange={(e) => setEditPrice(e.target.value)} required />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Estimated Purchase Cost ({currency === "USD" ? "$" : "৳"})</label>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Estimated Purchase Cost / Unit Price ({currency === "USD" ? "$" : "৳"})</label>
                   <input type="number" step="0.01" className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" value={editCost} onChange={(e) => setEditCost(e.target.value)} />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Commission (%)</label>
+                  <input type="number" step="any" min="0" max="100" className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-gray-750" value={editCommission} onChange={(e) => setEditCommission(e.target.value)} />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Additional Cost ({currency === "USD" ? "$" : "৳"})</label>
+                  <input type="number" step="any" min="0" className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-gray-750" value={editAdditionalCost} onChange={(e) => setEditAdditionalCost(e.target.value)} />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -3112,11 +3120,25 @@ export default function InventoryControlPage() {
                     </div>
                     <div className="p-4 bg-emerald-50/50 rounded-xl border border-emerald-100">
                       <span className="text-xs text-gray-500 uppercase font-bold block mb-1">Selling Price</span>
-                      <span className="text-2xl font-bold text-emerald-950">{formatPrice(viewingProductDetail.product.selling_price)}</span>
+                      <span className="text-2xl font-bold text-emerald-955">{formatPrice(viewingProductDetail.product.selling_price)}</span>
                     </div>
                     <div className="p-4 bg-purple-50/50 rounded-xl border border-purple-100">
-                      <span className="text-xs text-gray-500 uppercase font-bold block mb-1">Purchase Cost</span>
+                      <span className="text-xs text-gray-500 uppercase font-bold block mb-1">Unit Price (DP)</span>
                       <span className="text-2xl font-bold text-purple-950">{formatPrice(viewingProductDetail.product.purchase_cost || 0)}</span>
+                    </div>
+                    <div className="p-4 bg-orange-50/50 rounded-xl border border-orange-100">
+                      <span className="text-xs text-gray-500 uppercase font-bold block mb-1">Commission</span>
+                      <span className="text-2xl font-bold text-orange-955">{viewingProductDetail.product.commission || 0}%</span>
+                    </div>
+                    <div className="p-4 bg-teal-50/50 rounded-xl border border-teal-100">
+                      <span className="text-xs text-gray-500 uppercase font-bold block mb-1">Purchased Price</span>
+                      <span className="text-2xl font-bold text-teal-955">
+                        {formatPrice((viewingProductDetail.product.purchase_cost || 0) * (1 - (viewingProductDetail.product.commission || 0) / 100))}
+                      </span>
+                    </div>
+                    <div className="p-4 bg-amber-50/50 rounded-xl border border-amber-100">
+                      <span className="text-xs text-gray-500 uppercase font-bold block mb-1">Additional Cost</span>
+                      <span className="text-2xl font-bold text-amber-955">{formatPrice(viewingProductDetail.product.additional_cost || 0)}</span>
                     </div>
                     <div className="p-4 bg-indigo-50/50 rounded-xl border border-indigo-100">
                       <span className="text-xs text-gray-500 uppercase font-bold block mb-0.5">Average Cost</span>
@@ -3127,9 +3149,9 @@ export default function InventoryControlPage() {
                       </span>
                       <span className="text-[10px] text-indigo-500 block mt-0.5">Weighted average of all GRNs</span>
                     </div>
-                    <div className="p-4 bg-orange-50/50 rounded-xl border border-orange-100">
+                    <div className="p-4 bg-red-50/50 rounded-xl border border-red-100">
                       <span className="text-xs text-gray-500 uppercase font-bold block mb-1">Min Stock Limit</span>
-                      <span className="text-2xl font-bold text-orange-955">{viewingProductDetail.product.min_stock_level || 0}</span>
+                      <span className="text-2xl font-bold text-red-955">{viewingProductDetail.product.min_stock_level || 0}</span>
                     </div>
                   </div>
 

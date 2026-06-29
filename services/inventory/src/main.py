@@ -68,6 +68,13 @@ async def lifespan(app: FastAPI):
         except Exception as e:
             log.warning(f"Could not add is_active column to suppliers table: {e}")
 
+        # Ensure commission and additional_cost columns exist on products table
+        try:
+            await conn.execute(text("ALTER TABLE inventory.products ADD COLUMN IF NOT EXISTS commission DOUBLE PRECISION DEFAULT 0.0 NOT NULL"))
+            await conn.execute(text("ALTER TABLE inventory.products ADD COLUMN IF NOT EXISTS additional_cost DOUBLE PRECISION DEFAULT 0.0 NOT NULL"))
+        except Exception as e:
+            log.warning(f"Could not add commission/additional_cost columns to products table: {e}")
+
         await conn.run_sync(Base.metadata.create_all)
 
         # Seed default company profile if empty
@@ -542,7 +549,14 @@ async def create_grn(grn_data: GRNCreate, session: AsyncSession = Depends(db_man
         # Update average/purchase costs on the product template/variant directly
         product_obj = await session.get(Product, item.product_id)
         if product_obj:
-            product_obj.purchase_cost = item.cost_price
+            if item.unit_price is not None:
+                product_obj.purchase_cost = item.unit_price
+            else:
+                product_obj.purchase_cost = item.cost_price
+            
+            if item.commission is not None:
+                product_obj.commission = item.commission
+
             # Weighted Average Cost (WAC) = (existing stock × old avg cost + new qty × new cost) / (existing stock + new qty)
             old_avg_cost = product_obj.average_cost or 0.0
             new_qty = item.quantity_received
