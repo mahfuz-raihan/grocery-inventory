@@ -10,6 +10,7 @@ interface Supplier {
   phone?: string;
   email?: string;
   address?: string;
+  is_active?: boolean;
 }
 
 interface Branch {
@@ -137,6 +138,15 @@ const api = {
       body: JSON.stringify(payload),
     });
     if (!response.ok) throw new Error("Failed to create supplier");
+    return await response.json();
+  },
+  updateSupplier: async (id: string, payload: any): Promise<Supplier> => {
+    const response = await fetch(`${getApiBaseUrl()}/api/v1/inventory/suppliers/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!response.ok) throw new Error("Failed to update supplier");
     return await response.json();
   },
   getCategories: async (): Promise<any[]> => {
@@ -471,6 +481,18 @@ export default function InventoryControlPage() {
   const [grnOrderedQty, setGrnOrderedQty] = useState("");
   const [grnDamagedQty, setGrnDamagedQty] = useState("");
   const [grnBatchNumber, setGrnBatchNumber] = useState("");
+  const [grnItemsList, setGrnItemsList] = useState<any[]>([
+    {
+      product_id: "",
+      quantity_received: "",
+      cost_price: "",
+      selling_price: "",
+      commission: "0",
+      ordered_quantity: "",
+      damaged_quantity: "0",
+      batch_number: ""
+    }
+  ]);
   const [isSubmittingGRN, setIsSubmittingGRN] = useState(false);
   const [grnSuccessMessage, setGrnSuccessMessage] = useState("");
 
@@ -493,6 +515,8 @@ export default function InventoryControlPage() {
   const [supplierPhone, setSupplierPhone] = useState("");
   const [supplierEmail, setSupplierEmail] = useState("");
   const [supplierAddress, setSupplierAddress] = useState("");
+  const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
+  const [supplierActive, setSupplierActive] = useState(true);
 
   const [txProduct, setTxProduct] = useState("");
   const [txFrom, setTxFrom] = useState("");
@@ -847,9 +871,28 @@ export default function InventoryControlPage() {
       alert("Please select a supplier company or enter a Supplier Name (at least 2 characters).");
       return;
     }
-    if (!selectedProductId) { alert("Please select a product."); return; }
-    if (!grnQty || parseFloat(grnQty) <= 0) { alert("Please enter a valid received quantity."); return; }
-    if (!grnCostPrice || parseFloat(grnCostPrice) <= 0) { alert("Please enter a valid unit cost."); return; }
+    
+    // Validate items list
+    if (grnItemsList.length === 0) {
+      alert("Please add at least one product item to receive.");
+      return;
+    }
+
+    for (let i = 0; i < grnItemsList.length; i++) {
+      const item = grnItemsList[i];
+      if (!item.product_id) {
+        alert(`Please select a catalog product for item #${i + 1}.`);
+        return;
+      }
+      if (!item.quantity_received || parseFloat(item.quantity_received) <= 0) {
+        alert(`Please enter a valid received quantity for item #${i + 1}.`);
+        return;
+      }
+      if (!item.cost_price || parseFloat(item.cost_price) <= 0) {
+        alert(`Please enter a valid unit price for item #${i + 1}.`);
+        return;
+      }
+    }
 
     const resolvedSupplierName = grnSupplierName.trim();
 
@@ -857,17 +900,29 @@ export default function InventoryControlPage() {
     setGrnSuccessMessage("");
 
     try {
-      const rawPrice = parseFloat(grnCostPrice);
-      const commissionPct = parseFloat(grnCommission || "0");
-      // Purchase price = Unit Cost - Commission %
-      const netCost = rawPrice * (1 - commissionPct / 100);
-      const finalCost = currency === "USD" ? netCost * USD_EXCHANGE_RATE : netCost;
+      const payloadItems = grnItemsList.map(item => {
+        const rawPrice = parseFloat(item.cost_price);
+        const commissionPct = parseFloat(item.commission || "0");
+        const netCost = rawPrice * (1 - commissionPct / 100);
+        const finalCost = currency === "USD" ? netCost * USD_EXCHANGE_RATE : netCost;
 
-      const finalSellingPrice = grnSellingPrice
-        ? (currency === "USD" ? parseFloat(grnSellingPrice) * USD_EXCHANGE_RATE : parseFloat(grnSellingPrice))
-        : undefined;
+        const finalSellingPrice = item.selling_price
+          ? (currency === "USD" ? parseFloat(item.selling_price) * USD_EXCHANGE_RATE : parseFloat(item.selling_price))
+          : undefined;
 
-      // Build payload — only include fields the backend GRNCreate schema accepts
+        return {
+          product_id: item.product_id,
+          quantity_received: parseFloat(item.quantity_received),
+          cost_price: finalCost,
+          ordered_quantity: item.ordered_quantity ? parseFloat(item.ordered_quantity) : parseFloat(item.quantity_received),
+          damaged_quantity: item.damaged_quantity ? parseFloat(item.damaged_quantity) : 0.0,
+          batch_number: item.batch_number || undefined,
+          selling_price: finalSellingPrice,
+          unit_price: currency === "USD" ? rawPrice * USD_EXCHANGE_RATE : rawPrice,
+          commission: commissionPct
+        };
+      });
+
       const payload = {
         branch_id: selectedBranchId,
         supplier_name: resolvedSupplierName,
@@ -877,23 +932,13 @@ export default function InventoryControlPage() {
         supplier_address: grnSupplierAddress || undefined,
         invoice_reference: invoiceRef || undefined,
         receiving_date: grnReceivingDate || undefined,
-        items: [{
-          product_id: selectedProductId,
-          quantity_received: parseFloat(grnQty),
-          cost_price: finalCost,
-          ordered_quantity: grnOrderedQty ? parseFloat(grnOrderedQty) : parseFloat(grnQty),
-          damaged_quantity: grnDamagedQty ? parseFloat(grnDamagedQty) : 0.0,
-          batch_number: grnBatchNumber || undefined,
-          selling_price: finalSellingPrice,
-          unit_price: currency === "USD" ? rawPrice * USD_EXCHANGE_RATE : rawPrice,
-          commission: commissionPct
-        }]
+        items: payloadItems
       };
 
       const newGRN = await api.submitGRN(payload);
       setGrns(prev => [newGRN, ...prev]);
 
-      setGrnSuccessMessage(`✅ Successfully received ${grnQty} units from ${resolvedSupplierName}!`);
+      setGrnSuccessMessage(`✅ Successfully received ${grnItemsList.length} items from ${resolvedSupplierName}!`);
       
       // Auto open Invoice Preview Modal
       setActiveGRN(newGRN);
@@ -913,12 +958,23 @@ export default function InventoryControlPage() {
       setGrnCostPrice("");
       setGrnSellingPrice("");
       setGrnCommission("");
-      setGrnReceivingDate(new Date().toISOString().split("T")[0]);
-      setSelectedProductId(products.length > 0 ? products[0].id : "");
       setGrnOrderedQty("");
       setGrnDamagedQty("");
       setGrnBatchNumber("");
+      setGrnReceivingDate(new Date().toISOString().split("T")[0]);
       setInvoiceRef(generateInvoiceRef());
+      setGrnItemsList([
+        {
+          product_id: "",
+          quantity_received: "",
+          cost_price: "",
+          selling_price: "",
+          commission: "0",
+          ordered_quantity: "",
+          damaged_quantity: "0",
+          batch_number: ""
+        }
+      ]);
 
       // Reload products, valuation & reports to show latest stocks & values
       const [updatedProducts, val, low] = await Promise.all([
@@ -1142,23 +1198,32 @@ export default function InventoryControlPage() {
     e.preventDefault();
     if (!supplierName) return;
     try {
-      const payload = {
+      const payload: any = {
         name: supplierName,
         contact_person: supplierContact,
         phone: supplierPhone,
         email: supplierEmail,
         address: supplierAddress,
+        is_active: supplierActive
       };
-      const newS = await api.createSupplier(payload);
-      setSuppliers(prev => [...prev, newS]);
+      if (editingSupplier) {
+        const updated = await api.updateSupplier(editingSupplier.id, payload);
+        setSuppliers(prev => prev.map(s => s.id === updated.id ? updated : s));
+        setEditingSupplier(null);
+        setSupplierActive(true);
+        alert("✅ Supplier updated successfully!");
+      } else {
+        const newS = await api.createSupplier(payload);
+        setSuppliers(prev => [...prev, newS]);
+        alert("✅ Supplier registered successfully!");
+      }
       setSupplierName("");
       setSupplierContact("");
       setSupplierPhone("");
       setSupplierEmail("");
       setSupplierAddress("");
-      alert("✅ Supplier registered successfully!");
     } catch (err) {
-      alert("Failed to create supplier");
+      alert("Failed to save supplier info");
     }
   };
 
@@ -2145,7 +2210,7 @@ export default function InventoryControlPage() {
       {activeTab === "suppliers" && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="bg-white p-6 rounded-xl border h-fit shadow-sm">
-            <h3 className="text-lg font-bold text-gray-800 mb-4">Register Supplier</h3>
+            <h3 className="text-lg font-bold text-gray-800 mb-4">{editingSupplier ? "✏️ Edit Supplier" : "Register Supplier"}</h3>
             <form onSubmit={handleCreateSupplier} className="space-y-4">
               <div>
                 <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Supplier Company Name</label>
@@ -2196,17 +2261,45 @@ export default function InventoryControlPage() {
                   onChange={(e) => setSupplierAddress(e.target.value)}
                 />
               </div>
+              <div>
+                <label className="flex items-center gap-2 text-xs font-bold text-gray-600 uppercase cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={supplierActive}
+                    onChange={(e) => setSupplierActive(e.target.checked)}
+                    className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-gray-300"
+                  />
+                  <span>Supplier Status (Active)</span>
+                </label>
+              </div>
               <button
                 type="submit"
                 className="w-full py-2.5 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition"
               >
-                Register Supplier
+                {editingSupplier ? "Save Changes" : "Register Supplier"}
               </button>
+              {editingSupplier && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingSupplier(null);
+                    setSupplierName("");
+                    setSupplierContact("");
+                    setSupplierPhone("");
+                    setSupplierEmail("");
+                    setSupplierAddress("");
+                    setSupplierActive(true);
+                  }}
+                  className="w-full py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition"
+                >
+                  Cancel Edit
+                </button>
+              )}
             </form>
           </div>
 
           <div className="bg-white p-6 rounded-xl border lg:col-span-2 shadow-sm">
-            <h3 className="text-lg font-bold text-gray-800 mb-4">Active Suppliers ({suppliers.length})</h3>
+            <h3 className="text-lg font-bold text-gray-800 mb-4">Registered Suppliers ({suppliers.length})</h3>
             {suppliers.length === 0 ? (
               <p className="text-sm text-gray-500">No suppliers registered.</p>
             ) : (
@@ -2219,16 +2312,57 @@ export default function InventoryControlPage() {
                       <th className="p-3">Phone</th>
                       <th className="p-3">Email</th>
                       <th className="p-3">Office Address</th>
+                      <th className="p-3 text-center">Status</th>
+                      {userRole && ["owner", "manager"].includes(userRole) && <th className="p-3 text-center">Actions</th>}
                     </tr>
                   </thead>
                   <tbody>
                     {suppliers.map(s => (
                       <tr key={s.id} className="border-b hover:bg-gray-55">
                         <td className="p-3 font-semibold text-gray-900">{s.name}</td>
-                        <td className="p-3">{s.contact_person || "-"}</td>
-                        <td className="p-3">{s.phone || "-"}</td>
-                        <td className="p-3">{s.email || "-"}</td>
-                        <td className="p-3 text-xs text-gray-500 max-w-xs truncate">{s.address || "-"}</td>
+                        <td className="p-3 text-xs">{s.contact_person || "-"}</td>
+                        <td className="p-3 text-xs">{s.phone || "-"}</td>
+                        <td className="p-3 text-xs">{s.email || "-"}</td>
+                        <td className="p-3 text-[11px] text-gray-500 max-w-xs truncate">{s.address || "-"}</td>
+                        <td className="p-3 text-center">
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${s.is_active !== false ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
+                            {s.is_active !== false ? "Active" : "Inactive"}
+                          </span>
+                        </td>
+                        {userRole && ["owner", "manager"].includes(userRole) && (
+                          <td className="p-3 text-center whitespace-nowrap">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingSupplier(s);
+                                setSupplierName(s.name);
+                                setSupplierContact(s.contact_person || "");
+                                setSupplierPhone(s.phone || "");
+                                setSupplierEmail(s.email || "");
+                                setSupplierAddress(s.address || "");
+                                setSupplierActive(s.is_active !== false);
+                              }}
+                              className="px-2.5 py-1 bg-amber-50 text-amber-700 hover:bg-amber-100 rounded text-xs font-bold mr-1.5 transition"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                try {
+                                  const updated = await api.updateSupplier(s.id, { is_active: s.is_active === false });
+                                  setSuppliers(prev => prev.map(item => item.id === updated.id ? updated : item));
+                                  alert(`Status updated for ${s.name}`);
+                                } catch (err) {
+                                  alert("Failed to toggle supplier status");
+                                }
+                              }}
+                              className={`px-2.5 py-1 rounded text-xs font-bold transition ${s.is_active !== false ? "bg-red-50 text-red-700 hover:bg-red-100" : "bg-green-50 text-green-700 hover:bg-green-100"}`}
+                            >
+                              {s.is_active !== false ? "Deactivate" : "Activate"}
+                            </button>
+                          </td>
+                        )}
                       </tr>
                     ))}
                   </tbody>
@@ -3754,7 +3888,7 @@ export default function InventoryControlPage() {
       {/* 6. Receive supplier delivery modal */}
       {showGRNModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4 overflow-y-auto">
-          <div className="bg-white rounded-2xl border shadow-2xl w-full max-w-lg max-h-[92vh] overflow-y-auto my-4 animate-scaleUp">
+          <div className="bg-white rounded-2xl border shadow-2xl w-full max-w-6xl max-h-[92vh] overflow-y-auto my-4 animate-scaleUp">
             <div className="p-6 border-b flex items-center justify-between bg-blue-50 sticky top-0 z-10">
               <div>
                 <h3 className="text-lg font-bold text-blue-900">Receive Supplier Delivery (GRN)</h3>
@@ -3820,7 +3954,7 @@ export default function InventoryControlPage() {
                     }}
                   >
                     <option value="">-- Choose registered supplier profile --</option>
-                    {suppliers.map(s => (
+                    {suppliers.filter(s => s.is_active !== false).map(s => (
                       <option key={s.id} value={s.id}>
                         🏢 {s.name}{s.contact_person ? ` (Contact: ${s.contact_person})` : ""}
                       </option>
@@ -3829,63 +3963,72 @@ export default function InventoryControlPage() {
                   </select>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
-                    Supplier Name *
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm bg-white font-medium"
-                    value={grnSupplierName}
-                    onChange={(e) => setGrnSupplierName(e.target.value)}
-                    placeholder="e.g. Timberwood Ltd"
-                    required
-                  />
-                </div>
+                {/* Custom Supplier Name input (only if custom is selected) */}
+                {grnSupplierId === "custom" && (
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
+                      Supplier Name *
+                    </label>
+                    <input
+                      type="text"
+                      className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm bg-white font-semibold text-gray-700"
+                      value={grnSupplierName}
+                      onChange={(e) => setGrnSupplierName(e.target.value)}
+                      placeholder="e.g. Timberwood Ltd"
+                      required
+                    />
+                  </div>
+                )}
 
-                {/* Additional Supplier Contact Details */}
-                <div className="grid grid-cols-2 gap-2 pt-1 border-t border-gray-200">
-                  <div>
-                    <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Contact Person</label>
-                    <input
-                      type="text"
-                      className="w-full p-1.5 border rounded text-xs bg-white font-medium"
-                      value={grnSupplierContact}
-                      onChange={(e) => setGrnSupplierContact(e.target.value)}
-                      placeholder="e.g. John Doe"
-                    />
+                {/* Cute read-only Supplier details card */}
+                {grnSupplierName ? (
+                  <div className="bg-white border border-blue-100 rounded-xl p-3.5 shadow-sm space-y-2 mt-2">
+                    <div className="text-[10px] font-bold text-blue-500 uppercase tracking-wider mb-2 flex items-center gap-1">
+                      <span>📋</span> Supplier Details
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                      <div className="flex items-center gap-2 bg-slate-50 p-2 rounded-lg">
+                        <span className="text-base">🏢</span>
+                        <div>
+                          <div className="text-[9px] font-bold text-gray-400 uppercase">Company Name</div>
+                          <div className="font-semibold text-gray-800">{grnSupplierName}</div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 bg-slate-50 p-2 rounded-lg">
+                        <span className="text-base">👤</span>
+                        <div>
+                          <div className="text-[9px] font-bold text-gray-400 uppercase">Contact Person</div>
+                          <div className="font-semibold text-gray-800">{grnSupplierContact || "—"}</div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 bg-slate-50 p-2 rounded-lg">
+                        <span className="text-base">📞</span>
+                        <div>
+                          <div className="text-[9px] font-bold text-gray-400 uppercase">Phone Number</div>
+                          <div className="font-semibold text-gray-800">{grnSupplierPhone || "—"}</div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 bg-slate-50 p-2 rounded-lg">
+                        <span className="text-base">✉️</span>
+                        <div>
+                          <div className="text-[9px] font-bold text-gray-400 uppercase">Email Address</div>
+                          <div className="font-semibold text-gray-800 truncate max-w-[180px]" title={grnSupplierEmail}>{grnSupplierEmail || "—"}</div>
+                        </div>
+                      </div>
+                      <div className="col-span-1 md:col-span-2 flex items-start gap-2 bg-slate-50 p-2.5 rounded-lg">
+                        <span className="text-base mt-0.5">📍</span>
+                        <div>
+                          <div className="text-[9px] font-bold text-gray-400 uppercase">Office Address</div>
+                          <div className="font-semibold text-gray-800 text-[11px] leading-relaxed">{grnSupplierAddress || "—"}</div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Phone Number</label>
-                    <input
-                      type="text"
-                      className="w-full p-1.5 border rounded text-xs bg-white font-medium"
-                      value={grnSupplierPhone}
-                      onChange={(e) => setGrnSupplierPhone(e.target.value)}
-                      placeholder="e.g. +88017..."
-                    />
+                ) : (
+                  <div className="text-center p-4 bg-white border border-dashed rounded-xl text-xs text-gray-400">
+                    💡 Choose a supplier profile above to display contact information.
                   </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Email Address</label>
-                    <input
-                      type="email"
-                      className="w-full p-1.5 border rounded text-xs bg-white font-medium"
-                      value={grnSupplierEmail}
-                      onChange={(e) => setGrnSupplierEmail(e.target.value)}
-                      placeholder="e.g. sales@timber.com"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Supplier Address</label>
-                    <input
-                      type="text"
-                      className="w-full p-1.5 border rounded text-xs bg-white font-medium"
-                      value={grnSupplierAddress}
-                      onChange={(e) => setGrnSupplierAddress(e.target.value)}
-                      placeholder="e.g. Dhaka, Bangladesh"
-                    />
-                  </div>
-                </div>
+                )}
               </div>
 
               {/* Invoice Reference & Date */}
@@ -3913,123 +4056,225 @@ export default function InventoryControlPage() {
                 </div>
               </div>
 
-              {/* Product Selection */}
-              <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Select Catalog Product *</label>
-                <select
-                  className="w-full p-2.5 border rounded-lg bg-white focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium"
-                  value={selectedProductId}
-                  onChange={(e) => setSelectedProductId(e.target.value)}
-                  required
-                >
-                  <option value="" disabled>-- Select product --</option>
-                  {products.map(p => (
-                    <option key={p.id} value={p.id}>{p.name} ({p.sku})</option>
-                  ))}
-                </select>
-              </div>
+              {/* Products receiving table */}
+              <div className="border border-gray-200 rounded-xl overflow-hidden mt-4">
+                <div className="p-4 bg-gray-50 border-b flex justify-between items-center">
+                  <h4 className="font-bold text-gray-800 text-sm">📦 Received Product Items</h4>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setGrnItemsList(prev => [...prev, {
+                        product_id: "",
+                        quantity_received: "",
+                        cost_price: "",
+                        selling_price: "",
+                        commission: "0",
+                        ordered_quantity: "",
+                        damaged_quantity: "0",
+                        batch_number: ""
+                      }]);
+                    }}
+                    className="px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 rounded-lg text-xs font-bold transition flex items-center gap-1"
+                  >
+                    ➕ Add Product Item
+                  </button>
+                </div>
+                
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead className="bg-gray-100/80 font-bold text-gray-700 uppercase border-b">
+                      <tr>
+                        <th className="p-2.5 w-60">Catalog Product *</th>
+                        <th className="p-2.5 w-24 text-right">Received Qty *</th>
+                        <th className="p-2.5 w-24 text-right">Unit Price (DP) *</th>
+                        <th className="p-2.5 w-20 text-center">Comm (%)</th>
+                        <th className="p-2.5 w-24 text-right">Net Cost</th>
+                        <th className="p-2.5 w-24 text-right">Selling Price</th>
+                        <th className="p-2.5 w-24 text-right">Ordered Qty</th>
+                        <th className="p-2.5 w-20 text-right">Damaged</th>
+                        <th className="p-2.5 w-24">Batch No.</th>
+                        <th className="p-2.5 text-center">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {grnItemsList.map((item, idx) => {
+                        const rawCost = parseFloat(item.cost_price || "0");
+                        const commPct = parseFloat(item.commission || "0");
+                        const netPrice = rawCost * (1 - commPct / 100);
+                        
+                        const handleItemChange = (field: string, value: string) => {
+                          setGrnItemsList(prev => prev.map((it, i) => i === idx ? { ...it, [field]: value } : it));
+                        };
 
-              {/* Qty & Unit Price */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Quantity Received *</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium"
-                    value={grnQty}
-                    onChange={(e) => setGrnQty(e.target.value)}
-                    placeholder="e.g. 50"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Unit Price ({currency === "USD" ? "$" : "৳"}) *</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium"
-                    value={grnCostPrice}
-                    onChange={(e) => setGrnCostPrice(e.target.value)}
-                    placeholder="e.g. 1500"
-                    required
-                  />
-                </div>
-              </div>
+                        return (
+                          <tr key={idx} className="hover:bg-gray-55">
+                            {/* Product selection */}
+                            <td className="p-2">
+                              <select
+                                className="w-full p-1.5 border rounded-lg bg-white outline-none focus:ring-1 focus:ring-blue-500 font-medium"
+                                value={item.product_id}
+                                onChange={(e) => handleItemChange("product_id", e.target.value)}
+                                required
+                              >
+                                <option value="" disabled>-- Select product --</option>
+                                {products.map(p => (
+                                  <option key={p.id} value={p.id}>{p.name} ({p.sku})</option>
+                                ))}
+                              </select>
+                            </td>
 
-              {/* Selling Price, Commission, and Purchase Price */}
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Selling Price ({currency === "USD" ? "$" : "৳"})</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm font-semibold text-emerald-800 bg-white"
-                    value={grnSellingPrice}
-                    onChange={(e) => setGrnSellingPrice(e.target.value)}
-                    placeholder="Set Selling Price"
-                  />
-                  <p className="text-[10px] text-gray-400 mt-1">Updates catalog</p>
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Commission (%)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    max="100"
-                    className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-orange-400 outline-none text-sm font-medium"
-                    value={grnCommission}
-                    onChange={(e) => setGrnCommission(e.target.value)}
-                    placeholder="e.g. 5"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Purchase Price ({currency === "USD" ? "$" : "৳"})</label>
-                  <div className={`w-full p-2.5 rounded-lg border font-bold text-sm h-[42px] flex items-center ${grnCostPrice
-                    ? "bg-emerald-50 border-emerald-300 text-emerald-800"
-                    : "bg-gray-50 border-gray-200 text-gray-400"
-                    }`}>
-                    {grnCostPrice
-                      ? (() => {
-                        const raw = parseFloat(grnCostPrice || "0");
-                        const comm = parseFloat(grnCommission || "0");
-                        const net = raw * (1 - comm / 100);
-                        return `${currency === "USD" ? "$" : "৳"}${net.toFixed(2)}`;
-                      })()
-                      : "—"}
-                  </div>
-                  <p className="text-[10px] text-gray-400 mt-1">Calculated Price</p>
-                </div>
-              </div>
+                             {/* Qty Received */}
+                            <td className="p-2">
+                              <input
+                                type="number"
+                                step="any"
+                                min="0"
+                                className="w-full p-1.5 border rounded-lg text-right font-semibold outline-none focus:ring-1 focus:ring-blue-500"
+                                value={item.quantity_received}
+                                onChange={(e) => handleItemChange("quantity_received", e.target.value)}
+                                placeholder="0"
+                                required
+                              />
+                            </td>
 
-              {/* Ordered / Damaged / Batch */}
-              <div className="grid grid-cols-3 gap-2 pt-2">
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Ordered Qty</label>
-                  <input type="number" step="0.01" className="w-full p-2 border rounded-lg text-xs bg-white" value={grnOrderedQty} onChange={(e) => setGrnOrderedQty(e.target.value)} placeholder="50" />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Damaged Qty</label>
-                  <input type="number" step="0.01" className="w-full p-2 border rounded-lg text-xs bg-white" value={grnDamagedQty} onChange={(e) => setGrnDamagedQty(e.target.value)} placeholder="0" />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Batch No.</label>
-                  <input type="text" className="w-full p-2 border rounded-lg text-xs bg-white" value={grnBatchNumber} onChange={(e) => setGrnBatchNumber(e.target.value)} placeholder="B-12" />
-                </div>
-              </div>
+                            {/* Unit Cost / Cost Price */}
+                            <td className="p-2">
+                              <input
+                                type="number"
+                                step="any"
+                                min="0"
+                                className="w-full p-1.5 border rounded-lg text-right font-semibold outline-none focus:ring-1 focus:ring-blue-500"
+                                value={item.cost_price}
+                                onChange={(e) => handleItemChange("cost_price", e.target.value)}
+                                placeholder="0"
+                                required
+                              />
+                            </td>
 
-              {grnCostPrice && grnQty && (
-                <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-800 space-y-1 mt-2">
-                  <div className="font-bold text-sm mb-1">📦 Order Summary</div>
-                  <div className="flex justify-between"><span>Unit Price:</span><span className="font-semibold">{currency === "USD" ? "$" : "৳"}{parseFloat(grnCostPrice).toFixed(2)}</span></div>
-                  {grnCommission && parseFloat(grnCommission) > 0 && (
-                    <div className="flex justify-between text-orange-700"><span>Commission ({grnCommission}%):</span><span>− {currency === "USD" ? "$" : "৳"}{(parseFloat(grnCostPrice) * parseFloat(grnCommission) / 100).toFixed(2)}</span></div>
-                  )}
-                  <div className="flex justify-between font-bold border-t border-blue-200 pt-1"><span>Purchase Price:</span><span className="text-emerald-700">{currency === "USD" ? "$" : "৳"}{(parseFloat(grnCostPrice) * (1 - parseFloat(grnCommission || "0") / 100)).toFixed(2)}</span></div>
-                  <div className="flex justify-between font-bold"><span>Total Order Value:</span><span className="text-blue-900">{currency === "USD" ? "$" : "৳"}{(parseFloat(grnQty) * parseFloat(grnCostPrice) * (1 - parseFloat(grnCommission || "0") / 100)).toFixed(2)}</span></div>
+                            {/* Commission */}
+                            <td className="p-2">
+                              <input
+                                type="number"
+                                step="any"
+                                min="0"
+                                max="100"
+                                className="w-full p-1.5 border rounded-lg text-center outline-none focus:ring-1 focus:ring-orange-400 font-medium"
+                                value={item.commission}
+                                onChange={(e) => handleItemChange("commission", e.target.value)}
+                                placeholder="0"
+                              />
+                            </td>
+
+                            {/* Calculated Net Cost */}
+                            <td className="p-2 text-right font-bold text-emerald-700 pr-3">
+                              {item.cost_price ? formatPrice(netPrice) : "—"}
+                            </td>
+
+                            {/* Selling Price */}
+                            <td className="p-2">
+                              <input
+                                type="number"
+                                step="any"
+                                min="0"
+                                className="w-full p-1.5 border rounded-lg text-right font-medium outline-none focus:ring-1 focus:ring-emerald-450"
+                                value={item.selling_price}
+                                onChange={(e) => handleItemChange("selling_price", e.target.value)}
+                                placeholder="Optional"
+                              />
+                            </td>
+
+                            {/* Ordered Qty */}
+                            <td className="p-2">
+                              <input
+                                type="number"
+                                step="any"
+                                min="0"
+                                className="w-full p-1.5 border rounded-lg text-right outline-none focus:ring-1 focus:ring-blue-500 font-medium"
+                                value={item.ordered_quantity}
+                                onChange={(e) => handleItemChange("ordered_quantity", e.target.value)}
+                                placeholder="Auto"
+                              />
+                            </td>
+
+                            {/* Damaged Qty */}
+                            <td className="p-2">
+                              <input
+                                type="number"
+                                step="any"
+                                min="0"
+                                className="w-full p-1.5 border rounded-lg text-right outline-none focus:ring-1 focus:ring-red-400 font-medium"
+                                value={item.damaged_quantity}
+                                onChange={(e) => handleItemChange("damaged_quantity", e.target.value)}
+                                placeholder="0"
+                              />
+                            </td>
+
+                            {/* Batch Number */}
+                            <td className="p-2">
+                              <input
+                                type="text"
+                                className="w-full p-1.5 border rounded-lg outline-none focus:ring-1 focus:ring-blue-500 font-semibold text-gray-700"
+                                value={item.batch_number}
+                                onChange={(e) => handleItemChange("batch_number", e.target.value)}
+                                placeholder="Batch"
+                              />
+                            </td>
+
+                            {/* Remove row */}
+                            <td className="p-2 text-center">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (grnItemsList.length === 1) {
+                                    alert("You must keep at least one product item row.");
+                                    return;
+                                  }
+                                  setGrnItemsList(prev => prev.filter((_, i) => i !== idx));
+                                }}
+                                className="text-red-500 hover:text-red-700 font-black text-lg px-2 py-0.5 hover:bg-red-50 rounded transition"
+                                title="Remove item"
+                              >
+                                &times;
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
                 </div>
-              )}
+
+                {/* Grand Order value summary */}
+                {(() => {
+                  const grossTotal = grnItemsList.reduce((sum, item) => sum + (parseFloat(item.quantity_received || "0") * parseFloat(item.cost_price || "0")), 0);
+                  const totalOrderValue = grnItemsList.reduce((sum, item) => {
+                    const raw = parseFloat(item.cost_price || "0");
+                    const comm = parseFloat(item.commission || "0");
+                    const qty = parseFloat(item.quantity_received || "0");
+                    return sum + (qty * raw * (1 - comm / 100));
+                  }, 0);
+                  const totalItems = grnItemsList.reduce((sum, item) => sum + parseFloat(item.quantity_received || "0"), 0);
+
+                  if (grossTotal > 0) {
+                    return (
+                      <div className="p-4 bg-blue-50 border-t border-blue-200 flex flex-wrap justify-between items-center gap-4 text-xs font-semibold text-blue-900">
+                        <div>
+                          Received items total qty: <span className="font-bold text-gray-850">{totalItems}</span>
+                        </div>
+                        <div className="flex gap-4">
+                          <div>
+                            Gross Subtotal: <span className="font-bold text-gray-850">{formatPrice(grossTotal)}</span>
+                          </div>
+                          <div>
+                            Total Order Value (Net): <span className="font-black text-emerald-800 text-sm">{formatPrice(totalOrderValue)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
+              </div>
 
               <div className="flex justify-end gap-3 pt-6 border-t">
                 <button

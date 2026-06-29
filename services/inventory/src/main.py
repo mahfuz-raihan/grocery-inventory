@@ -21,7 +21,7 @@ from src.schemas import (
     ProductCreate, ProductResponse, ProductWithStockResponse, 
     BranchCreate, BranchResponse, CategoryCreate, CategoryResponse, 
     StockUpdateEvent, GRNCreate, GRNResponse,
-    SupplierCreate, SupplierResponse,
+    SupplierCreate, SupplierResponse, SupplierUpdate,
     StockTransferCreate, StockTransferResponse,
     StockAdjustmentCreate, StockAdjustmentResponse,
     ProductUpdate, StockMovementResponse, ConsumptionReportResponse, DeadStockResponse,
@@ -61,6 +61,12 @@ async def lifespan(app: FastAPI):
             await conn.execute(text("ALTER TABLE inventory.grn_items ADD COLUMN IF NOT EXISTS commission DOUBLE PRECISION NULL"))
         except Exception as e:
             log.warning(f"Could not add columns to grn_items table: {e}")
+
+        # Ensure is_active column exists on suppliers table
+        try:
+            await conn.execute(text("ALTER TABLE inventory.suppliers ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE NOT NULL"))
+        except Exception as e:
+            log.warning(f"Could not add is_active column to suppliers table: {e}")
 
         await conn.run_sync(Base.metadata.create_all)
 
@@ -115,6 +121,24 @@ async def create_supplier(supplier: SupplierCreate, session: AsyncSession = Depe
 async def get_suppliers(session: AsyncSession = Depends(db_manager.get_session)):
     result = await session.execute(select(Supplier).order_by(Supplier.name.asc()))
     return result.scalars().all()
+
+@app.put("/api/v1/inventory/suppliers/{supplier_id}", response_model=SupplierResponse)
+async def update_supplier(supplier_id: uuid.UUID, update_data: SupplierUpdate, session: AsyncSession = Depends(db_manager.get_session)):
+    result = await session.execute(select(Supplier).filter(Supplier.id == supplier_id))
+    db_supplier = result.scalar_one_or_none()
+    if not db_supplier:
+        raise HTTPException(status_code=404, detail="Supplier not found")
+        
+    for key, value in update_data.model_dump(exclude_unset=True).items():
+        setattr(db_supplier, key, value)
+        
+    try:
+        await session.commit()
+        await session.refresh(db_supplier)
+        return db_supplier
+    except IntegrityError as e:
+        await session.rollback()
+        raise HTTPException(status_code=400, detail=f"Database error: {str(e.orig)}")
 
 
 # --- BRANCH/WAREHOUSE ENDPOINTS ---

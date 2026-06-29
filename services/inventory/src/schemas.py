@@ -11,9 +11,18 @@ class SupplierBase(BaseModel):
     phone: Optional[str] = Field(None, max_length=20)
     email: Optional[str] = Field(None, max_length=100)
     address: Optional[str] = None
+    is_active: bool = True
 
 class SupplierCreate(SupplierBase):
     pass
+
+class SupplierUpdate(BaseModel):
+    name: Optional[str] = Field(None, min_length=2, max_length=200)
+    contact_person: Optional[str] = Field(None, max_length=100)
+    phone: Optional[str] = Field(None, max_length=20)
+    email: Optional[str] = Field(None, max_length=100)
+    address: Optional[str] = None
+    is_active: Optional[bool] = None
 
 class SupplierResponse(SupplierBase):
     id: uuid.UUID

@@ -32,6 +32,7 @@ class Supplier(Base, TimestampMixin):
     phone = Column(String(20), nullable=True)
     email = Column(String(100), nullable=True)
     address = Column(Text, nullable=True)
+    is_active = Column(Boolean, default=True, nullable=False)
 
 
 class Branch(Base, TimestampMixin):
