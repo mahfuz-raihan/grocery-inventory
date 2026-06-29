@@ -21,13 +21,13 @@ async def lifespan(app: FastAPI):
         await conn.run_sync(Base.metadata.create_all)
         log.info("Database schema (Auth Users) initialized successfully.")
     
-    # Seed default administrator account if empty
+    # Seed default administrator account if not exists
     async with db_manager.session_factory() as session:
-        result = await session.execute(select(User))
-        user_list = result.scalars().all()
-        if not user_list:
-            if settings.default_admin_email and settings.default_admin_password:
-                log.info("No registered users found. Seeding default administrator account...")
+        if settings.default_admin_email and settings.default_admin_password:
+            result = await session.execute(select(User).where(User.email == settings.default_admin_email))
+            admin_user = result.scalar_one_or_none()
+            if not admin_user:
+                log.info(f"Default administrator not found. Seeding account: {settings.default_admin_email}...")
                 default_admin = User(
                     email=settings.default_admin_email,
                     full_name="Default Administrator",
@@ -39,9 +39,9 @@ async def lifespan(app: FastAPI):
                 )
                 session.add(default_admin)
                 await session.commit()
-                log.info(f"Default administrator seeded: {settings.default_admin_email} / [configured password]")
-            else:
-                log.warning("No users found in database, but default_admin_email or default_admin_password is not set in environment. Skipping automatic database seeding.")
+                log.info(f"Default administrator seeded successfully: {settings.default_admin_email}")
+        else:
+            log.warning("default_admin_email or default_admin_password is not set in environment. Skipping automatic database seeding.")
             
     yield
     await db_manager.engine.dispose()

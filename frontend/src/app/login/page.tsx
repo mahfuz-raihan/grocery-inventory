@@ -39,8 +39,31 @@ export default function LoginPage() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || "Authentication failed. Incorrect email or password.");
+        // Safely handle non-JSON error responses (e.g. "Bad Gateway" from the proxy)
+        const rawText = await response.text();
+        let detail = `Server error (${response.status})`;
+        try {
+          const errorData = JSON.parse(rawText);
+          if (errorData.detail) {
+            if (typeof errorData.detail === "string") {
+              detail = errorData.detail;
+            } else if (Array.isArray(errorData.detail)) {
+              // Format FastAPI validation errors nicely
+              detail = errorData.detail.map((err: any) => {
+                const field = err.loc ? err.loc.join('.') : 'error';
+                return `${field}: ${err.msg}`;
+              }).join("; ");
+            } else {
+              detail = typeof errorData.detail === "object" ? JSON.stringify(errorData.detail) : String(errorData.detail);
+            }
+          } else {
+            detail = JSON.stringify(errorData);
+          }
+        } catch {
+          // Not JSON — use the raw text if it's short and readable, otherwise use the status
+          if (rawText && rawText.length < 200) detail = rawText;
+        }
+        throw new Error(detail);
       }
 
       const data = await response.json();
