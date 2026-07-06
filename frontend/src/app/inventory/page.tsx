@@ -265,13 +265,13 @@ const api = {
     if (!response.ok) throw new Error("Failed to submit adjustment");
     return await response.json();
   },
-  getStockList: async (params?: { supplier_name?: string; category_id?: string; branch_id?: string; status_filter?: string; search?: string }): Promise<any[]> => {
+  getStockList: async (params?: { supplier_name?: string; category_id?: string; branch_id?: string; stock_status?: string; search?: string }): Promise<any[]> => {
     let url = `${getApiBaseUrl()}/api/v1/inventory/stock-list`;
     const qs: string[] = [];
     if (params?.supplier_name) qs.push(`supplier_name=${encodeURIComponent(params.supplier_name)}`);
     if (params?.category_id) qs.push(`category_id=${params.category_id}`);
     if (params?.branch_id) qs.push(`branch_id=${params.branch_id}`);
-    if (params?.status_filter) qs.push(`status_filter=${params.status_filter}`);
+    if (params?.stock_status) qs.push(`stock_status=${params.stock_status}`);
     if (params?.search) qs.push(`search=${encodeURIComponent(params.search)}`);
     if (qs.length) url += `?${qs.join("&")}`;
     const response = await fetch(url);
@@ -394,6 +394,7 @@ export default function InventoryControlPage() {
   const [stockListCategoryFilter, setStockListCategoryFilter] = useState("");
   const [stockListWarehouseFilter, setStockListWarehouseFilter] = useState("");
   const [stockListData, setStockListData] = useState<any[]>([]);
+  const [stockListLoading, setStockListLoading] = useState(true);
   const [stockListSummary, setStockListSummary] = useState<{ total_products: number; stock_value: number; low_and_out_of_stock_count: number } | null>(null);
 
   // States
@@ -640,6 +641,7 @@ export default function InventoryControlPage() {
         setGrns(grnsData);
         setStockListData(stockListData);
         setStockListSummary(stockSummary);
+        setStockListLoading(false);
 
         try {
           const companyData = await api.getCompanyProfile();
@@ -1011,20 +1013,20 @@ export default function InventoryControlPage() {
         }
       ]);
 
-      // Reload products, valuation & reports to show latest stocks & values
-      const [updatedProducts, val, low] = await Promise.all([
+      // Reload products, valuation, stock list & reports to show latest stocks & values
+      const [updatedProducts, val, low, updatedStockList, updatedSummary] = await Promise.all([
         api.getProducts(),
         api.getValuationReport(),
         api.getLowStockReport(),
+        api.getStockList(),
+        api.getStockListSummary(),
         api.getAdjustments()
       ]);
       setProducts(updatedProducts);
       setValuation(val);
       setLowStock(low);
-      setAdjustments(adj => {
-        // Adjustments might have changed backend calculations, so reload
-        return adj;
-      });
+      setStockListData(updatedStockList);
+      setStockListSummary(updatedSummary);
       // Close GRN form modal
       setShowGRNModal(false);
     } catch (error: any) {
@@ -1466,9 +1468,22 @@ export default function InventoryControlPage() {
 
         const statusConfig: Record<string, { label: string; color: string; dot: string }> = {
           available:    { label: "Available",    color: "bg-emerald-50 text-emerald-700 border-emerald-200", dot: "bg-emerald-500" },
-          low_stock:    { label: "Low Stock",    color: "bg-amber-50  text-amber-700  border-amber-200",  dot: "bg-amber-500"  },
-          out_of_stock: { label: "Out of Stock", color: "bg-red-50    text-red-700    border-red-200",    dot: "bg-red-500"    },
+          low_stock:    { label: "Low Stock",    color: "bg-amber-50 text-amber-700 border-amber-200",      dot: "bg-amber-500"  },
+          out_of_stock: { label: "Out of Stock", color: "bg-red-50 text-red-700 border-red-200",            dot: "bg-red-500"    },
         };
+
+        // Show loading skeleton while stock list data is being fetched
+        if (stockListLoading) {
+          return (
+            <div className="space-y-4 animate-pulse">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                {[1,2,3].map(i => <div key={i} className="bg-white rounded-2xl h-24 border border-slate-100" />)}
+              </div>
+              <div className="bg-white rounded-2xl h-16 border border-slate-100" />
+              <div className="bg-white rounded-2xl h-48 border border-slate-100" />
+            </div>
+          );
+        }
 
         // Client-side filter on top of backend-returned data
         const filteredRows = stockListData.filter(row => {
@@ -1518,7 +1533,12 @@ export default function InventoryControlPage() {
                 </div>
                 <div>
                   <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Products</div>
-                  <div className="text-3xl font-black text-slate-800 mt-0.5">{summary?.total_products ?? filteredRows.length}</div>
+                  <div className="text-3xl font-black text-slate-800 mt-0.5">
+                    {/* Show filtered unique product count when filters are active, full count otherwise */}
+                    {(stockListSearch || stockListSupplierFilter || stockListCategoryFilter || stockListWarehouseFilter || stockListStatusFilter)
+                      ? new Set(filteredRows.map((r: any) => r.product_id)).size
+                      : (summary?.total_products ?? 0)}
+                  </div>
                 </div>
               </div>
 
@@ -1544,7 +1564,12 @@ export default function InventoryControlPage() {
                 </div>
                 <div>
                   <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Low / Out of Stock</div>
-                  <div className="text-3xl font-black text-red-600 mt-0.5">{summary?.low_and_out_of_stock_count ?? filteredRows.filter(r => r.status !== "available").length}</div>
+                  <div className="text-3xl font-black text-red-600 mt-0.5">
+                    {/* Show filtered count when filters active, global summary otherwise */}
+                    {(stockListSearch || stockListSupplierFilter || stockListCategoryFilter || stockListWarehouseFilter || stockListStatusFilter)
+                      ? filteredRows.filter((r: any) => r.status !== "available").length
+                      : (summary?.low_and_out_of_stock_count ?? 0)}
+                  </div>
                 </div>
               </div>
             </div>
@@ -1678,7 +1703,7 @@ export default function InventoryControlPage() {
                       <table className="min-w-full">
                         <thead>
                           <tr className="border-b border-slate-100">
-                            {["Product Name", "SKU (Product Code)", "Category", "Supplier", "Available Qty", "Unit", "Warehouse", "Status", "Last Updated"].map(h => (
+                            {["Product Name", "SKU (Product Code)", "Category", "Available Qty", "Unit", "Warehouse", "Status", "Last Updated"].map(h => (
                               <th key={h} className="px-4 py-2.5 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">{h}</th>
                             ))}
                           </tr>
@@ -1708,18 +1733,16 @@ export default function InventoryControlPage() {
                                 <td className="px-4 py-3">
                                   <span className="text-xs text-slate-500">{row.category || <span className="text-slate-300 italic">—</span>}</span>
                                 </td>
-                                {/* Supplier */}
-                                <td className="px-4 py-3">
-                                  <span className="text-xs text-slate-600 font-medium">{row.supplier || "—"}</span>
-                                </td>
-                                {/* Available Qty */}
+                                {/* Available Qty — integer if whole number, else 2 decimal places */}
                                 <td className="px-4 py-3">
                                   <span className={`text-sm font-bold ${
                                     row.status === "out_of_stock" ? "text-red-600" :
                                     row.status === "low_stock" ? "text-amber-600" :
                                     "text-emerald-700"
                                   }`}>
-                                    {Number(row.available_qty).toLocaleString("en-US", { maximumFractionDigits: 2 })}
+                                    {Number.isInteger(row.available_qty)
+                                      ? row.available_qty.toLocaleString("en-US")
+                                      : Number(row.available_qty).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                   </span>
                                 </td>
                                 {/* Unit */}

@@ -1,6 +1,7 @@
 import csv
 import io
 import uuid
+from collections import defaultdict
 from datetime import datetime
 from contextlib import asynccontextmanager
 
@@ -877,7 +878,7 @@ async def get_stock_list(
     supplier_name: str | None = None,
     category_id: uuid.UUID | None = None,
     branch_id: uuid.UUID | None = None,
-    status_filter: str | None = None,
+    stock_status: str | None = None,
     search: str | None = None,
     session: AsyncSession = Depends(db_manager.get_session)
 ):
@@ -950,13 +951,12 @@ async def get_stock_list(
     branch_result = await session.execute(select(Branch))
     branch_map = {b.id: b.name for b in branch_result.scalars().all()}
 
-    # Compute the proportion of total stock attributable to each supplier for a product.
-    # Approach: for each (product, branch) the net stock is from ledger.
-    # We distribute that proportionally across suppliers based on their GRN receipts.
-    # If there's no GRN data for a product/branch, show it as a single row with the ledger qty.
+    # Pre-group ledger map by product_id for O(1) lookup
+    product_to_branches: dict = defaultdict(set)
+    for (pid, bid) in ledger_map:
+        product_to_branches[pid].add(bid)
 
     # Group GRN rows by (product_id, branch_id)
-    from collections import defaultdict
     grn_by_product_branch: dict = defaultdict(list)
     for g in grn_rows:
         grn_by_product_branch[(g.product_id, g.branch_id)].append(g)
@@ -964,8 +964,8 @@ async def get_stock_list(
     stock_items = []
 
     for prod_id, prod in product_map.items():
-        # Find all (branch_id) combinations this product appears in (via ledger)
-        product_branches = {k[1] for k in ledger_map if k[0] == prod_id}
+        # O(1) lookup using pre-grouped dict
+        product_branches = product_to_branches.get(prod_id, set())
 
         if not product_branches:
             # Product has never had any stock movement — skip (nothing to show)
@@ -1054,7 +1054,7 @@ async def get_stock_list(
         ]
     if supplier_name:
         stock_items = [i for i in stock_items if i.get("supplier") == supplier_name]
-    if status_filter:
+    if status_filter := stock_status:
         stock_items = [i for i in stock_items if i["status"] == status_filter]
     if branch_id:
         target_branch_name = branch_map.get(branch_id)
@@ -1075,28 +1075,40 @@ async def get_stock_list(
 @app.get("/api/v1/inventory/stock-list/summary")
 async def get_stock_list_summary(session: AsyncSession = Depends(db_manager.get_session)):
     """
-    Returns KPI summary numbers for the Stock List tab:
-    - total_products: count of active products
-    - stock_value: total inventory value (avg_cost × net stock) across all products
-    - low_and_out_of_stock_count: number of active products at or below min stock level
+    Returns KPI summary numbers for the Stock List tab.
+    Uses a single aggregated SQL query instead of per-product loops (avoids N+1).
     """
-    result = await session.execute(select(Product).where(Product.is_active == True))
-    products_all = result.scalars().all()
-
+    # Single query: count active products and sum ledger stock
+    products_result = await session.execute(
+        select(
+            Product.id,
+            Product.min_stock_level,
+            Product.average_cost,
+            Product.purchase_cost,
+        ).where(Product.is_active == True)
+    )
+    products_all = products_result.all()
     total_products = len(products_all)
+
+    if total_products == 0:
+        return {"total_products": 0, "stock_value": 0.0, "low_and_out_of_stock_count": 0}
+
+    # Aggregate net stock per product in one query
+    ledger_agg = await session.execute(
+        select(
+            StockLedger.product_id,
+            func.coalesce(func.sum(StockLedger.quantity_change), 0).label("net_qty")
+        ).group_by(StockLedger.product_id)
+    )
+    stock_by_product = {r.product_id: r.net_qty for r in ledger_agg.all()}
+
     stock_value = 0.0
     low_and_out_count = 0
 
     for p in products_all:
-        stock_query = select(
-            func.coalesce(func.sum(StockLedger.quantity_change), 0)
-        ).where(StockLedger.product_id == p.id)
-        stock_res = await session.execute(stock_query)
-        current_stock = stock_res.scalar_one()
-
+        current_stock = stock_by_product.get(p.id, 0.0)
         cost = p.average_cost if p.average_cost and p.average_cost > 0 else (p.purchase_cost or 0.0)
         stock_value += max(0.0, current_stock) * cost
-
         min_level = p.min_stock_level or 0.0
         if current_stock <= min_level:
             low_and_out_count += 1
@@ -1106,7 +1118,6 @@ async def get_stock_list_summary(session: AsyncSession = Depends(db_manager.get_
         "stock_value": round(stock_value, 2),
         "low_and_out_of_stock_count": low_and_out_count,
     }
-
 
 
 @app.get("/api/v1/inventory/company-profile", response_model=CompanyProfileResponse)
