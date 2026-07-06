@@ -265,6 +265,24 @@ const api = {
     if (!response.ok) throw new Error("Failed to submit adjustment");
     return await response.json();
   },
+  getStockList: async (params?: { supplier_name?: string; category_id?: string; branch_id?: string; status_filter?: string; search?: string }): Promise<any[]> => {
+    let url = `${getApiBaseUrl()}/api/v1/inventory/stock-list`;
+    const qs: string[] = [];
+    if (params?.supplier_name) qs.push(`supplier_name=${encodeURIComponent(params.supplier_name)}`);
+    if (params?.category_id) qs.push(`category_id=${params.category_id}`);
+    if (params?.branch_id) qs.push(`branch_id=${params.branch_id}`);
+    if (params?.status_filter) qs.push(`status_filter=${params.status_filter}`);
+    if (params?.search) qs.push(`search=${encodeURIComponent(params.search)}`);
+    if (qs.length) url += `?${qs.join("&")}`;
+    const response = await fetch(url);
+    if (!response.ok) throw new Error("Failed to fetch stock list");
+    return await response.json();
+  },
+  getStockListSummary: async (): Promise<any> => {
+    const response = await fetch(`${getApiBaseUrl()}/api/v1/inventory/stock-list/summary`);
+    if (!response.ok) throw new Error("Failed to fetch stock list summary");
+    return await response.json();
+  },
   getValuationReport: async (): Promise<ValuationReport> => {
     const response = await fetch(`${getApiBaseUrl()}/api/v1/inventory/reports/valuation`);
     if (!response.ok) throw new Error("Failed to fetch valuation");
@@ -371,8 +389,12 @@ export default function InventoryControlPage() {
 
   // Stock List view state
   const [stockListSearch, setStockListSearch] = useState("");
-  const [stockListTypeFilter, setStockListTypeFilter] = useState("");
   const [stockListStatusFilter, setStockListStatusFilter] = useState("");
+  const [stockListSupplierFilter, setStockListSupplierFilter] = useState("");
+  const [stockListCategoryFilter, setStockListCategoryFilter] = useState("");
+  const [stockListWarehouseFilter, setStockListWarehouseFilter] = useState("");
+  const [stockListData, setStockListData] = useState<any[]>([]);
+  const [stockListSummary, setStockListSummary] = useState<{ total_products: number; stock_value: number; low_and_out_of_stock_count: number } | null>(null);
 
   // States
   const [branches, setBranches] = useState<Branch[]>([]);
@@ -594,7 +616,7 @@ export default function InventoryControlPage() {
 
     const loadData = async () => {
       try {
-        const [branchesData, suppliersData, productsData, transfersData, adjustmentsData, valData, lowData, categoriesData, grnsData] = await Promise.all([
+        const [branchesData, suppliersData, productsData, transfersData, adjustmentsData, valData, lowData, categoriesData, grnsData, stockListData, stockSummary] = await Promise.all([
           api.getBranches(),
           api.getSuppliers(),
           api.getProducts(),
@@ -604,6 +626,8 @@ export default function InventoryControlPage() {
           api.getLowStockReport(),
           api.getCategories(),
           api.getGRNs(),
+          api.getStockList(),
+          api.getStockListSummary(),
         ]);
         setBranches(branchesData);
         setSuppliers(suppliersData);
@@ -614,6 +638,8 @@ export default function InventoryControlPage() {
         setLowStock(lowData);
         setCategories(categoriesData);
         setGrns(grnsData);
+        setStockListData(stockListData);
+        setStockListSummary(stockSummary);
 
         try {
           const companyData = await api.getCompanyProfile();
@@ -1437,153 +1463,308 @@ export default function InventoryControlPage() {
 
       {/* ────────────── STOCK LIST TAB ────────────── */}
       {activeTab === "stock_list" && (() => {
-        // Compute stock status for each product
-        const getStockStatus = (p: Product) => {
-          const stock = p.current_stock ?? 0;
-          const min = p.min_stock_level ?? 0;
-          const max = p.max_stock_level ?? Infinity;
-          if (stock <= 0) return "out_of_stock";
-          if (stock <= min) return "low_stock";
-          if (max !== Infinity && stock > max) return "overstock";
-          return "available";
+
+        const statusConfig: Record<string, { label: string; color: string; dot: string }> = {
+          available:    { label: "Available",    color: "bg-emerald-50 text-emerald-700 border-emerald-200", dot: "bg-emerald-500" },
+          low_stock:    { label: "Low Stock",    color: "bg-amber-50  text-amber-700  border-amber-200",  dot: "bg-amber-500"  },
+          out_of_stock: { label: "Out of Stock", color: "bg-red-50    text-red-700    border-red-200",    dot: "bg-red-500"    },
         };
 
-        const statusConfig: Record<string, { label: string; color: string }> = {
-          available: { label: "Available", color: "bg-emerald-100 text-emerald-800 border-emerald-200" },
-          low_stock: { label: "Low Stock", color: "bg-amber-100 text-amber-800 border-amber-200" },
-          out_of_stock: { label: "Out of Stock", color: "bg-red-100 text-red-800 border-red-200" },
-          overstock: { label: "Overstock", color: "bg-blue-100 text-blue-800 border-blue-200" }
-        };
-
-        const stockListFiltered = products.filter(p => {
-          const matchesSearch = !stockListSearch ||
-            p.name.toLowerCase().includes(stockListSearch.toLowerCase()) ||
-            p.sku.toLowerCase().includes(stockListSearch.toLowerCase()) ||
-            (p.barcode || "").toLowerCase().includes(stockListSearch.toLowerCase());
-          const matchesType = !stockListTypeFilter || p.product_type === stockListTypeFilter;
-          const matchesStatus = !stockListStatusFilter || getStockStatus(p) === stockListStatusFilter;
-          return matchesSearch && matchesType && matchesStatus;
+        // Client-side filter on top of backend-returned data
+        const filteredRows = stockListData.filter(row => {
+          const q = stockListSearch.toLowerCase();
+          const matchSearch = !q ||
+            row.product_name.toLowerCase().includes(q) ||
+            row.sku.toLowerCase().includes(q) ||
+            (row.supplier || "").toLowerCase().includes(q);
+          const matchSupplier  = !stockListSupplierFilter  || row.supplier  === stockListSupplierFilter;
+          const matchCategory  = !stockListCategoryFilter  || row.category  === stockListCategoryFilter;
+          const matchWarehouse = !stockListWarehouseFilter || row.warehouse === stockListWarehouseFilter;
+          const matchStatus    = !stockListStatusFilter    || row.status    === stockListStatusFilter;
+          return matchSearch && matchSupplier && matchCategory && matchWarehouse && matchStatus;
         });
 
-        const totalStockValue = stockListFiltered.reduce((sum, p) => {
-          const cost = p.average_cost ?? p.purchase_cost ?? 0;
-          return sum + (p.current_stock ?? 0) * cost;
-        }, 0);
+        // Derive unique filter options from data
+        const uniqueSuppliers  = Array.from(new Set(stockListData.map(r => r.supplier).filter(Boolean))).sort() as string[];
+        const uniqueCategories = Array.from(new Set(stockListData.map(r => r.category).filter(Boolean))).sort() as string[];
+        const uniqueWarehouses = Array.from(new Set(stockListData.map(r => r.warehouse).filter(Boolean))).sort() as string[];
+
+        // Group filtered rows by supplier for the grouped view
+        const grouped: Record<string, any[]> = {};
+        for (const row of filteredRows) {
+          const key = row.supplier || "— No Supplier";
+          if (!grouped[key]) grouped[key] = [];
+          grouped[key].push(row);
+        }
+        const supplierGroups = Object.keys(grouped).sort();
+
+        // Stock Value formatted like 32,412,398.68
+        const formatStockValue = (val: number) =>
+          val.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+        const summary = stockListSummary;
 
         return (
           <div className="space-y-6">
-            {/* Summary KPI bar */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {[
-                { label: "Total Products", value: stockListFiltered.length, color: "blue" },
-                { label: "Total Stock Units", value: stockListFiltered.reduce((s, p) => s + (p.current_stock ?? 0), 0).toLocaleString(), color: "indigo" },
-                { label: "Portfolio Value", value: formatPrice(totalStockValue), color: "emerald" },
-                { label: "Low / Out of Stock", value: stockListFiltered.filter(p => ["low_stock", "out_of_stock"].includes(getStockStatus(p))).length, color: "red" }
-              ].map(kpi => (
-                <div key={kpi.label} className={`bg-white rounded-xl p-4 border shadow-sm border-l-4 border-l-${kpi.color}-400`}>
-                  <div className={`text-xs font-bold text-${kpi.color}-600 uppercase mb-1`}>{kpi.label}</div>
-                  <div className="text-2xl font-black text-gray-800">{kpi.value}</div>
+
+            {/* ── Summary KPI Cards (3 cards — Total Stock Units removed) ── */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              {/* Total Products */}
+              <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
+                  <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                  </svg>
                 </div>
-              ))}
+                <div>
+                  <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Products</div>
+                  <div className="text-3xl font-black text-slate-800 mt-0.5">{summary?.total_products ?? filteredRows.length}</div>
+                </div>
+              </div>
+
+              {/* Stock Value (renamed from Portfolio Value, formatted as 1,250,000.00) */}
+              <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center flex-shrink-0">
+                  <svg className="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Stock Value</div>
+                  <div className="text-2xl font-black text-slate-800 mt-0.5 truncate">{formatStockValue(summary?.stock_value ?? 0)}</div>
+                </div>
+              </div>
+
+              {/* Low / Out of Stock */}
+              <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-red-50 flex items-center justify-center flex-shrink-0">
+                  <svg className="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                </div>
+                <div>
+                  <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Low / Out of Stock</div>
+                  <div className="text-3xl font-black text-red-600 mt-0.5">{summary?.low_and_out_of_stock_count ?? filteredRows.filter(r => r.status !== "available").length}</div>
+                </div>
+              </div>
             </div>
 
-            {/* Filters */}
-            <div className="bg-white rounded-xl border shadow-sm p-4">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-                <div className="md:col-span-2">
+            {/* ── Filter Bar ── */}
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+                {/* Search */}
+                <div className="md:col-span-2 relative">
+                  <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
                   <input
                     type="text"
-                    placeholder="🔍 Search by name, SKU or barcode..."
-                    className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    placeholder="Search by product name, SKU or supplier..."
+                    className="w-full pl-9 pr-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-slate-50"
                     value={stockListSearch}
                     onChange={e => setStockListSearch(e.target.value)}
                   />
                 </div>
-                <select className="p-2.5 border rounded-lg bg-white focus:ring-2 focus:ring-blue-500 outline-none" value={stockListTypeFilter} onChange={e => setStockListTypeFilter(e.target.value)}>
-                  <option value="">All Product Types</option>
-                  <option value="raw_material">Raw Material</option>
-                  <option value="finished_product">Finished Product</option>
-                  <option value="semi_finished">Semi-Finished</option>
-                  <option value="consumable">Consumable</option>
-                  <option value="spare_parts">Spare Parts</option>
+
+                {/* Supplier filter */}
+                <select
+                  className="p-2.5 border border-slate-200 rounded-xl bg-slate-50 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                  value={stockListSupplierFilter}
+                  onChange={e => setStockListSupplierFilter(e.target.value)}
+                >
+                  <option value="">All Suppliers</option>
+                  {uniqueSuppliers.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
-                <select className="p-2.5 border rounded-lg bg-white focus:ring-2 focus:ring-blue-500 outline-none" value={stockListStatusFilter} onChange={e => setStockListStatusFilter(e.target.value)}>
+
+                {/* Category filter */}
+                <select
+                  className="p-2.5 border border-slate-200 rounded-xl bg-slate-50 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                  value={stockListCategoryFilter}
+                  onChange={e => setStockListCategoryFilter(e.target.value)}
+                >
+                  <option value="">All Categories</option>
+                  {uniqueCategories.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+
+                {/* Status filter */}
+                <select
+                  className="p-2.5 border border-slate-200 rounded-xl bg-slate-50 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                  value={stockListStatusFilter}
+                  onChange={e => setStockListStatusFilter(e.target.value)}
+                >
                   <option value="">All Statuses</option>
                   <option value="available">✅ Available</option>
                   <option value="low_stock">⚠️ Low Stock</option>
                   <option value="out_of_stock">🔴 Out of Stock</option>
-                  <option value="overstock">🔵 Overstock</option>
                 </select>
               </div>
+
+              {/* Warehouse filter row */}
+              {uniqueWarehouses.length > 0 && (
+                <div className="mt-3 flex items-center gap-2 flex-wrap">
+                  <span className="text-xs text-slate-500 font-medium">Warehouse:</span>
+                  <button
+                    onClick={() => setStockListWarehouseFilter("")}
+                    className={`px-3 py-1 rounded-lg text-xs font-semibold border transition ${
+                      !stockListWarehouseFilter
+                        ? "bg-blue-600 text-white border-blue-600"
+                        : "bg-white text-slate-600 border-slate-200 hover:border-blue-300"
+                    }`}
+                  >
+                    All
+                  </button>
+                  {uniqueWarehouses.map(w => (
+                    <button
+                      key={w}
+                      onClick={() => setStockListWarehouseFilter(w)}
+                      className={`px-3 py-1 rounded-lg text-xs font-semibold border transition ${
+                        stockListWarehouseFilter === w
+                          ? "bg-blue-600 text-white border-blue-600"
+                          : "bg-white text-slate-600 border-slate-200 hover:border-blue-300"
+                      }`}
+                    >
+                      {w}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
-            {/* Full Enterprise Stock Table */}
-            <div className="bg-white rounded-xl border shadow-sm overflow-hidden">
-              <div className="p-4 border-b flex items-center justify-between">
-                <h3 className="font-bold text-gray-800">Inventory Stock List ({stockListFiltered.length} products)</h3>
-                <span className="text-xs text-gray-500">Prices in {currency} · Last refreshed on load</span>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="min-w-full text-sm">
-                  <thead className="bg-gray-50 border-b">
-                    <tr>
-                      {[
-                        "Product", "SKU", "Type", "Category",
-                        "Current Stock", "Available Qty", "Reserved Qty", "Incoming Qty",
-                        "Purchase Cost", "Avg Cost", "Stock Value",
-                        "Warehouse", "Status", "Last Updated"
-                      ].map(h => (
-                        <th key={h} className="px-3 py-3 text-left text-[10px] font-bold text-gray-500 uppercase whitespace-nowrap">{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y">
-                    {stockListFiltered.length === 0 ? (
-                      <tr>
-                        <td colSpan={14} className="py-16 text-center text-gray-400 text-sm">No products match your filters.</td>
-                      </tr>
-                    ) : stockListFiltered.map(p => {
-                      const status = getStockStatus(p);
-                      const conf = statusConfig[status];
-                      const avgCost = p.average_cost ?? p.purchase_cost ?? 0;
-                      const stockValue = (p.current_stock ?? 0) * avgCost;
-                      // Reserved = 0, Incoming = qty from pending GRNs (we approximate as 0 without a dedicated API)
-                      const availableQty = Math.max(0, p.current_stock ?? 0);
-                      return (
-                        <tr key={p.id} className="hover:bg-blue-50/30 transition cursor-pointer" onClick={() => setViewingProductDetail(p)}>
-                          <td className="px-3 py-3">
-                            <div className="font-semibold text-gray-800 text-xs whitespace-nowrap">{p.name}</div>
-                          </td>
-                          <td className="px-3 py-3 text-xs font-mono text-gray-600 whitespace-nowrap">{p.sku}</td>
-                          <td className="px-3 py-3 text-xs text-gray-500 whitespace-nowrap">{(p.product_type || "").replace("_", " ")}</td>
-                          <td className="px-3 py-3 text-xs text-gray-500 whitespace-nowrap">—</td>
-                          <td className={`px-3 py-3 text-xs font-bold whitespace-nowrap ${status === "low_stock" || status === "out_of_stock" ? "text-red-700" : "text-gray-800"}`}>
-                            {p.current_stock ?? 0} {p.unit || ""}
-                          </td>
-                          <td className="px-3 py-3 text-xs text-emerald-700 font-semibold whitespace-nowrap">{availableQty} {p.unit || ""}</td>
-                          <td className="px-3 py-3 text-xs text-gray-500 whitespace-nowrap">0</td>
-                          <td className="px-3 py-3 text-xs text-blue-600 whitespace-nowrap">—</td>
-                          <td className="px-3 py-3 text-xs whitespace-nowrap">{p.purchase_cost != null ? formatPrice(p.purchase_cost) : "—"}</td>
-                          <td className="px-3 py-3 text-xs font-semibold text-indigo-700 whitespace-nowrap">
-                            {avgCost > 0 ? formatPrice(avgCost) : "—"}
-                          </td>
-                          <td className="px-3 py-3 text-xs font-bold text-gray-900 whitespace-nowrap">{stockValue > 0 ? formatPrice(stockValue) : "—"}</td>
-                          <td className="px-3 py-3 text-xs text-gray-500 whitespace-nowrap">
-                            {branches.find(b => b.branch_type === "warehouse")?.name || "—"}
-                          </td>
-                          <td className="px-3 py-3 whitespace-nowrap">
-                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${conf.color}`}>{conf.label}</span>
-                          </td>
-                          <td className="px-3 py-3 text-[10px] text-gray-400 whitespace-nowrap">
-                            {new Date().toLocaleDateString()}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+            {/* ── Supplier-Grouped Stock Table ── */}
+            <div className="space-y-4">
+              {filteredRows.length === 0 ? (
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm py-20 flex flex-col items-center justify-center gap-3">
+                  <svg className="w-12 h-12 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                  </svg>
+                  <p className="text-slate-400 font-semibold text-sm">No stock records match your filters.</p>
+                  <button
+                    onClick={() => { setStockListSearch(""); setStockListSupplierFilter(""); setStockListCategoryFilter(""); setStockListWarehouseFilter(""); setStockListStatusFilter(""); }}
+                    className="text-blue-600 text-xs font-semibold hover:underline"
+                  >Clear all filters</button>
+                </div>
+              ) : (
+                supplierGroups.map(supplierKey => (
+                  <div key={supplierKey} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    {/* Supplier header */}
+                    <div className="px-5 py-3.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
+                          <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                          </svg>
+                        </div>
+                        <div>
+                          <span className="font-bold text-slate-800 text-sm">{supplierKey}</span>
+                          <span className="ml-2 text-xs text-slate-400">{grouped[supplierKey].length} product{grouped[supplierKey].length !== 1 ? "s" : ""}</span>
+                        </div>
+                      </div>
+                      <div className="flex gap-1.5">
+                        {(["available", "low_stock", "out_of_stock"] as const).map(st => {
+                          const count = grouped[supplierKey].filter(r => r.status === st).length;
+                          if (!count) return null;
+                          const conf = statusConfig[st];
+                          return (
+                            <span key={st} className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${conf.color}`}>
+                              {count} {conf.label}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Product rows for this supplier */}
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full">
+                        <thead>
+                          <tr className="border-b border-slate-100">
+                            {["Product Name", "SKU (Product Code)", "Category", "Supplier", "Available Qty", "Unit", "Warehouse", "Status", "Last Updated"].map(h => (
+                              <th key={h} className="px-4 py-2.5 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">{h}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-50">
+                          {grouped[supplierKey].map((row: any, idx: number) => {
+                            const conf = statusConfig[row.status as keyof typeof statusConfig] ?? statusConfig["out_of_stock"];
+                            const lastUpdated = row.last_updated ? new Date(row.last_updated).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : "—";
+                            return (
+                              <tr
+                                key={`${row.product_id}-${supplierKey}-${idx}`}
+                                className="hover:bg-blue-50/40 transition-colors cursor-pointer"
+                                onClick={() => {
+                                  const prod = products.find(p => p.id === row.product_id);
+                                  if (prod) handleOpenProductDetail(prod);
+                                }}
+                              >
+                                {/* Product Name */}
+                                <td className="px-4 py-3">
+                                  <span className="font-semibold text-slate-800 text-sm">{row.product_name}</span>
+                                </td>
+                                {/* SKU */}
+                                <td className="px-4 py-3">
+                                  <span className="font-mono text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded">{row.sku}</span>
+                                </td>
+                                {/* Category */}
+                                <td className="px-4 py-3">
+                                  <span className="text-xs text-slate-500">{row.category || <span className="text-slate-300 italic">—</span>}</span>
+                                </td>
+                                {/* Supplier */}
+                                <td className="px-4 py-3">
+                                  <span className="text-xs text-slate-600 font-medium">{row.supplier || "—"}</span>
+                                </td>
+                                {/* Available Qty */}
+                                <td className="px-4 py-3">
+                                  <span className={`text-sm font-bold ${
+                                    row.status === "out_of_stock" ? "text-red-600" :
+                                    row.status === "low_stock" ? "text-amber-600" :
+                                    "text-emerald-700"
+                                  }`}>
+                                    {Number(row.available_qty).toLocaleString("en-US", { maximumFractionDigits: 2 })}
+                                  </span>
+                                </td>
+                                {/* Unit */}
+                                <td className="px-4 py-3">
+                                  <span className="text-xs text-slate-500">{row.unit || "—"}</span>
+                                </td>
+                                {/* Warehouse */}
+                                <td className="px-4 py-3">
+                                  <span className="text-xs text-slate-600">{row.warehouse || "—"}</span>
+                                </td>
+                                {/* Status */}
+                                <td className="px-4 py-3">
+                                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border ${conf.color}`}>
+                                    <span className={`w-1.5 h-1.5 rounded-full ${conf.dot}`} />
+                                    {conf.label}
+                                  </span>
+                                </td>
+                                {/* Last Updated */}
+                                <td className="px-4 py-3">
+                                  <span className="text-xs text-slate-400">{lastUpdated}</span>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
+
+            {/* Total row at bottom */}
+            {filteredRows.length > 0 && (
+              <div className="bg-slate-800 text-white rounded-2xl px-6 py-4 flex items-center justify-between">
+                <span className="text-sm font-semibold text-slate-300">
+                  Showing {filteredRows.length} stock record{filteredRows.length !== 1 ? "s" : ""} across {supplierGroups.length} supplier{supplierGroups.length !== 1 ? "s" : ""}
+                </span>
+                <div className="text-right">
+                  <div className="text-xs text-slate-400 uppercase tracking-wider">Total Stock Value</div>
+                  <div className="text-xl font-black">{formatStockValue(summary?.stock_value ?? 0)}</div>
+                </div>
+              </div>
+            )}
+
           </div>
         );
       })()}

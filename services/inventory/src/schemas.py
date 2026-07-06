@@ -293,3 +293,28 @@ class CompanyProfileUpdate(BaseModel):
     phone: Optional[str] = None
     email: Optional[str] = None
     contact_person: Optional[str] = None
+
+
+# --- Stock List Schemas ---
+class StockListItemResponse(BaseModel):
+    """A single row in the supplier-grouped inventory stock list."""
+    product_id: uuid.UUID
+    product_name: str
+    sku: str
+    category: Optional[str] = None
+    supplier: Optional[str] = None
+    available_qty: float
+    unit: Optional[str] = None
+    warehouse: Optional[str] = None
+    status: str  # "available" | "low_stock" | "out_of_stock"
+    last_updated: Optional[datetime] = None
+    min_stock_level: float = 0.0
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class StockListSummaryResponse(BaseModel):
+    """KPI summary for the stock list tab."""
+    total_products: int
+    stock_value: float
+    low_and_out_of_stock_count: int

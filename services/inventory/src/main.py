@@ -25,7 +25,8 @@ from src.schemas import (
     StockTransferCreate, StockTransferResponse,
     StockAdjustmentCreate, StockAdjustmentResponse,
     ProductUpdate, StockMovementResponse, ConsumptionReportResponse, DeadStockResponse,
-    CompanyProfileResponse, CompanyProfileUpdate
+    CompanyProfileResponse, CompanyProfileUpdate,
+    StockListItemResponse, StockListSummaryResponse
 )
 from src.config import settings
 
@@ -869,6 +870,243 @@ async def import_products_csv(file: UploadFile = File(...), session: AsyncSessio
 
     await session.commit()
     return {"message": f"Successfully imported {imported_count} products!"}
+
+
+@app.get("/api/v1/inventory/stock-list")
+async def get_stock_list(
+    supplier_name: str | None = None,
+    category_id: uuid.UUID | None = None,
+    branch_id: uuid.UUID | None = None,
+    status_filter: str | None = None,
+    search: str | None = None,
+    session: AsyncSession = Depends(db_manager.get_session)
+):
+    """
+    Returns a flat list of stock rows, one per (product, supplier, warehouse) combination.
+    Stock quantity is derived from GRN receipts — accurately reflecting which supplier
+    provided which stock, per the business rule that a product can come from multiple suppliers.
+    """
+    # Build query: Join GRNItem → GRN (for supplier) → Product → Category → Branch (warehouse)
+    # We compute net quantity = sum of GRN receipts minus stock_ledger outflows per product
+    # For supplier-tracing, we use GRN records as the source of truth for which supplier provided stock.
+
+    # First: get all products with their category names
+    product_query = (
+        select(
+            Product.id,
+            Product.name,
+            Product.sku,
+            Product.unit,
+            Product.min_stock_level,
+            Product.average_cost,
+            Product.purchase_cost,
+            Product.updated_at,
+            Category.name.label("category_name"),
+        )
+        .outerjoin(Category, Product.category_id == Category.id)
+        .where(Product.is_active == True)
+    )
+    product_result = await session.execute(product_query)
+    products_raw = product_result.all()
+
+    if not products_raw:
+        return []
+
+    product_map = {row.id: row for row in products_raw}
+
+    # Second: get all GRN items grouped by (product_id, supplier_name, branch_id)
+    grn_query = (
+        select(
+            GRNItem.product_id,
+            GRN.supplier_name,
+            GRN.branch_id,
+            func.sum(GRNItem.quantity_received).label("total_received"),
+            func.max(GRN.created_at).label("last_grn_date"),
+        )
+        .join(GRN, GRNItem.grn_id == GRN.id)
+        .group_by(GRNItem.product_id, GRN.supplier_name, GRN.branch_id)
+    )
+    grn_result = await session.execute(grn_query)
+    grn_rows = grn_result.all()
+
+    # Third: get total stock ledger balance per product (for net available qty)
+    ledger_query = (
+        select(
+            StockLedger.product_id,
+            StockLedger.branch_id,
+            func.coalesce(func.sum(StockLedger.quantity_change), 0).label("net_qty"),
+            func.max(StockLedger.created_at).label("last_movement"),
+        )
+        .group_by(StockLedger.product_id, StockLedger.branch_id)
+    )
+    ledger_result = await session.execute(ledger_query)
+    ledger_rows = ledger_result.all()
+    # Build lookup: (product_id, branch_id) -> (net_qty, last_movement)
+    ledger_map: dict = {}
+    for r in ledger_rows:
+        ledger_map[(r.product_id, r.branch_id)] = (r.net_qty, r.last_movement)
+
+    # Fourth: get branch names
+    branch_result = await session.execute(select(Branch))
+    branch_map = {b.id: b.name for b in branch_result.scalars().all()}
+
+    # Compute the proportion of total stock attributable to each supplier for a product.
+    # Approach: for each (product, branch) the net stock is from ledger.
+    # We distribute that proportionally across suppliers based on their GRN receipts.
+    # If there's no GRN data for a product/branch, show it as a single row with the ledger qty.
+
+    # Group GRN rows by (product_id, branch_id)
+    from collections import defaultdict
+    grn_by_product_branch: dict = defaultdict(list)
+    for g in grn_rows:
+        grn_by_product_branch[(g.product_id, g.branch_id)].append(g)
+
+    stock_items = []
+
+    for prod_id, prod in product_map.items():
+        # Find all (branch_id) combinations this product appears in (via ledger)
+        product_branches = {k[1] for k in ledger_map if k[0] == prod_id}
+
+        if not product_branches:
+            # Product has never had any stock movement — skip (nothing to show)
+            # But show once with zero stock if it has GRN records
+            product_grn_branches = {g.branch_id for g in grn_rows if g.product_id == prod_id}
+            if not product_grn_branches:
+                continue
+            product_branches = product_grn_branches
+
+        for br_id in product_branches:
+            net_qty, last_movement = ledger_map.get((prod_id, br_id), (0.0, None))
+            supplier_grns = grn_by_product_branch.get((prod_id, br_id), [])
+
+            if supplier_grns:
+                total_received = sum(g.total_received for g in supplier_grns)
+                for g in supplier_grns:
+                    # Distribute net stock proportionally to this supplier's receipts
+                    if total_received > 0:
+                        proportion = g.total_received / total_received
+                    else:
+                        proportion = 1.0 / len(supplier_grns)
+                    supplier_qty = round(net_qty * proportion, 4)
+                    supplier_qty = max(0.0, supplier_qty)
+
+                    item_supplier = g.supplier_name
+                    item_branch = branch_map.get(br_id, "Unknown Warehouse")
+                    item_last = last_movement or g.last_grn_date
+
+                    min_level = prod.min_stock_level or 0.0
+                    if supplier_qty <= 0:
+                        item_status = "out_of_stock"
+                    elif supplier_qty <= min_level:
+                        item_status = "low_stock"
+                    else:
+                        item_status = "available"
+
+                    stock_items.append({
+                        "product_id": str(prod_id),
+                        "product_name": prod.name,
+                        "sku": prod.sku,
+                        "category": prod.category_name,
+                        "supplier": item_supplier,
+                        "available_qty": supplier_qty,
+                        "unit": prod.unit,
+                        "warehouse": item_branch,
+                        "status": item_status,
+                        "last_updated": item_last.isoformat() if item_last else None,
+                        "min_stock_level": min_level,
+                        "average_cost": prod.average_cost or prod.purchase_cost or 0.0,
+                    })
+            else:
+                # No GRN data for this branch — show the ledger quantity with no supplier
+                item_branch = branch_map.get(br_id, "Unknown Warehouse")
+                available_qty = max(0.0, net_qty)
+                min_level = prod.min_stock_level or 0.0
+                if available_qty <= 0:
+                    item_status = "out_of_stock"
+                elif available_qty <= min_level:
+                    item_status = "low_stock"
+                else:
+                    item_status = "available"
+
+                stock_items.append({
+                    "product_id": str(prod_id),
+                    "product_name": prod.name,
+                    "sku": prod.sku,
+                    "category": prod.category_name,
+                    "supplier": None,
+                    "available_qty": available_qty,
+                    "unit": prod.unit,
+                    "warehouse": item_branch,
+                    "status": item_status,
+                    "last_updated": last_movement.isoformat() if last_movement else None,
+                    "min_stock_level": min_level,
+                    "average_cost": prod.average_cost or prod.purchase_cost or 0.0,
+                })
+
+    # Apply filters
+    if search:
+        s = search.lower()
+        stock_items = [
+            i for i in stock_items
+            if s in i["product_name"].lower()
+            or s in i["sku"].lower()
+            or (i["supplier"] and s in i["supplier"].lower())
+        ]
+    if supplier_name:
+        stock_items = [i for i in stock_items if i.get("supplier") == supplier_name]
+    if status_filter:
+        stock_items = [i for i in stock_items if i["status"] == status_filter]
+    if branch_id:
+        target_branch_name = branch_map.get(branch_id)
+        if target_branch_name:
+            stock_items = [i for i in stock_items if i["warehouse"] == target_branch_name]
+    if category_id:
+        # Filter by category — look up name for this id
+        cat_result = await session.get(Category, category_id)
+        if cat_result:
+            stock_items = [i for i in stock_items if i.get("category") == cat_result.name]
+
+    # Sort: supplier asc, product name asc
+    stock_items.sort(key=lambda x: (x.get("supplier") or "", x["product_name"]))
+
+    return stock_items
+
+
+@app.get("/api/v1/inventory/stock-list/summary")
+async def get_stock_list_summary(session: AsyncSession = Depends(db_manager.get_session)):
+    """
+    Returns KPI summary numbers for the Stock List tab:
+    - total_products: count of active products
+    - stock_value: total inventory value (avg_cost × net stock) across all products
+    - low_and_out_of_stock_count: number of active products at or below min stock level
+    """
+    result = await session.execute(select(Product).where(Product.is_active == True))
+    products_all = result.scalars().all()
+
+    total_products = len(products_all)
+    stock_value = 0.0
+    low_and_out_count = 0
+
+    for p in products_all:
+        stock_query = select(
+            func.coalesce(func.sum(StockLedger.quantity_change), 0)
+        ).where(StockLedger.product_id == p.id)
+        stock_res = await session.execute(stock_query)
+        current_stock = stock_res.scalar_one()
+
+        cost = p.average_cost if p.average_cost and p.average_cost > 0 else (p.purchase_cost or 0.0)
+        stock_value += max(0.0, current_stock) * cost
+
+        min_level = p.min_stock_level or 0.0
+        if current_stock <= min_level:
+            low_and_out_count += 1
+
+    return {
+        "total_products": total_products,
+        "stock_value": round(stock_value, 2),
+        "low_and_out_of_stock_count": low_and_out_count,
+    }
+
 
 
 @app.get("/api/v1/inventory/company-profile", response_model=CompanyProfileResponse)
