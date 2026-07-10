@@ -168,6 +168,7 @@ class GRN(Base, TimestampMixin):
     invoice_reference = Column(String(100), nullable=True)
     receiving_date = Column(Date, nullable=True, default=datetime.date.today)
     total_amount = Column(Float, default=0.0, nullable=False)
+    discount = Column(Float, default=0.0, nullable=False)
     status = Column(String(50), default="completed", nullable=False)
 
     items = relationship("GRNItem", back_populates="grn", cascade="all, delete-orphan")

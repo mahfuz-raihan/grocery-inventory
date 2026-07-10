@@ -899,6 +899,30 @@ export default function InventoryControlPage() {
 
   const generateInvoiceRef = () => `INV-GRN-${Date.now().toString().slice(-6)}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
 
+  const handleSaveInvoiceDiscount = async () => {
+    if (!activeGRN) return;
+    const discountVal = parseFloat(invoiceDiscount || "0");
+    try {
+      const response = await fetch(`${getApiBaseUrl()}/api/v1/inventory/grn/${activeGRN.id}/discount`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ discount: discountVal }),
+      });
+      if (!response.ok) throw new Error("Failed to save discount");
+      
+      const updatedGRN = await response.json();
+      
+      // Update activeGRN local state
+      setActiveGRN(updatedGRN);
+      
+      // Update grns list
+      setGrns(prev => prev.map(g => g.id === activeGRN.id ? updatedGRN : g));
+      alert("✅ Invoice discount saved successfully!");
+    } catch (err: any) {
+      alert(err.message || "Failed to save invoice discount");
+    }
+  };
+
   const handleGRNSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -980,8 +1004,7 @@ export default function InventoryControlPage() {
       // Auto open Invoice Preview Modal
       setActiveGRN(newGRN);
       const grossVal = (newGRN.items || []).reduce((sum: number, it: any) => sum + (it.quantity_received * (it.unit_price || it.cost_price)), 0);
-      const diffVal = grossVal - newGRN.total_amount;
-      setInvoiceDiscount(diffVal > 0.01 ? diffVal.toFixed(2) : "0");
+      setInvoiceDiscount((newGRN.discount != null ? newGRN.discount : (grossVal - newGRN.total_amount)).toFixed(2));
       setShowInvoiceModal(true);
 
       // Reset
@@ -1927,13 +1950,6 @@ export default function InventoryControlPage() {
                         <th className="px-4 py-3.5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Product Code (SKU)</th>
                         <th className="px-4 py-3.5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Product Type</th>
                         <th className="px-4 py-3.5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Category</th>
-                        <th className="px-4 py-3.5 text-right text-[10px] font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Stock Level(QTY)</th>
-                        <th className="px-4 py-3.5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Unit</th>
-                        <th className="px-4 py-3.5 text-right text-[10px] font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Unit Price</th>
-                        <th className="px-4 py-3.5 text-center text-[10px] font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Commission(%)</th>
-                        <th className="px-4 py-3.5 text-right text-[10px] font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Purchased Price</th>
-                        <th className="px-4 py-3.5 text-right text-[10px] font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Additional Cost</th>
-                        <th className="px-4 py-3.5 text-right text-[10px] font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Selling Price</th>
                         <th className="px-4 py-3.5 text-center text-[10px] font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Status</th>
                         <th className="px-4 py-3.5 text-center text-[10px] font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Actions</th>
                       </tr>
@@ -1941,7 +1957,7 @@ export default function InventoryControlPage() {
                     <tbody className="divide-y divide-gray-100">
                       {filteredCatalog.length === 0 ? (
                         <tr>
-                          <td colSpan={14} className="py-16 text-center text-gray-400">No products found matching filters.</td>
+                          <td colSpan={7} className="py-16 text-center text-gray-400">No products found matching filters.</td>
                         </tr>
                       ) : filteredCatalog.map(p => {
                         const stock = p.current_stock ?? 0;
@@ -1960,14 +1976,10 @@ export default function InventoryControlPage() {
                           badgeColor = "bg-blue-100 text-blue-800 border-blue-200";
                           statusText = "Overstock";
                         }
-
+ 
                         const typeLabel = productTypes.find(t => t.key === p.product_type)?.label || p.product_type || "—";
                         const supplierNameStr = suppliers.find(s => s.id === p.supplier_id)?.name || "—";
-                        const unitPrice = p.purchase_cost || 0.0;
-                        const commVal = p.commission || 0.0;
-                        const purchasePrice = unitPrice * (1 - commVal / 100);
-                        const addCost = p.additional_cost || 0.0;
-
+ 
                         return (
                           <tr key={p.id} className="hover:bg-blue-50/20 transition cursor-pointer" onClick={() => handleOpenProductDetail(p)}>
                             <td className="px-4 py-3.5 font-semibold text-gray-900">{p.name}</td>
@@ -1977,13 +1989,6 @@ export default function InventoryControlPage() {
                             <td className="px-4 py-3.5 text-xs text-gray-500 whitespace-nowrap">
                               {categories.find(c => c.id === p.category_id)?.name || "—"}
                             </td>
-                            <td className="px-4 py-3.5 text-right font-bold text-gray-900">{stock}</td>
-                            <td className="px-4 py-3.5 text-xs text-gray-500">{p.unit || "—"}</td>
-                            <td className="px-4 py-3.5 text-right font-bold text-gray-700">{formatPrice(unitPrice)}</td>
-                            <td className="px-4 py-3.5 text-center text-xs font-semibold text-gray-600">{commVal}%</td>
-                            <td className="px-4 py-3.5 text-right font-bold text-emerald-700">{formatPrice(purchasePrice)}</td>
-                            <td className="px-4 py-3.5 text-right font-semibold text-orange-600">{formatPrice(addCost)}</td>
-                            <td className="px-4 py-3.5 text-right font-bold text-slate-800">{formatPrice(p.selling_price || 0.0)}</td>
                             <td className="px-4 py-3.5 text-center">
                               <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${badgeColor}`}>
                                 {statusText}
@@ -2043,8 +2048,6 @@ export default function InventoryControlPage() {
                     <tr>
                       <th className="px-6 py-3.5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Product Type</th>
                       <th className="px-6 py-3.5 text-center text-[10px] font-bold text-gray-500 uppercase tracking-wider">Unique Products</th>
-                      <th className="px-6 py-3.5 text-right text-[10px] font-bold text-gray-500 uppercase tracking-wider">Total Stock Units</th>
-                      <th className="px-6 py-3.5 text-right text-[10px] font-bold text-gray-500 uppercase tracking-wider">Total Cost Valuation</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
@@ -2052,8 +2055,6 @@ export default function InventoryControlPage() {
                       <tr key={stat.key} className="hover:bg-gray-50/50 transition">
                         <td className="px-6 py-4 font-semibold text-gray-800">{stat.label}</td>
                         <td className="px-6 py-4 text-center font-semibold text-blue-600">{stat.count}</td>
-                        <td className="px-6 py-4 text-right font-black text-gray-800">{stat.totalStock}</td>
-                        <td className="px-6 py-4 text-right font-black text-emerald-700">{formatPrice(stat.totalValue)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -2100,8 +2101,6 @@ export default function InventoryControlPage() {
                     <tr>
                       <th className="px-6 py-3.5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Category</th>
                       <th className="px-6 py-3.5 text-center text-[10px] font-bold text-gray-500 uppercase tracking-wider">Unique Products</th>
-                      <th className="px-6 py-3.5 text-right text-[10px] font-bold text-gray-500 uppercase tracking-wider">Total Stock Units</th>
-                      <th className="px-6 py-3.5 text-right text-[10px] font-bold text-gray-500 uppercase tracking-wider">Total Cost Valuation</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
@@ -2109,8 +2108,6 @@ export default function InventoryControlPage() {
                       <tr key={idx} className="hover:bg-gray-50/50 transition">
                         <td className="px-6 py-4 font-semibold text-gray-800">{stat.name}</td>
                         <td className="px-6 py-4 text-center font-semibold text-blue-600">{stat.count}</td>
-                        <td className="px-6 py-4 text-right font-black text-gray-800">{stat.totalStock}</td>
-                        <td className="px-6 py-4 text-right font-black text-emerald-700">{formatPrice(stat.totalValue)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -2332,8 +2329,7 @@ export default function InventoryControlPage() {
                               onClick={() => {
                                 setActiveGRN(item.grn);
                                 const grossVal = (item.grn.items || []).reduce((sum: number, it: any) => sum + (it.quantity_received * (it.unit_price || it.cost_price)), 0);
-                                const diffVal = grossVal - item.grn.total_amount;
-                                setInvoiceDiscount(diffVal > 0.01 ? diffVal.toFixed(2) : "0");
+                                setInvoiceDiscount((item.grn.discount != null ? item.grn.discount : (grossVal - item.grn.total_amount)).toFixed(2));
                                 setShowInvoiceModal(true);
                               }}
                               className="px-2 py-1 bg-blue-50 text-blue-700 hover:bg-blue-100 font-bold rounded-lg text-xs transition"
@@ -3173,54 +3169,39 @@ export default function InventoryControlPage() {
                     ))}
                   </select>
                 </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Default Supplier</label>
-                  <select className="w-full p-2.5 border rounded-lg bg-white focus:ring-2 focus:ring-blue-500 outline-none" value={editSupplier} onChange={(e) => setEditSupplier(e.target.value)}>
-                    <option value="">-- No Supplier --</option>
-                    {suppliers.map(s => (
-                      <option key={s.id} value={s.id}>{s.name}</option>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Color Variation</label>
+                  <input type="text" className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" value={editColor} onChange={(e) => setEditColor(e.target.value)} />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Material Type</label>
+                  <select
+                    className="w-full p-2.5 border rounded-lg bg-white focus:ring-2 focus:ring-blue-500 outline-none text-sm font-semibold text-gray-750"
+                    value={editMaterialType}
+                    onChange={(e) => setEditMaterialType(e.target.value)}
+                  >
+                    <option value="">-- Select Material Type --</option>
+                    {materialTypes.map((mat, i) => (
+                      <option key={i} value={mat}>{mat}</option>
                     ))}
                   </select>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Selling Price ({currency === "USD" ? "$" : "৳"}) *</label>
-                  <input type="number" step="0.01" className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" value={editPrice} onChange={(e) => setEditPrice(e.target.value)} required />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Estimated Purchase Cost / Unit Price ({currency === "USD" ? "$" : "৳"})</label>
-                  <input type="number" step="0.01" className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" value={editCost} onChange={(e) => setEditCost(e.target.value)} />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Commission (%)</label>
-                  <input type="number" step="any" min="0" max="100" className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-gray-750" value={editCommission} onChange={(e) => setEditCommission(e.target.value)} />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Additional Cost ({currency === "USD" ? "$" : "৳"})</label>
-                  <input type="number" step="any" min="0" className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-gray-750" value={editAdditionalCost} onChange={(e) => setEditAdditionalCost(e.target.value)} />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Tax/VAT rate (%)</label>
-                  <input type="number" step="0.1" className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" value={editTaxRate} onChange={(e) => setEditTaxRate(e.target.value)} />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Color Variation</label>
-                  <input type="text" className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" value={editColor} onChange={(e) => setEditColor(e.target.value)} />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Material Type</label>
-                  <input type="text" className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" value={editMaterialType} onChange={(e) => setEditMaterialType(e.target.value)} />
-                </div>
-                <div>
                   <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Wood Type</label>
-                  <input type="text" className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" value={editWoodType} onChange={(e) => setEditWoodType(e.target.value)} />
+                  <select
+                    className="w-full p-2.5 border rounded-lg bg-white focus:ring-2 focus:ring-blue-500 outline-none text-sm font-semibold text-gray-750"
+                    value={editWoodType}
+                    onChange={(e) => setEditWoodType(e.target.value)}
+                  >
+                    <option value="">-- Select Wood Type --</option>
+                    {woodTypes.map((wood, i) => (
+                      <option key={i} value={wood}>{wood}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
               <div className="grid grid-cols-3 gap-4">
@@ -3251,20 +3232,7 @@ export default function InventoryControlPage() {
                   <input type="number" step="0.1" className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" value={editHeight} onChange={(e) => setEditHeight(e.target.value)} />
                 </div>
               </div>
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Min Stock</label>
-                  <input type="number" step="0.1" className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" value={editMinStock} onChange={(e) => setEditMinStock(e.target.value)} />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Max Stock</label>
-                  <input type="number" step="0.1" className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" value={editMaxStock} onChange={(e) => setEditMaxStock(e.target.value)} />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Reorder Qty</label>
-                  <input type="number" step="0.1" className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" value={editReorderQty} onChange={(e) => setEditReorderQty(e.target.value)} />
-                </div>
-              </div>
+
               <div className="grid grid-cols-1 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Product Image Link</label>
@@ -3322,41 +3290,50 @@ export default function InventoryControlPage() {
                       <span className="text-xs text-gray-500 uppercase font-bold block mb-1">Current Stock</span>
                       <span className="text-2xl font-bold text-blue-900">{viewingProductDetail.current_stock} {viewingProductDetail.product.unit || 'pcs'}</span>
                     </div>
-                    <div className="p-4 bg-emerald-50/50 rounded-xl border border-emerald-100">
-                      <span className="text-xs text-gray-500 uppercase font-bold block mb-1">Selling Price</span>
-                      <span className="text-2xl font-bold text-emerald-955">{formatPrice(viewingProductDetail.product.selling_price)}</span>
-                    </div>
-                    <div className="p-4 bg-purple-50/50 rounded-xl border border-purple-100">
-                      <span className="text-xs text-gray-500 uppercase font-bold block mb-1">Unit Price (DP)</span>
-                      <span className="text-2xl font-bold text-purple-950">{formatPrice(viewingProductDetail.product.purchase_cost || 0)}</span>
-                    </div>
-                    <div className="p-4 bg-orange-50/50 rounded-xl border border-orange-100">
-                      <span className="text-xs text-gray-500 uppercase font-bold block mb-1">Commission</span>
-                      <span className="text-2xl font-bold text-orange-955">{viewingProductDetail.product.commission || 0}%</span>
-                    </div>
-                    <div className="p-4 bg-teal-50/50 rounded-xl border border-teal-100">
-                      <span className="text-xs text-gray-500 uppercase font-bold block mb-1">Purchased Price</span>
-                      <span className="text-2xl font-bold text-teal-955">
-                        {formatPrice((viewingProductDetail.product.purchase_cost || 0) * (1 - (viewingProductDetail.product.commission || 0) / 100))}
-                      </span>
-                    </div>
-                    <div className="p-4 bg-amber-50/50 rounded-xl border border-amber-100">
-                      <span className="text-xs text-gray-500 uppercase font-bold block mb-1">Additional Cost</span>
-                      <span className="text-2xl font-bold text-amber-955">{formatPrice(viewingProductDetail.product.additional_cost || 0)}</span>
-                    </div>
-                    <div className="p-4 bg-indigo-50/50 rounded-xl border border-indigo-100">
-                      <span className="text-xs text-gray-500 uppercase font-bold block mb-0.5">Average Cost</span>
-                      <span className="text-2xl font-bold text-indigo-900">
-                        {viewingProductDetail.product.average_cost != null && viewingProductDetail.product.average_cost > 0
-                          ? formatPrice(viewingProductDetail.product.average_cost)
-                          : formatPrice(viewingProductDetail.product.purchase_cost || 0)}
-                      </span>
-                      <span className="text-[10px] text-indigo-500 block mt-0.5">Weighted average of all GRNs</span>
-                    </div>
                     <div className="p-4 bg-red-50/50 rounded-xl border border-red-100">
                       <span className="text-xs text-gray-500 uppercase font-bold block mb-1">Min Stock Limit</span>
                       <span className="text-2xl font-bold text-red-955">{viewingProductDetail.product.min_stock_level || 0}</span>
                     </div>
+
+                    {viewingProductDetail.has_been_received ? (
+                      <>
+                        <div className="p-4 bg-emerald-50/50 rounded-xl border border-emerald-100">
+                          <span className="text-xs text-gray-500 uppercase font-bold block mb-1">Selling Price</span>
+                          <span className="text-2xl font-bold text-emerald-955">{formatPrice(viewingProductDetail.product.selling_price)}</span>
+                        </div>
+                        <div className="p-4 bg-purple-50/50 rounded-xl border border-purple-100">
+                          <span className="text-xs text-gray-500 uppercase font-bold block mb-1">Unit Price (DP)</span>
+                          <span className="text-2xl font-bold text-purple-950">{formatPrice(viewingProductDetail.product.purchase_cost || 0)}</span>
+                        </div>
+                        <div className="p-4 bg-orange-50/50 rounded-xl border border-orange-100">
+                          <span className="text-xs text-gray-500 uppercase font-bold block mb-1">Commission</span>
+                          <span className="text-2xl font-bold text-orange-955">{viewingProductDetail.product.commission || 0}%</span>
+                        </div>
+                        <div className="p-4 bg-teal-50/50 rounded-xl border border-teal-100">
+                          <span className="text-xs text-gray-500 uppercase font-bold block mb-1">Purchased Price</span>
+                          <span className="text-2xl font-bold text-teal-955">
+                            {formatPrice((viewingProductDetail.product.purchase_cost || 0) * (1 - (viewingProductDetail.product.commission || 0) / 100))}
+                          </span>
+                        </div>
+                        <div className="p-4 bg-amber-50/50 rounded-xl border border-amber-100">
+                          <span className="text-xs text-gray-500 uppercase font-bold block mb-1">Additional Cost</span>
+                          <span className="text-2xl font-bold text-amber-955">{formatPrice(viewingProductDetail.product.additional_cost || 0)}</span>
+                        </div>
+                        <div className="p-4 bg-indigo-50/50 rounded-xl border border-indigo-100">
+                          <span className="text-xs text-gray-500 uppercase font-bold block mb-0.5">Average Cost</span>
+                          <span className="text-2xl font-bold text-indigo-900">
+                            {viewingProductDetail.product.average_cost != null && viewingProductDetail.product.average_cost > 0
+                              ? formatPrice(viewingProductDetail.product.average_cost)
+                              : formatPrice(viewingProductDetail.product.purchase_cost || 0)}
+                          </span>
+                          <span className="text-[10px] text-indigo-500 block mt-0.5">Weighted average of all GRNs</span>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="col-span-2 p-4 bg-gray-50 border border-dashed rounded-xl flex items-center justify-center text-center text-xs text-gray-500 font-semibold leading-relaxed">
+                        ℹ️ This product has not been received from any supplier yet. Pricing & costing details will become available after stock receiving.
+                      </div>
+                    )}
                   </div>
 
                   {/* Historical Stock lookup card */}
@@ -4647,6 +4624,13 @@ export default function InventoryControlPage() {
                                   onChange={(e) => setInvoiceDiscount(e.target.value)}
                                   placeholder="0.00"
                                 />
+                                <button
+                                  type="button"
+                                  onClick={handleSaveInvoiceDiscount}
+                                  className="px-3 py-1.5 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-xs font-bold transition shadow-sm"
+                                >
+                                  Save
+                                </button>
                               </div>
                             </td>
                             <td colSpan={1} className="p-3 text-right text-sm font-bold text-orange-700">

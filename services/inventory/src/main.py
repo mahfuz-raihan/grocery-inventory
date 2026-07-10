@@ -77,6 +77,12 @@ async def lifespan(app: FastAPI):
         except Exception as e:
             log.warning(f"Could not add commission/additional_cost columns to products table: {e}")
 
+        # Ensure discount column exists on grn table
+        try:
+            await conn.execute(text("ALTER TABLE inventory.grn ADD COLUMN IF NOT EXISTS discount DOUBLE PRECISION DEFAULT 0.0 NOT NULL"))
+        except Exception as e:
+            log.warning(f"Could not add discount column to grn table: {e}")
+
         await conn.run_sync(Base.metadata.create_all)
 
         # Seed default company profile if empty
@@ -101,6 +107,42 @@ async def lifespan(app: FastAPI):
         log.info("Database schema (Stock Ledger) initialized successfully.")
         
     await msg_manager.connect()
+
+    # Subscribe to sales checkout events to deduct inventory stock
+    try:
+        from src.models import StockLedger, MovementType
+        from pydantic import BaseModel
+
+        class CheckoutItemEvent(BaseModel):
+            product_id: uuid.UUID
+            quantity: float
+            unit_price: float
+
+        class OrderCompletedEvent(BaseModel):
+            sale_id: uuid.UUID
+            branch_id: uuid.UUID
+            items: list[CheckoutItemEvent]
+
+        async def handle_sales_order_completed(event: OrderCompletedEvent):
+            log.info(f"Received sales.order.completed event for Sale {event.sale_id}")
+            async with db_manager.session_factory() as session:
+                for item in event.items:
+                    ledger = StockLedger(
+                        product_id=item.product_id,
+                        branch_id=event.branch_id,
+                        quantity_change=-float(item.quantity),
+                        movement_type=MovementType.sales_delivery,
+                        reference_id=event.sale_id,
+                        notes=f"Auto-deducted from POS checkout"
+                    )
+                    session.add(ledger)
+                await session.commit()
+                log.info(f"Deducted inventory stock for Sale {event.sale_id} successfully.")
+
+        await msg_manager.subscribe("sales.order.completed", OrderCompletedEvent, handle_sales_order_completed)
+    except Exception as e:
+        log.error(f"Failed to subscribe to sales.order.completed: {e}")
+
     yield
     await msg_manager.close()
     await db_manager.engine.dispose()
@@ -266,25 +308,28 @@ async def get_products(branch_id: uuid.UUID | None = None, session: AsyncSession
     result = await session.execute(query)
     products = result.scalars().all()
     
+    # Query stock ledger totals for all products in one query to avoid N+1 queries
+    ledger_query = select(
+        StockLedger.product_id,
+        func.coalesce(func.sum(StockLedger.quantity_change), 0.0).label("net_qty")
+    )
+    if branch_id:
+        ledger_query = ledger_query.where(StockLedger.branch_id == branch_id)
+    ledger_query = ledger_query.group_by(StockLedger.product_id)
+    ledger_result = await session.execute(ledger_query)
+    stock_map = {row.product_id: row.net_qty for row in ledger_result.all()}
+    
     response_list = []
     for p in products:
-        stock_query = select(func.coalesce(func.sum(StockLedger.quantity_change), 0)).where(StockLedger.product_id == p.id)
-        if branch_id:
-            stock_query = stock_query.where(StockLedger.branch_id == branch_id)
-            
-        stock_result = await session.execute(stock_query)
-        current_stock = stock_result.scalar_one()
+        current_stock = stock_map.get(p.id, 0.0)
         
         # Formulate variant sub-list with computed stocks
         variant_responses = []
         for variant in p.variants:
-            v_stock_query = select(func.coalesce(func.sum(StockLedger.quantity_change), 0)).where(StockLedger.product_id == variant.id)
-            if branch_id:
-                v_stock_query = v_stock_query.where(StockLedger.branch_id == branch_id)
-            v_stock_result = await session.execute(v_stock_query)
+            v_stock = stock_map.get(variant.id, 0.0)
             
-            # Create dict copying properties of variant
             v_dict = variant.__dict__.copy()
+            v_dict["current_stock"] = v_stock
             variant_responses.append(v_dict)
             
         p_dict = p.__dict__.copy()
@@ -294,6 +339,7 @@ async def get_products(branch_id: uuid.UUID | None = None, session: AsyncSession
         response_list.append(ProductWithStockResponse(**p_dict))
         
     return response_list
+
 
 @app.get("/api/v1/inventory/products/{product_id}")
 async def get_product_detail(product_id: uuid.UUID, session: AsyncSession = Depends(db_manager.get_session)):
@@ -311,22 +357,23 @@ async def get_product_detail(product_id: uuid.UUID, session: AsyncSession = Depe
     stock_result = await session.execute(stock_query)
     current_stock = stock_result.scalar_one()
     
-    # Get stock breakdown by warehouse
+    # Get stock breakdown by warehouse in a single aggregated query
+    breakdown_query = select(
+        StockLedger.branch_id,
+        func.coalesce(func.sum(StockLedger.quantity_change), 0.0).label("stock")
+    ).where(StockLedger.product_id == product_id).group_by(StockLedger.branch_id)
+    breakdown_result = await session.execute(breakdown_query)
+    breakdown_map = {row.branch_id: row.stock for row in breakdown_result.all()}
+
     warehouse_stock = []
     branches_result = await session.execute(select(Branch))
     branches = branches_result.scalars().all()
     for b in branches:
-        b_stock_query = select(func.coalesce(func.sum(StockLedger.quantity_change), 0)).where(
-            StockLedger.product_id == product_id,
-            StockLedger.branch_id == b.id
-        )
-        b_stock_result = await session.execute(b_stock_query)
-        b_stock = b_stock_result.scalar_one()
         warehouse_stock.append({
             "branch_id": str(b.id),
             "branch_name": b.name,
             "branch_type": b.branch_type,
-            "stock": b_stock
+            "stock": breakdown_map.get(b.id, 0.0)
         })
         
     # Get transactions log
@@ -343,12 +390,18 @@ async def get_product_detail(product_id: uuid.UUID, session: AsyncSession = Depe
             "created_at": tx.created_at.isoformat()
         })
         
+    # Check if product has been received in any GRN
+    grn_item_query = select(func.count(GRNItem.id)).where(GRNItem.product_id == product_id)
+    grn_item_result = await session.execute(grn_item_query)
+    has_been_received = grn_item_result.scalar_one() > 0
+        
     return {
         "product": product,
         "current_stock": current_stock,
         "warehouse_stock": warehouse_stock,
         "transactions": tx_log,
-        "variants": product.variants
+        "variants": product.variants,
+        "has_been_received": has_been_received
     }
 
 
@@ -504,6 +557,8 @@ async def get_adjustments(session: AsyncSession = Depends(db_manager.get_session
 @app.post("/api/v1/inventory/grn", response_model=GRNResponse, status_code=201)
 async def create_grn(grn_data: GRNCreate, session: AsyncSession = Depends(db_manager.get_session)):
     total_amount = sum(item.quantity_received * item.cost_price for item in grn_data.items)
+    gross_amount = sum(item.quantity_received * (item.unit_price or item.cost_price) for item in grn_data.items)
+    default_discount = max(0.0, gross_amount - total_amount)
 
     new_grn = GRN(
         branch_id=grn_data.branch_id,
@@ -515,6 +570,7 @@ async def create_grn(grn_data: GRNCreate, session: AsyncSession = Depends(db_man
         invoice_reference=grn_data.invoice_reference,
         receiving_date=grn_data.receiving_date,
         total_amount=total_amount,
+        discount=default_discount,
         status="completed"
     )
     session.add(new_grn)
@@ -600,20 +656,48 @@ async def get_grns(session: AsyncSession = Depends(db_manager.get_session)):
     return result.scalars().all()
 
 
+@app.put("/api/v1/inventory/grn/{grn_id}/discount")
+async def update_grn_discount(
+    grn_id: uuid.UUID,
+    payload: dict,
+    session: AsyncSession = Depends(db_manager.get_session)
+):
+    grn_result = await session.execute(
+        select(GRN)
+        .options(selectinload(GRN.items))
+        .where(GRN.id == grn_id)
+    )
+    grn = grn_result.scalar_one_or_none()
+    if not grn:
+        raise HTTPException(status_code=404, detail="GRN not found")
+    
+    discount = payload.get("discount", 0.0)
+    grn.discount = float(discount)
+    await session.commit()
+    await session.refresh(grn)
+    return grn
+
+
 # --- REPORTS ENDPOINTS ---
 @app.get("/api/v1/inventory/reports/valuation")
 async def get_valuation_report(session: AsyncSession = Depends(db_manager.get_session)):
     result = await session.execute(select(Product))
     products = result.scalars().all()
     
+    # Query stock ledger totals for all products in one query to avoid N+1 queries
+    ledger_query = select(
+        StockLedger.product_id,
+        func.coalesce(func.sum(StockLedger.quantity_change), 0.0).label("net_qty")
+    ).group_by(StockLedger.product_id)
+    ledger_result = await session.execute(ledger_query)
+    stock_map = {row.product_id: row.net_qty for row in ledger_result.all()}
+    
     valuation_details = []
     total_valuation = 0.0
     total_items = 0
     
     for p in products:
-        stock_query = select(func.coalesce(func.sum(StockLedger.quantity_change), 0)).where(StockLedger.product_id == p.id)
-        stock_result = await session.execute(stock_query)
-        current_stock = stock_result.scalar_one()
+        current_stock = stock_map.get(p.id, 0.0)
         
         cost = p.purchase_cost if p.purchase_cost > 0 else (p.selling_price * 0.7)
         product_value = current_stock * cost
@@ -642,11 +726,17 @@ async def get_low_stock_report(session: AsyncSession = Depends(db_manager.get_se
     result = await session.execute(select(Product))
     products = result.scalars().all()
     
+    # Query stock ledger totals for all products in one query to avoid N+1 queries
+    ledger_query = select(
+        StockLedger.product_id,
+        func.coalesce(func.sum(StockLedger.quantity_change), 0.0).label("net_qty")
+    ).group_by(StockLedger.product_id)
+    ledger_result = await session.execute(ledger_query)
+    stock_map = {row.product_id: row.net_qty for row in ledger_result.all()}
+    
     low_stock_list = []
     for p in products:
-        stock_query = select(func.coalesce(func.sum(StockLedger.quantity_change), 0)).where(StockLedger.product_id == p.id)
-        stock_result = await session.execute(stock_query)
-        current_stock = stock_result.scalar_one()
+        current_stock = stock_map.get(p.id, 0.0)
         
         min_limit = p.min_stock_level if p.min_stock_level > 0 else 5.0
         

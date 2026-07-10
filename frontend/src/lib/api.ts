@@ -21,6 +21,9 @@ export interface CheckoutRequest {
         unit_price: number;
     }[];
     status: "paid" | "pending";
+    customer_name?: string;
+    customer_phone?: string;
+    discount?: number;
 }
 
 // New GRN Types

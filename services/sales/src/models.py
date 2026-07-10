@@ -35,6 +35,9 @@ class Sale(Base, TimestampMixin):
     cashier_id = Column(UUID(as_uuid=True), nullable=True)
 
     total_amount = Column(Float, default=0.0, nullable=False)
+    customer_name = Column(String(150), nullable=True)
+    customer_phone = Column(String(50), nullable=True)
+    discount = Column(Float, default=0.0, nullable=False)
     status = Column(
         SAEnum(OrderStatus, native_enum=False),
         default=OrderStatus.paid,

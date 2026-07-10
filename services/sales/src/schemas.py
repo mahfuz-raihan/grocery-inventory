@@ -15,6 +15,9 @@ class CheckoutRequest(BaseModel):
     cashier_id: uuid.UUID
     items: List[CheckoutItem] = Field(..., min_length=1)
     status: OrderStatus = OrderStatus.paid
+    customer_name: Optional[str] = None
+    customer_phone: Optional[str] = None
+    discount: float = 0.0
 
 # --- Outgoing Responses ---
 class SaleItemResponse(BaseModel):
@@ -28,6 +31,9 @@ class SaleResponse(BaseModel):
     id: uuid.UUID
     receipt_number: str
     total_amount: float
+    discount: float = 0.0
+    customer_name: Optional[str] = None
+    customer_phone: Optional[str] = None
     status: OrderStatus
     created_at: datetime
     items: List[SaleItemResponse]

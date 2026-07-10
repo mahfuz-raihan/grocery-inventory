@@ -162,6 +162,7 @@ class GRNResponse(BaseModel):
     invoice_reference: Optional[str]
     receiving_date: Optional[date]
     total_amount: float
+    discount: float = 0.0
     status: str
     created_at: datetime
     items: list[GRNItemResponse]

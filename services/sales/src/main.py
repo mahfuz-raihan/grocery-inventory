@@ -21,7 +21,18 @@ async def lifespan(app: FastAPI):
     log.info("Starting Sales Service...")
     async with db_manager.engine.begin() as conn:
         await conn.execute(text("CREATE SCHEMA IF NOT EXISTS sales"))
+        
+        # Ensure database tables are created
         await conn.run_sync(Base.metadata.create_all)
+        
+        # Ensure schema migrations for new customer and discount columns
+        try:
+            await conn.execute(text("ALTER TABLE sales.sales ADD COLUMN IF NOT EXISTS customer_name VARCHAR(150) NULL"))
+            await conn.execute(text("ALTER TABLE sales.sales ADD COLUMN IF NOT EXISTS customer_phone VARCHAR(50) NULL"))
+            await conn.execute(text("ALTER TABLE sales.sales ADD COLUMN IF NOT EXISTS discount DOUBLE PRECISION DEFAULT 0.0 NOT NULL"))
+        except Exception as e:
+            log.warning(f"Could not run schema migrations for customer/discount columns: {e}")
+            
         log.info("Database schema (Sales) initialized successfully.")
         
     await msg_manager.connect()
@@ -47,13 +58,17 @@ async def process_checkout(request: CheckoutRequest, session: AsyncSession = Dep
     short_uuid = str(uuid.uuid4()).split('-')[0].upper()
     receipt_no = f"INV-{date_str}-{short_uuid}"
 
-    total = sum(item.quantity * item.unit_price for item in request.items)
+    gross_total = sum(item.quantity * item.unit_price for item in request.items)
+    total = max(0.0, gross_total - request.discount)
 
     new_sale = Sale(
         branch_id=request.branch_id,
         cashier_id=request.cashier_id,
         receipt_number=receipt_no,
         total_amount=total,
+        discount=request.discount,
+        customer_name=request.customer_name,
+        customer_phone=request.customer_phone,
         status=request.status
     )
     session.add(new_sale)
