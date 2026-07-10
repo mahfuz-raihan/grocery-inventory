@@ -17,6 +17,7 @@ class CheckoutRequest(BaseModel):
     status: OrderStatus = OrderStatus.paid
     customer_name: Optional[str] = None
     customer_phone: Optional[str] = None
+    customer_address: Optional[str] = None
     discount: float = 0.0
 
 # --- Outgoing Responses ---
@@ -34,10 +35,18 @@ class SaleResponse(BaseModel):
     discount: float = 0.0
     customer_name: Optional[str] = None
     customer_phone: Optional[str] = None
+    customer_address: Optional[str] = None
     status: OrderStatus
     created_at: datetime
     items: List[SaleItemResponse]
     model_config = ConfigDict(from_attributes=True)
+
+class SaleUpdateRequest(BaseModel):
+    customer_name: Optional[str] = None
+    customer_phone: Optional[str] = None
+    customer_address: Optional[str] = None
+    discount: Optional[float] = None
+
 
 # --- NATS Event Schema ---
 class OrderCompletedEvent(BaseModel):

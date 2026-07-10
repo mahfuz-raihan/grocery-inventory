@@ -9,8 +9,8 @@ from sqlalchemy import text, select, func
 from sqlalchemy.orm import selectinload
 
 from shared.python.core import DatabaseManager, MessagingManager, log, Base
-from src.models import Sale, SaleItem, OrderStatus
-from src.schemas import CheckoutRequest, SaleResponse, OrderCompletedEvent
+from src.models import Sale, SaleItem, OrderStatus, SaleAuditLog
+from src.schemas import CheckoutRequest, SaleResponse, OrderCompletedEvent, SaleUpdateRequest
 from src.config import settings
 
 db_manager = DatabaseManager(settings.database_url)
@@ -29,6 +29,7 @@ async def lifespan(app: FastAPI):
         try:
             await conn.execute(text("ALTER TABLE sales.sales ADD COLUMN IF NOT EXISTS customer_name VARCHAR(150) NULL"))
             await conn.execute(text("ALTER TABLE sales.sales ADD COLUMN IF NOT EXISTS customer_phone VARCHAR(50) NULL"))
+            await conn.execute(text("ALTER TABLE sales.sales ADD COLUMN IF NOT EXISTS customer_address VARCHAR(255) NULL"))
             await conn.execute(text("ALTER TABLE sales.sales ADD COLUMN IF NOT EXISTS discount DOUBLE PRECISION DEFAULT 0.0 NOT NULL"))
         except Exception as e:
             log.warning(f"Could not run schema migrations for customer/discount columns: {e}")
@@ -48,11 +49,26 @@ app = FastAPI(
     openapi_url="/api/v1/sales/openapi.json"
 )
 
+# --- AUDIT LOG HELPER ---
+async def write_audit_log(session: AsyncSession, action: str, sale_id: uuid.UUID, detail: str):
+    """Logs financial mutations and payment states to the database sale_audit_logs table."""
+    try:
+        log_entry = SaleAuditLog(
+            sale_id=sale_id,
+            action=action,
+            detail=detail
+        )
+        session.add(log_entry)
+        log.info(f"[DB-AUDIT] [{action.upper()}] Sale {sale_id}: {detail}")
+    except Exception as e:
+        log.error(f"Failed to write DB audit log: {e}")
+
+
 # --- CHECKOUT ENDPOINT ---
 
 @app.post("/api/v1/sales/checkout", response_model=SaleResponse, status_code=201)
 async def process_checkout(request: CheckoutRequest, session: AsyncSession = Depends(db_manager.get_session)):
-    """Processes a POS cart, generates a receipt, and publishes a NATS event."""
+    """Processes a POS cart, generates a receipt, and publishes a NATS event if paid."""
     
     date_str = datetime.now().strftime("%Y%m%d")
     short_uuid = str(uuid.uuid4()).split('-')[0].upper()
@@ -69,6 +85,7 @@ async def process_checkout(request: CheckoutRequest, session: AsyncSession = Dep
         discount=request.discount,
         customer_name=request.customer_name,
         customer_phone=request.customer_phone,
+        customer_address=request.customer_address,
         status=request.status
     )
     session.add(new_sale)
@@ -84,6 +101,14 @@ async def process_checkout(request: CheckoutRequest, session: AsyncSession = Dep
         )
         session.add(new_item)
 
+    # Log checkout creation in database audit log
+    await write_audit_log(
+        session, 
+        "created", 
+        new_sale.id, 
+        f"Checkout created with status '{request.status}'. Gross: {gross_total:.2f}, Discount: {request.discount:.2f}, Net: {total:.2f}"
+    )
+
     await session.commit()
 
     result = await session.execute(
@@ -93,14 +118,110 @@ async def process_checkout(request: CheckoutRequest, session: AsyncSession = Dep
     )
     final_sale = result.scalar_one()
 
+    # Publish NATS stock deduction event ONLY if checked out as 'paid'
+    if final_sale.status == OrderStatus.paid:
+        event = OrderCompletedEvent(
+            sale_id=final_sale.id,
+            branch_id=final_sale.branch_id,
+            items=[
+                {"product_id": item.product_id, "quantity": item.quantity, "unit_price": item.unit_price} 
+                for item in final_sale.items
+            ]
+        )
+        await msg_manager.publish("sales.order.completed", event)
+        await write_audit_log(
+            session,
+            "finalized",
+            final_sale.id,
+            f"NATS checkout deductions triggered at creation time for status '{final_sale.status}'"
+        )
+        await session.commit()
+
+    return final_sale
+
+
+@app.put("/api/v1/sales/{sale_id}", response_model=SaleResponse)
+async def update_sale(sale_id: uuid.UUID, request: SaleUpdateRequest, session: AsyncSession = Depends(db_manager.get_session)):
+    """Updates a pending sale's customer name, phone, address, or discount, and recalculates the total."""
+    from fastapi import HTTPException
+    result = await session.execute(
+        select(Sale)
+        .options(selectinload(Sale.items))
+        .where(Sale.id == sale_id)
+    )
+    sale = result.scalar_one_or_none()
+    if not sale:
+        raise HTTPException(status_code=404, detail="Sale not found")
+        
+    if sale.status != OrderStatus.pending:
+        raise HTTPException(status_code=400, detail="Only pending invoices can be edited")
+
+    if request.customer_name is not None:
+        sale.customer_name = request.customer_name.strip() or None
+    if request.customer_phone is not None:
+        sale.customer_phone = request.customer_phone.strip() or None
+    if request.customer_address is not None:
+        sale.customer_address = request.customer_address.strip() or None
+        
+    if request.discount is not None:
+        sale.discount = max(0.0, request.discount)
+        
+    # Recalculate total_amount
+    gross_total = sum(item.quantity * item.unit_price for item in sale.items)
+    sale.total_amount = max(0.0, gross_total - sale.discount)
+
+    # Log database audit
+    await write_audit_log(
+        session,
+        "updated",
+        sale.id,
+        f"Invoice updated. Name: {sale.customer_name}, Phone: {sale.customer_phone}, Address: {sale.customer_address}, Discount: {sale.discount:.2f}, Total: {sale.total_amount:.2f}"
+    )
+
+    await session.commit()
+    return sale
+
+
+@app.post("/api/v1/sales/{sale_id}/complete", response_model=SaleResponse)
+async def complete_sale(sale_id: uuid.UUID, session: AsyncSession = Depends(db_manager.get_session)):
+    """Transitions a pending sale's status to paid and publishes the NATS stock deduction event."""
+    from fastapi import HTTPException
+    result = await session.execute(
+        select(Sale)
+        .options(selectinload(Sale.items))
+        .where(Sale.id == sale_id)
+    )
+    sale = result.scalar_one_or_none()
+    if not sale:
+        raise HTTPException(status_code=404, detail="Sale not found")
+
+    if sale.status == OrderStatus.paid:
+        return sale  # Already completed
+
+    sale.status = OrderStatus.paid
+
+    # Log database audit
+    await write_audit_log(
+        session,
+        "finalized",
+        sale.id,
+        f"Payment finalized. Status transitioned to PAID. Total: {sale.total_amount:.2f}"
+    )
+
+    await session.commit()
+
+    # Publish NATS stock deduction event
     event = OrderCompletedEvent(
-        sale_id=final_sale.id,
-        branch_id=final_sale.branch_id,
-        items=request.items
+        sale_id=sale.id,
+        branch_id=sale.branch_id,
+        items=[
+            {"product_id": item.product_id, "quantity": item.quantity, "unit_price": item.unit_price} 
+            for item in sale.items
+        ]
     )
     await msg_manager.publish("sales.order.completed", event)
 
-    return final_sale
+    return sale
 
 
 # --- ANALYTICS & REPORTING ENDPOINTS ---
@@ -143,3 +264,21 @@ async def get_daily_sales_report(
         "total_revenue": float(row.total_revenue),
         "transaction_count": row.transaction_count
     }
+
+
+@app.get("/api/v1/sales/customer/{phone}", response_model=dict)
+async def get_customer_by_phone(phone: str, session: AsyncSession = Depends(db_manager.get_session)):
+    """Fetch the latest customer name and address by phone number."""
+    result = await session.execute(
+        select(Sale)
+        .filter(Sale.customer_phone == phone)
+        .order_by(Sale.created_at.desc())
+        .limit(1)
+    )
+    sale = result.scalar_one_or_none()
+    if sale:
+        return {
+            "customer_name": sale.customer_name or "",
+            "customer_address": sale.customer_address or ""
+        }
+    return {"customer_name": "", "customer_address": ""}

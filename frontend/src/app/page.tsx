@@ -67,6 +67,41 @@ const posApi = {
             await addToSyncQueue(payload);
             return { receipt_number: `INV-OFFLINE-${Date.now().toString().slice(-6)}`, offline: true };
         }
+    },
+    updateSale: async (saleId: string, payload: { customer_name?: string; customer_phone?: string; customer_address?: string; discount?: number }) => {
+        try {
+            const baseUrl = getApiBaseUrl();
+            const response = await fetch(`${baseUrl}/api/v1/sales/${saleId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || "Update sale failed");
+            }
+            return await response.json();
+        } catch (error) {
+            console.error("API Error (updateSale):", error);
+            throw error;
+        }
+    },
+    completeSale: async (saleId: string) => {
+        try {
+            const baseUrl = getApiBaseUrl();
+            const response = await fetch(`${baseUrl}/api/v1/sales/${saleId}/complete`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || "Complete sale failed");
+            }
+            return await response.json();
+        } catch (error) {
+            console.error("API Error (completeSale):", error);
+            throw error;
+        }
     }
 };
 
@@ -82,13 +117,28 @@ export default function POSTerminal() {
   // --- CUSTOMER & DISCOUNT STATE ---
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
+  const [customerAddress, setCustomerAddress] = useState("");
   const [discountStr, setDiscountStr] = useState("");
+
+  // --- EDIT MODAL STATES ---
+  const [editName, setEditName] = useState("");
+  const [editPhone, setEditPhone] = useState("");
+  const [editAddress, setEditAddress] = useState("");
+  const [editDiscount, setEditDiscount] = useState("");
+
+  // --- CATEGORIES STATE ---
+  const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
+
+  // --- COMPANY PROFILE STATE ---
+  const [companyProfile, setCompanyProfile] = useState<{ name: string; address: string; phone: string } | null>(null);
 
   // --- COMPLETED SALE (INVOICE) STATE ---
   const [completedSale, setCompletedSale] = useState<{
+    id?: string;
     receipt_number: string;
     customer_name: string;
     customer_phone: string;
+    customer_address: string;
     items: {
       name: string;
       sku: string;
@@ -99,8 +149,18 @@ export default function POSTerminal() {
     gross_total: number;
     discount: number;
     net_total: number;
+    status: "pending" | "paid";
     date: string;
   } | null>(null);
+
+  useEffect(() => {
+    if (completedSale) {
+      setEditName(completedSale.customer_name);
+      setEditPhone(completedSale.customer_phone);
+      setEditAddress(completedSale.customer_address);
+      setEditDiscount(completedSale.discount.toString());
+    }
+  }, [completedSale]);
 
   const [showSuggestions, setShowSuggestions] = useState(false);
 
@@ -116,12 +176,49 @@ export default function POSTerminal() {
     }
   }, [router]);
 
+  // Debounced recurring customer details lookup by phone number
+  useEffect(() => {
+    if (customerPhone.trim().length >= 8) {
+      const delayDebounceFn = setTimeout(async () => {
+        try {
+          const baseUrl = getApiBaseUrl();
+          const res = await fetch(`${baseUrl}/api/v1/sales/customer/${encodeURIComponent(customerPhone.trim())}`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data.customer_name) {
+              setCustomerName(data.customer_name);
+            }
+            if (data.customer_address) {
+              setCustomerAddress(data.customer_address);
+            }
+          }
+        } catch (error) {
+          console.error("Failed to fetch recurring customer info:", error);
+        }
+      }, 400);
+      return () => clearTimeout(delayDebounceFn);
+    }
+  }, [customerPhone]);
+
   const fetchProductsList = async () => {
     try {
       const data = await posApi.getProducts();
       setProducts(data);
+      
+      const baseUrl = getApiBaseUrl();
+      const catRes = await fetch(`${baseUrl}/api/v1/inventory/categories`);
+      if (catRes.ok) {
+        const catData = await catRes.json();
+        setCategories(catData);
+      }
+
+      const profileRes = await fetch(`${baseUrl}/api/v1/inventory/company-profile`);
+      if (profileRes.ok) {
+        const profileData = await profileRes.json();
+        setCompanyProfile(profileData);
+      }
     } catch (error) {
-      console.error("Failed to load products:", error);
+      console.error("Failed to load products/categories/profile:", error);
     } finally {
       setLoading(false);
     }
@@ -256,9 +353,10 @@ export default function POSTerminal() {
       const payload: CheckoutRequest = {
         branch_id: branchId,
         cashier_id: cashierId,
-        status: "paid",
+        status: "pending",
         customer_name: customerName.trim() || undefined,
         customer_phone: customerPhone.trim() || undefined,
+        customer_address: customerAddress.trim() || undefined,
         discount: discountValue,
         items: cart.map((item) => ({
           product_id: item.id,
@@ -271,9 +369,11 @@ export default function POSTerminal() {
       
       // Save details for printable invoice preview
       setCompletedSale({
+        id: response.id,
         receipt_number: response.receipt_number || `INV-LOCAL-${Date.now().toString().slice(-6)}`,
         customer_name: customerName.trim() || "Walk-in Customer",
         customer_phone: customerPhone.trim() || "—",
+        customer_address: customerAddress.trim() || "—",
         items: cart.map(item => ({
           name: item.name,
           sku: item.sku,
@@ -284,12 +384,14 @@ export default function POSTerminal() {
         gross_total: cartTotal,
         discount: discountValue,
         net_total: netPayable,
+        status: "pending",
         date: new Date().toLocaleString()
       });
 
       setCart([]);
       setCustomerName("");
       setCustomerPhone("");
+      setCustomerAddress("");
       setDiscountStr("");
       setSearchQuery("");
       setLastReceipt(response.receipt_number);
@@ -310,8 +412,21 @@ export default function POSTerminal() {
     }
   };
 
-  const handlePrint = () => {
-    window.print();
+  const handlePrint = async () => {
+    if (completedSale && completedSale.id && completedSale.status === "pending") {
+      try {
+        await posApi.completeSale(completedSale.id);
+        setCompletedSale((prev) => (prev ? { ...prev, status: "paid" } : null));
+        await fetchProductsList(); // Reload active stock counts
+      } catch (err) {
+        console.error("Failed to finalize payment:", err);
+        alert("Failed to finalize payment in database. Cannot print invoice.");
+        return;
+      }
+    }
+    setTimeout(() => {
+      window.print();
+    }, 100);
   };
 
   return (
@@ -400,7 +515,7 @@ export default function POSTerminal() {
                         <p className="text-xs font-mono font-bold text-blue-600">{product.sku}</p>
                       </div>
                       <div className="text-right flex-shrink-0">
-                        <p className="font-bold text-slate-900 text-sm">${product.selling_price.toFixed(2)}</p>
+                        <p className="font-bold text-slate-900 text-sm">৳{product.selling_price.toFixed(2)}</p>
                         <p className={`text-[10px] px-1.5 py-0.5 rounded font-bold inline-block ${
                           product.current_stock > 0 
                             ? "bg-slate-100 text-slate-600" 
@@ -417,7 +532,7 @@ export default function POSTerminal() {
           </div>
         </div>
 
-        {/* Catalog Grid View */}
+        {/* Catalog List/Table View */}
         <div className="flex-1 overflow-y-auto p-5">
           {loading ? (
             <div className="flex items-center justify-center h-full text-slate-500 font-medium animate-pulse">Loading products...</div>
@@ -427,49 +542,67 @@ export default function POSTerminal() {
               <p className="font-medium">No matching products found.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-              {filteredProducts.map((product) => {
-                const outOfStock = product.current_stock <= 0;
-                return (
-                  <div
-                    key={product.id}
-                    onClick={() => {
-                      if (!outOfStock) addToCart(product);
-                    }}
-                    className={`bg-white p-4 rounded-xl shadow-sm border border-slate-100 hover:shadow-md transition-all active:scale-98 flex flex-col justify-between h-32 relative group overflow-hidden ${
-                      outOfStock 
-                        ? "opacity-60 cursor-not-allowed" 
-                        : "cursor-pointer hover:border-blue-300"
-                    }`}
-                  >
-                    <div>
-                      <h3 className="font-semibold text-slate-800 leading-tight text-sm line-clamp-2">{product.name}</h3>
-                      <span className="text-[10px] font-mono font-bold text-slate-400 block mt-1">SKU: {product.sku}</span>
-                    </div>
-                    <div className="flex justify-between items-end mt-2">
-                      <span className="text-base font-bold text-blue-600">${product.selling_price.toFixed(2)}</span>
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
-                        outOfStock 
-                          ? "bg-red-100 text-red-800" 
-                          : "bg-slate-100 text-slate-600"
-                      }`}>
-                        {outOfStock ? "Out of Stock" : `Qty: ${product.current_stock}`}
-                      </span>
-                    </div>
-                    {/* Add hover overlay effect */}
-                    {!outOfStock && (
-                      <div className="absolute inset-0 bg-blue-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none" />
-                    )}
-                  </div>
-                );
-              })}
+            <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs text-left border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-200 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                      <th className="px-4 py-3">Product Name</th>
+                      <th className="px-4 py-3">SKU</th>
+                      <th className="px-4 py-3">Category</th>
+                      <th className="px-4 py-3 text-center">Stock Level</th>
+                      <th className="px-4 py-3 text-right">Price</th>
+                      <th className="px-4 py-3 text-center">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+                    {filteredProducts.map((product) => {
+                      const outOfStock = product.current_stock <= 0;
+                      const catName = categories.find(c => c.id === product.category_id)?.name || "Uncategorized";
+                      return (
+                        <tr 
+                          key={product.id} 
+                          className={`hover:bg-slate-50 transition-colors ${outOfStock ? "opacity-60" : ""}`}
+                        >
+                          <td className="px-4 py-3 font-semibold text-slate-900">{product.name}</td>
+                          <td className="px-4 py-3 font-mono text-slate-500 font-bold">{product.sku}</td>
+                          <td className="px-4 py-3 text-slate-500">{catName}</td>
+                          <td className="px-4 py-3 text-center">
+                            <span className={`px-2.5 py-0.5 rounded-full font-bold text-[10px] ${
+                              outOfStock 
+                                ? "bg-red-100 text-red-800" 
+                                : "bg-slate-100 text-slate-600"
+                            }`}>
+                              {outOfStock ? "Out of Stock" : `${product.current_stock} pcs`}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-right font-bold text-slate-900">৳{product.selling_price.toFixed(2)}</td>
+                          <td className="px-4 py-3 text-center">
+                            <button
+                              onClick={() => !outOfStock && addToCart(product)}
+                              disabled={outOfStock}
+                              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm ${
+                                outOfStock 
+                                  ? "bg-slate-100 text-slate-400 cursor-not-allowed shadow-none" 
+                                  : "bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white border border-blue-200"
+                              }`}
+                            >
+                              Add
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </div>
       </div>
 
       {/* RIGHT PANE: Cart & Checkout Summary */}
-      <div className="w-[26rem] bg-white border-l shadow-xl flex flex-col h-full flex-shrink-0 z-20">
+      <div className="w-[26rem] bg-white border-l shadow-xl flex flex-col h-full flex-shrink-0 z-20 overflow-hidden">
         <div className="p-4 bg-slate-900 text-slate-100 flex justify-between items-center shadow-md">
           <h2 className="text-lg font-bold flex items-center gap-1.5">
             <span>🛒</span> Current Cart
@@ -487,66 +620,88 @@ export default function POSTerminal() {
           </div>
         </div>
 
-        {/* Scrollable Cart Items */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+        {/* Scrollable Cart Items - Compact & Styled */}
+        <div className="flex-1 overflow-y-auto max-h-[calc(100vh-27rem)] min-h-[10rem] p-3 space-y-2">
           {cart.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-slate-400 space-y-2">
-              <span className="text-5xl">🛍️</span>
-              <p className="font-semibold text-sm">Cart is currently empty</p>
-              <p className="text-xs text-slate-400">Click products or use search to add items.</p>
+            <div className="h-full flex flex-col items-center justify-center text-slate-400 space-y-2 py-8">
+              <span className="text-4xl">🛍️</span>
+              <p className="font-semibold text-xs">Cart is currently empty</p>
+              <p className="text-[10px] text-slate-400">Add products to get started.</p>
             </div>
           ) : (
             cart.map((item) => (
-              <div key={item.id} className="flex justify-between items-center border-b border-slate-100 pb-3 gap-2">
-                <div className="flex-1 min-w-0">
-                  <h4 className="font-semibold text-slate-800 text-sm truncate">{item.name}</h4>
-                  <div className="text-slate-500 text-xs mt-0.5">${item.selling_price.toFixed(2)} / each</div>
+              <div 
+                key={item.id} 
+                className="flex justify-between items-center bg-slate-50 border border-slate-200/60 rounded-xl p-2.5 gap-2 transition hover:border-slate-300"
+              >
+                <div className="min-w-0 flex-1">
+                  <h4 className="font-semibold text-slate-900 text-xs truncate leading-tight">{item.name}</h4>
+                  <div className="text-[10px] text-slate-400 font-mono mt-0.5">
+                    SKU: {item.sku} &bull; ৳{item.selling_price.toFixed(2)}
+                  </div>
                 </div>
                 
-                <div className="flex items-center space-x-2 bg-slate-100 rounded-xl px-2 py-1 flex-shrink-0">
-                  <button onClick={() => updateQuantity(item.id, -1)} className="text-slate-600 hover:text-red-500 font-extrabold px-1.5 py-0.5 text-sm">−</button>
-                  <span className="font-bold text-slate-800 w-4 text-center text-xs">{item.cartQuantity}</span>
-                  <button onClick={() => updateQuantity(item.id, 1)} className="text-slate-600 hover:text-green-500 font-extrabold px-1.5 py-0.5 text-sm">+</button>
+                <div className="flex items-center bg-white border rounded-lg overflow-hidden flex-shrink-0">
+                  <button 
+                    onClick={() => updateQuantity(item.id, -1)} 
+                    className="text-slate-500 hover:bg-slate-100 px-2 py-1 text-xs font-bold"
+                  >
+                    −
+                  </button>
+                  <span className="font-bold text-slate-800 w-6 text-center text-xs">{item.cartQuantity}</span>
+                  <button 
+                    onClick={() => updateQuantity(item.id, 1)} 
+                    className="text-slate-500 hover:bg-slate-100 px-2 py-1 text-xs font-bold"
+                  >
+                    +
+                  </button>
                 </div>
                 
-                <div className="w-16 text-right font-bold text-slate-800 text-sm flex-shrink-0">
-                  ${item.subtotal.toFixed(2)}
+                <div className="w-16 text-right font-bold text-slate-900 text-xs flex-shrink-0">
+                  ৳{item.subtotal.toFixed(2)}
                 </div>
               </div>
             ))
           )}
         </div>
 
-        {/* Customer Information & Calculations */}
-        <div className="p-4 bg-slate-50 border-t space-y-4">
-          <div className="bg-white p-3 rounded-xl border border-slate-200 space-y-2.5">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Customer Details</h3>
+        {/* Customer Information & Calculations - Completely Compact to stay above fold */}
+        <div className="p-3 bg-slate-50 border-t space-y-3 flex-shrink-0">
+          <div className="bg-white p-2.5 rounded-xl border border-slate-200/80 space-y-2">
+            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Customer Details</h3>
             <div className="grid grid-cols-2 gap-2">
               <input
                 type="text"
                 placeholder="Customer Name"
-                className="p-2 border rounded-lg text-xs bg-slate-50 focus:bg-white focus:ring-1 focus:ring-blue-500 outline-none font-medium"
+                className="p-1.5 border rounded-lg text-xs bg-slate-50 focus:bg-white focus:ring-1 focus:ring-blue-500 outline-none font-medium w-full"
                 value={customerName}
                 onChange={(e) => setCustomerName(e.target.value)}
               />
               <input
                 type="text"
                 placeholder="Phone Number"
-                className="p-2 border rounded-lg text-xs bg-slate-50 focus:bg-white focus:ring-1 focus:ring-blue-500 outline-none font-medium"
+                className="p-1.5 border rounded-lg text-xs bg-slate-50 focus:bg-white focus:ring-1 focus:ring-blue-500 outline-none font-medium w-full"
                 value={customerPhone}
                 onChange={(e) => setCustomerPhone(e.target.value)}
               />
             </div>
-            <div className="pt-1.5 flex items-center justify-between border-t gap-4">
-              <label className="text-xs font-bold text-slate-500 uppercase">Manual Discount</label>
+            <input
+              type="text"
+              placeholder="Customer Address"
+              className="p-1.5 border rounded-lg text-xs bg-slate-50 focus:bg-white focus:ring-1 focus:ring-blue-500 outline-none font-medium w-full"
+              value={customerAddress}
+              onChange={(e) => setCustomerAddress(e.target.value)}
+            />
+            <div className="pt-2 flex items-center justify-between border-t gap-4">
+              <label className="text-[10px] font-bold text-slate-400 uppercase">Discount</label>
               <div className="relative w-28">
-                <span className="absolute left-2.5 top-2 text-xs font-bold text-slate-400">$</span>
+                <span className="absolute left-2 top-1 text-xs font-bold text-slate-400">৳</span>
                 <input
                   type="number"
                   step="0.01"
                   min="0"
                   placeholder="0.00"
-                  className="p-1.5 pl-6 border rounded-lg text-xs bg-slate-50 focus:bg-white focus:ring-1 focus:ring-blue-500 outline-none text-right font-bold w-full"
+                  className="p-1 pl-5 border rounded-lg text-xs bg-slate-50 focus:bg-white focus:ring-1 focus:ring-blue-500 outline-none text-right font-bold w-full"
                   value={discountStr}
                   onChange={(e) => setDiscountStr(e.target.value)}
                 />
@@ -554,27 +709,27 @@ export default function POSTerminal() {
             </div>
           </div>
 
-          <div className="space-y-1.5 text-xs text-slate-500 font-medium">
+          <div className="space-y-1 text-xs font-medium text-slate-500">
             <div className="flex justify-between">
               <span>Subtotal:</span>
-              <span className="font-bold text-slate-700">${cartTotal.toFixed(2)}</span>
+              <span className="font-bold text-slate-700">৳{cartTotal.toFixed(2)}</span>
             </div>
             {discountValue > 0 && (
               <div className="flex justify-between text-red-500">
                 <span>Discount Applied:</span>
-                <span className="font-bold">-${discountValue.toFixed(2)}</span>
+                <span className="font-bold">-৳{discountValue.toFixed(2)}</span>
               </div>
             )}
-            <div className="flex justify-between items-center text-slate-800 font-bold border-t pt-2 mt-2">
-              <span className="text-sm">Net Payable:</span>
-              <span className="text-2xl text-emerald-600">${netPayable.toFixed(2)}</span>
+            <div className="flex justify-between items-center text-slate-800 font-bold border-t pt-1.5 mt-1.5">
+              <span className="text-xs">Net Payable:</span>
+              <span className="text-xl text-emerald-600">৳{netPayable.toFixed(2)}</span>
             </div>
           </div>
 
           <button
             onClick={handleCheckout}
             disabled={cart.length === 0 || isProcessing}
-            className={`w-full py-3.5 rounded-xl text-white font-bold text-lg transition-all shadow-md
+            className={`w-full py-2.5 rounded-xl text-white font-bold text-sm transition-all shadow-md
               ${cart.length === 0 
                 ? "bg-slate-300 cursor-not-allowed shadow-none" 
                 : isProcessing 
@@ -618,9 +773,9 @@ export default function POSTerminal() {
                 {/* Invoice Header */}
                 <div className="flex justify-between items-start border-b pb-4 gap-4">
                   <div>
-                    <h1 className="text-xl font-bold text-slate-900">GROCERY ERP</h1>
-                    <p className="text-xs text-slate-500 font-medium">Bozlur Mor, Kushita Road</p>
-                    <p className="text-xs text-slate-500 font-medium">Phone: 01700-000000</p>
+                    <h1 className="text-xl font-bold text-slate-900">{companyProfile?.name || "GROCERY ERP"}</h1>
+                    <p className="text-xs text-slate-500 font-medium">{companyProfile?.address || "Bozlur Mor, Kushita Road"}</p>
+                    <p className="text-xs text-slate-500 font-medium">Phone: {companyProfile?.phone || "01700-000000"}</p>
                   </div>
                   <div className="text-right">
                     <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Invoice ID</span>
@@ -630,16 +785,112 @@ export default function POSTerminal() {
                 </div>
 
                 {/* Customer Info */}
-                <div className="bg-slate-50 p-4 rounded-xl border flex justify-between text-xs gap-4">
-                  <div>
-                    <span className="block font-bold text-slate-400 uppercase tracking-wider text-[9px] mb-1">Billed To</span>
-                    <p className="font-bold text-slate-800 text-sm">{completedSale.customer_name}</p>
-                    <p className="text-slate-500 font-medium mt-0.5">Phone: {completedSale.customer_phone}</p>
+                <div className="bg-slate-50 p-4 rounded-xl border flex flex-col text-xs gap-3">
+                  <span className="block font-bold text-slate-400 uppercase tracking-wider text-[9px]">Billing & Customer Details</span>
+                  
+                  {/* PRINT VIEW ONLY */}
+                  <div className="hidden print:flex justify-between w-full">
+                    <div>
+                      <p className="font-bold text-slate-800 text-sm">{completedSale.customer_name}</p>
+                      <p className="text-slate-500 font-medium mt-0.5">Phone: {completedSale.customer_phone}</p>
+                      <p className="text-slate-500 font-medium mt-0.5">Address: {completedSale.customer_address}</p>
+                    </div>
+                    <div className="text-right">
+                      <span className="block font-bold text-slate-400 uppercase tracking-wider text-[9px] mb-1">Status</span>
+                      <p className="text-emerald-600 font-bold mt-0.5 uppercase tracking-wider text-[10px]">
+                        {completedSale.status === "paid" ? "Payment Paid" : "Payment Pending"}
+                      </p>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <span className="block font-bold text-slate-400 uppercase tracking-wider text-[9px] mb-1">Cashier Desk</span>
-                    <p className="font-bold text-slate-800">POS Terminal #1</p>
-                    <p className="text-emerald-600 font-bold mt-0.5">Payment Paid</p>
+
+                  {/* SCREEN VIEW */}
+                  <div className="print:hidden">
+                    {completedSale.status === "pending" ? (
+                      <div className="space-y-2">
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="text-[9px] font-bold text-slate-400">Customer Name</label>
+                            <input
+                              type="text"
+                              className="w-full p-1.5 border rounded bg-white text-xs font-semibold focus:ring-1 focus:ring-blue-500 outline-none"
+                              value={editName}
+                              onChange={(e) => setEditName(e.target.value)}
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[9px] font-bold text-slate-400">Customer Phone</label>
+                            <input
+                              type="text"
+                              className="w-full p-1.5 border rounded bg-white text-xs font-semibold focus:ring-1 focus:ring-blue-500 outline-none"
+                              value={editPhone}
+                              onChange={(e) => setEditPhone(e.target.value)}
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-[9px] font-bold text-slate-400">Customer Address</label>
+                          <input
+                            type="text"
+                            className="w-full p-1.5 border rounded bg-white text-xs font-semibold focus:ring-1 focus:ring-blue-500 outline-none"
+                            value={editAddress}
+                            onChange={(e) => setEditAddress(e.target.value)}
+                          />
+                        </div>
+                        <div className="flex items-center justify-between gap-4 pt-1">
+                          <div>
+                            <label className="text-[9px] font-bold text-slate-400 block">Invoice Discount (৳)</label>
+                            <input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              className="p-1 border rounded text-xs font-bold text-slate-800 bg-white focus:ring-1 focus:ring-blue-500 outline-none w-28 text-right"
+                              value={editDiscount}
+                              onChange={(e) => setEditDiscount(e.target.value)}
+                            />
+                          </div>
+                          <button
+                            onClick={async () => {
+                              if (!completedSale.id) return;
+                              try {
+                                const updated = await posApi.updateSale(completedSale.id, {
+                                  customer_name: editName,
+                                  customer_phone: editPhone,
+                                  customer_address: editAddress,
+                                  discount: parseFloat(editDiscount) || 0.0
+                                });
+                                setCompletedSale(prev => prev ? {
+                                  ...prev,
+                                  customer_name: updated.customer_name || "Walk-in Customer",
+                                  customer_phone: updated.customer_phone || "—",
+                                  customer_address: updated.customer_address || "—",
+                                  discount: updated.discount,
+                                  net_total: updated.total_amount
+                                } : null);
+                                alert("✅ Invoice updated in database successfully!");
+                              } catch (err) {
+                                console.error("Failed to update sale:", err);
+                                alert("Failed to update sale in DB");
+                              }
+                            }}
+                            className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded text-xs transition shadow self-end"
+                          >
+                            Save Changes
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex justify-between gap-4">
+                        <div>
+                          <p className="font-bold text-slate-800 text-sm">{completedSale.customer_name}</p>
+                          <p className="text-slate-500 font-medium mt-0.5">Phone: {completedSale.customer_phone}</p>
+                          <p className="text-slate-500 font-medium mt-0.5">Address: {completedSale.customer_address}</p>
+                        </div>
+                        <div className="text-right">
+                          <span className="block font-bold text-slate-400 uppercase tracking-wider text-[9px] mb-1">Status</span>
+                          <p className="text-emerald-600 font-bold mt-0.5 uppercase tracking-wider text-[10px]">Payment Completed (Paid)</p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -661,8 +912,8 @@ export default function POSTerminal() {
                           <span className="text-[10px] text-slate-400 font-mono">SKU: {item.sku}</span>
                         </td>
                         <td className="py-3 text-center font-semibold">{item.quantity}</td>
-                        <td className="py-3 text-right">${item.unit_price.toFixed(2)}</td>
-                        <td className="py-3 text-right font-bold text-slate-900">${item.subtotal.toFixed(2)}</td>
+                        <td className="py-3 text-right">৳{item.unit_price.toFixed(2)}</td>
+                        <td className="py-3 text-right font-bold text-slate-900">৳{item.subtotal.toFixed(2)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -672,17 +923,17 @@ export default function POSTerminal() {
                 <div className="border-t pt-4 flex flex-col items-end text-xs gap-1.5">
                   <div className="w-48 flex justify-between font-medium text-slate-500">
                     <span>Subtotal:</span>
-                    <span className="font-bold text-slate-800">${completedSale.gross_total.toFixed(2)}</span>
+                    <span className="font-bold text-slate-800">৳{completedSale.gross_total.toFixed(2)}</span>
                   </div>
                   {completedSale.discount > 0 && (
                     <div className="w-48 flex justify-between text-red-500 font-medium">
                       <span>Discount:</span>
-                      <span>-${completedSale.discount.toFixed(2)}</span>
+                      <span>-৳{completedSale.discount.toFixed(2)}</span>
                     </div>
                   )}
                   <div className="w-48 flex justify-between items-center text-sm font-bold text-slate-900 border-t pt-2 mt-1">
                     <span>Grand Total:</span>
-                    <span className="text-lg text-emerald-600">${completedSale.net_total.toFixed(2)}</span>
+                    <span className="text-lg text-emerald-600">৳{completedSale.net_total.toFixed(2)}</span>
                   </div>
                 </div>
 

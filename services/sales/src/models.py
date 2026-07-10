@@ -37,6 +37,7 @@ class Sale(Base, TimestampMixin):
     total_amount = Column(Float, default=0.0, nullable=False)
     customer_name = Column(String(150), nullable=True)
     customer_phone = Column(String(50), nullable=True)
+    customer_address = Column(String(255), nullable=True)
     discount = Column(Float, default=0.0, nullable=False)
     status = Column(
         SAEnum(OrderStatus, native_enum=False),
@@ -68,3 +69,16 @@ class SaleItem(Base, TimestampMixin):
     subtotal = Column(Float, nullable=False)
 
     sale = relationship("Sale", back_populates="items")
+
+
+class SaleAuditLog(Base, TimestampMixin):
+    """
+    Audit logs for checking financial alterations and payments finalization.
+    """
+    __tablename__ = "sale_audit_logs"
+    __table_args__ = {"schema": "sales"}
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    sale_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    action = Column(String(50), nullable=False)
+    detail = Column(String(500), nullable=False)

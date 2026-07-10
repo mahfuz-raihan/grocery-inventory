@@ -131,9 +131,7 @@ async def lifespan(app: FastAPI):
                         product_id=item.product_id,
                         branch_id=event.branch_id,
                         quantity_change=-float(item.quantity),
-                        movement_type=MovementType.sales_delivery,
-                        reference_id=event.sale_id,
-                        notes=f"Auto-deducted from POS checkout"
+                        movement_type=MovementType.sales_delivery
                     )
                     session.add(ledger)
                 await session.commit()

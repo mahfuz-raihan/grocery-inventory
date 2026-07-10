@@ -23,6 +23,7 @@ export interface CheckoutRequest {
     status: "paid" | "pending";
     customer_name?: string;
     customer_phone?: string;
+    customer_address?: string;
     discount?: number;
 }
 
@@ -84,6 +85,43 @@ export const api = {
             return await response.json();
         } catch (error) {
             console.error("API Error (checkout):", error);
+            throw error;
+        }
+    },
+
+    updateSale: async (saleId: string, payload: { customer_name?: string; customer_phone?: string; customer_address?: string; discount?: number }) => {
+        try {
+            const baseUrl = getApiBaseUrl();
+            const response = await fetch(`${baseUrl}/api/v1/sales/${saleId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || "Update sale failed");
+            }
+            return await response.json();
+        } catch (error) {
+            console.error("API Error (updateSale):", error);
+            throw error;
+        }
+    },
+
+    completeSale: async (saleId: string) => {
+        try {
+            const baseUrl = getApiBaseUrl();
+            const response = await fetch(`${baseUrl}/api/v1/sales/${saleId}/complete`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || "Complete sale failed");
+            }
+            return await response.json();
+        } catch (error) {
+            console.error("API Error (completeSale):", error);
             throw error;
         }
     },
