@@ -91,6 +91,29 @@ async def lifespan(app: FastAPI):
         except Exception as e:
             log.warning(f"Could not add supplier_name column to stock_ledger table: {e}")
 
+        # Backfill supplier_name from GRN history into purchase_receive ledger rows that have NULL supplier_name
+        # This joins stock_ledger (purchase_receive, no supplier_name) → product → grn_items → grn to get supplier
+        try:
+            await conn.execute(text("""
+                UPDATE inventory.stock_ledger sl
+                SET supplier_name = sub.supplier_name
+                FROM (
+                    SELECT DISTINCT ON (sl2.product_id, sl2.branch_id)
+                        sl2.id AS ledger_id,
+                        g.supplier_name
+                    FROM inventory.stock_ledger sl2
+                    JOIN inventory.grn_items gi ON gi.product_id = sl2.product_id
+                    JOIN inventory.grn g ON g.id = gi.grn_id AND g.branch_id = sl2.branch_id
+                    WHERE sl2.supplier_name IS NULL
+                      AND sl2.movement_type = 'purchase_receive'
+                    ORDER BY sl2.product_id, sl2.branch_id, g.created_at DESC
+                ) sub
+                WHERE sl.id = sub.ledger_id
+            """))
+            log.info("Backfilled supplier_name into stock_ledger from GRN history.")
+        except Exception as e:
+            log.warning(f"Could not backfill supplier_name from GRN history: {e}")
+
         # Seed default company profile if empty
         try:
             profile_count_res = await conn.execute(text("SELECT COUNT(*) FROM inventory.company_profile"))
