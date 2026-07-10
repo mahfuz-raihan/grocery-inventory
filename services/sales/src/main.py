@@ -25,14 +25,15 @@ async def lifespan(app: FastAPI):
         # Ensure database tables are created
         await conn.run_sync(Base.metadata.create_all)
         
-        # Ensure schema migrations for new customer and discount columns
+        # Ensure schema migrations for new customer, discount, and supplier columns
         try:
             await conn.execute(text("ALTER TABLE sales.sales ADD COLUMN IF NOT EXISTS customer_name VARCHAR(150) NULL"))
             await conn.execute(text("ALTER TABLE sales.sales ADD COLUMN IF NOT EXISTS customer_phone VARCHAR(50) NULL"))
             await conn.execute(text("ALTER TABLE sales.sales ADD COLUMN IF NOT EXISTS customer_address VARCHAR(255) NULL"))
             await conn.execute(text("ALTER TABLE sales.sales ADD COLUMN IF NOT EXISTS discount DOUBLE PRECISION DEFAULT 0.0 NOT NULL"))
+            await conn.execute(text("ALTER TABLE sales.sale_items ADD COLUMN IF NOT EXISTS supplier_name VARCHAR(200) NULL"))
         except Exception as e:
-            log.warning(f"Could not run schema migrations for customer/discount columns: {e}")
+            log.warning(f"Could not run schema migrations: {e}")
             
         log.info("Database schema (Sales) initialized successfully.")
         
@@ -97,7 +98,8 @@ async def process_checkout(request: CheckoutRequest, session: AsyncSession = Dep
             product_id=item.product_id,
             quantity=item.quantity,
             unit_price=item.unit_price,
-            subtotal=item.quantity * item.unit_price
+            subtotal=item.quantity * item.unit_price,
+            supplier_name=item.supplier_name
         )
         session.add(new_item)
 
@@ -124,7 +126,12 @@ async def process_checkout(request: CheckoutRequest, session: AsyncSession = Dep
             sale_id=final_sale.id,
             branch_id=final_sale.branch_id,
             items=[
-                {"product_id": item.product_id, "quantity": item.quantity, "unit_price": item.unit_price} 
+                {
+                    "product_id": item.product_id,
+                    "quantity": item.quantity,
+                    "unit_price": item.unit_price,
+                    "supplier_name": item.supplier_name
+                } 
                 for item in final_sale.items
             ]
         )
@@ -153,8 +160,8 @@ async def update_sale(sale_id: uuid.UUID, request: SaleUpdateRequest, session: A
     if not sale:
         raise HTTPException(status_code=404, detail="Sale not found")
         
-    if sale.status != OrderStatus.pending:
-        raise HTTPException(status_code=400, detail="Only pending invoices can be edited")
+    # Allow editing both pending and paid sales to support post-checkout corrections
+    pass
 
     if request.customer_name is not None:
         sale.customer_name = request.customer_name.strip() or None
@@ -215,7 +222,12 @@ async def complete_sale(sale_id: uuid.UUID, session: AsyncSession = Depends(db_m
         sale_id=sale.id,
         branch_id=sale.branch_id,
         items=[
-            {"product_id": item.product_id, "quantity": item.quantity, "unit_price": item.unit_price} 
+            {
+                "product_id": item.product_id,
+                "quantity": item.quantity,
+                "unit_price": item.unit_price,
+                "supplier_name": item.supplier_name
+            } 
             for item in sale.items
         ]
     )

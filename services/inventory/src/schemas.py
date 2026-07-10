@@ -111,6 +111,8 @@ class ProductResponse(ProductBase):
 # Extended response that calculates stock from the ledger
 class ProductWithStockResponse(ProductResponse):
     current_stock: float = 0.0
+    supplier_name: Optional[str] = None
+    product_id: Optional[uuid.UUID] = None
     # Include variants list if template
     variants: list[ProductResponse] = []
 

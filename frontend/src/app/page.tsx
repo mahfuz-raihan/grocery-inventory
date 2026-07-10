@@ -19,10 +19,14 @@ const getApiBaseUrl = () => {
 };
 
 const posApi = {
-    getProducts: async (): Promise<Product[]> => {
+    getProducts: async (branchId?: string): Promise<Product[]> => {
         try {
             const baseUrl = getApiBaseUrl();
-            const response = await fetch(`${baseUrl}/api/v1/inventory/products`);
+            let url = `${baseUrl}/api/v1/inventory/products?supplier_wise=true`;
+            if (branchId) {
+                url += `&branch_id=${branchId}`;
+            }
+            const response = await fetch(url);
             if (!response.ok) throw new Error("Failed to fetch products");
             const data = await response.json();
             
@@ -38,12 +42,12 @@ const posApi = {
             if (localProducts && localProducts.length > 0) {
                 return localProducts;
             }
-
+ 
             // Final fallback for purely visual previews
             return [
-                { id: "1", sku: "APP-01", name: "Organic Apples", selling_price: 2.99, current_stock: 100 },
-                { id: "2", sku: "MIL-01", name: "Whole Milk 1 Gallon", selling_price: 4.50, current_stock: 45 },
-                { id: "3", sku: "BRD-01", name: "Sourdough Bread", selling_price: 5.25, current_stock: 20 },
+                { id: "1", sku: "APP-01", name: "Organic Apples", selling_price: 2.99, current_stock: 100, supplier_name: "Supplier A" },
+                { id: "2", sku: "MIL-01", name: "Whole Milk 1 Gallon", selling_price: 4.50, current_stock: 45, supplier_name: "Supplier B" },
+                { id: "3", sku: "BRD-01", name: "Sourdough Bread", selling_price: 5.25, current_stock: 20, supplier_name: "Supplier A" },
             ];
         }
     },
@@ -145,6 +149,7 @@ export default function POSTerminal() {
       quantity: number;
       unit_price: number;
       subtotal: number;
+      supplier_name?: string;
     }[];
     gross_total: number;
     discount: number;
@@ -202,7 +207,8 @@ export default function POSTerminal() {
 
   const fetchProductsList = async () => {
     try {
-      const data = await posApi.getProducts();
+      const branchId = localStorage.getItem("erp_branch_id") || "00000000-0000-0000-0000-000000000001";
+      const data = await posApi.getProducts(branchId);
       setProducts(data);
       
       const baseUrl = getApiBaseUrl();
@@ -287,7 +293,8 @@ export default function POSTerminal() {
     if (!searchQuery.trim()) return [];
     return products.filter((p) =>
       p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.sku.toLowerCase().includes(searchQuery.toLowerCase())
+      p.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (p.supplier_name || "").toLowerCase().includes(searchQuery.toLowerCase())
     ).slice(0, 8);
   }, [products, searchQuery]);
 
@@ -295,7 +302,8 @@ export default function POSTerminal() {
   const filteredProducts = useMemo(() => {
     return products.filter((p) =>
       p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.sku.toLowerCase().includes(searchQuery.toLowerCase())
+      p.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (p.supplier_name || "").toLowerCase().includes(searchQuery.toLowerCase())
     );
   }, [products, searchQuery]);
 
@@ -313,13 +321,26 @@ export default function POSTerminal() {
     return Math.max(0.0, cartTotal - discountValue);
   }, [cartTotal, discountValue]);
 
+  // Helper to compute available stock for a product, subtracting what's currently in the cart
+  const getAvailableStock = (product: Product) => {
+    const cartItem = cart.find(
+      (item) => item.id === product.id && item.supplier_name === product.supplier_name
+    );
+    return Math.max(0, product.current_stock - (cartItem ? cartItem.cartQuantity : 0));
+  };
+
   // --- Cart Actions ---
   const addToCart = (product: Product) => {
+    const available = getAvailableStock(product);
+    if (available <= 0) return;
+
     setCart((prev) => {
-      const existing = prev.find((item) => item.id === product.id);
+      const existing = prev.find(
+        (item) => item.id === product.id && item.supplier_name === product.supplier_name
+      );
       if (existing) {
         return prev.map((item) =>
-          item.id === product.id
+          item.id === product.id && item.supplier_name === product.supplier_name
             ? { ...item, cartQuantity: item.cartQuantity + 1, subtotal: (item.cartQuantity + 1) * item.selling_price }
             : item
         );
@@ -328,12 +349,21 @@ export default function POSTerminal() {
     });
   };
 
-  const updateQuantity = (productId: string, delta: number) => {
+  const updateQuantity = (productId: string, supplierName: string | undefined, delta: number) => {
+    const product = products.find(
+      (p) => p.id === productId && p.supplier_name === supplierName
+    );
+    if (!product) return;
+
     setCart((prev) =>
       prev.map((item) => {
-        if (item.id === productId) {
-          const newQty = Math.max(0, item.cartQuantity + delta);
-          return { ...item, cartQuantity: newQty, subtotal: newQty * item.selling_price };
+        if (item.id === productId && item.supplier_name === supplierName) {
+          const newQty = item.cartQuantity + delta;
+          if (newQty > product.current_stock) {
+            return item;
+          }
+          const finalQty = Math.max(0, newQty);
+          return { ...item, cartQuantity: finalQty, subtotal: finalQty * item.selling_price };
         }
         return item;
       }).filter((item) => item.cartQuantity > 0)
@@ -353,15 +383,16 @@ export default function POSTerminal() {
       const payload: CheckoutRequest = {
         branch_id: branchId,
         cashier_id: cashierId,
-        status: "pending",
+        status: "paid",
         customer_name: customerName.trim() || undefined,
         customer_phone: customerPhone.trim() || undefined,
         customer_address: customerAddress.trim() || undefined,
         discount: discountValue,
         items: cart.map((item) => ({
-          product_id: item.id,
+          product_id: item.product_id || item.id,
           quantity: item.cartQuantity,
           unit_price: item.selling_price,
+          supplier_name: item.supplier_name || null,
         })),
       };
 
@@ -379,12 +410,13 @@ export default function POSTerminal() {
           sku: item.sku,
           quantity: item.cartQuantity,
           unit_price: item.selling_price,
-          subtotal: item.subtotal
+          subtotal: item.subtotal,
+          supplier_name: item.supplier_name
         })),
         gross_total: cartTotal,
         discount: discountValue,
         net_total: netPayable,
-        status: "pending",
+        status: "paid",
         date: new Date().toLocaleString()
       });
 
@@ -500,32 +532,38 @@ export default function POSTerminal() {
                   onClick={() => setShowSuggestions(false)} 
                 />
                 <div className="absolute left-0 right-0 mt-1.5 bg-white border border-slate-200 rounded-xl shadow-xl z-30 overflow-hidden max-h-72 overflow-y-auto divide-y animate-fadeIn">
-                  {searchSuggestions.map((product) => (
-                    <div
-                      key={product.id}
-                      onClick={() => {
-                        addToCart(product);
-                        setSearchQuery("");
-                        setShowSuggestions(false);
-                      }}
-                      className="p-3 hover:bg-blue-50 cursor-pointer flex items-center justify-between transition-colors"
-                    >
-                      <div className="min-w-0 pr-4">
-                        <p className="font-semibold text-slate-800 text-sm truncate">{product.name}</p>
-                        <p className="text-xs font-mono font-bold text-blue-600">{product.sku}</p>
+                  {searchSuggestions.map((product) => {
+                    const availableStock = getAvailableStock(product);
+                    const outOfStock = availableStock <= 0;
+                    return (
+                      <div
+                        key={product.id}
+                        onClick={() => {
+                          if (!outOfStock) {
+                            addToCart(product);
+                            setSearchQuery("");
+                            setShowSuggestions(false);
+                          }
+                        }}
+                        className={`p-3 hover:bg-blue-50 cursor-pointer flex items-center justify-between transition-colors ${outOfStock ? "opacity-60 cursor-not-allowed" : ""}`}
+                      >
+                        <div className="min-w-0 pr-4">
+                          <p className="font-semibold text-slate-800 text-sm truncate">{product.name} {product.supplier_name ? `(${product.supplier_name})` : ""}</p>
+                          <p className="text-xs font-mono font-bold text-blue-600">{product.sku}</p>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <p className="font-bold text-slate-900 text-sm">৳{product.selling_price.toFixed(2)}</p>
+                          <p className={`text-[10px] px-1.5 py-0.5 rounded font-bold inline-block ${
+                            availableStock > 0 
+                              ? "bg-slate-100 text-slate-600" 
+                              : "bg-red-50 text-red-600"
+                          }`}>
+                            Stock: {availableStock}
+                          </p>
+                        </div>
                       </div>
-                      <div className="text-right flex-shrink-0">
-                        <p className="font-bold text-slate-900 text-sm">৳{product.selling_price.toFixed(2)}</p>
-                        <p className={`text-[10px] px-1.5 py-0.5 rounded font-bold inline-block ${
-                          product.current_stock > 0 
-                            ? "bg-slate-100 text-slate-600" 
-                            : "bg-red-50 text-red-600"
-                        }`}>
-                          Stock: {product.current_stock}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </>
             )}
@@ -550,6 +588,7 @@ export default function POSTerminal() {
                       <th className="px-4 py-3">Product Name</th>
                       <th className="px-4 py-3">SKU</th>
                       <th className="px-4 py-3">Category</th>
+                      <th className="px-4 py-3">Supplier</th>
                       <th className="px-4 py-3 text-center">Stock Level</th>
                       <th className="px-4 py-3 text-right">Price</th>
                       <th className="px-4 py-3 text-center">Action</th>
@@ -557,7 +596,8 @@ export default function POSTerminal() {
                   </thead>
                   <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
                     {filteredProducts.map((product) => {
-                      const outOfStock = product.current_stock <= 0;
+                      const availableStock = getAvailableStock(product);
+                      const outOfStock = availableStock <= 0;
                       const catName = categories.find(c => c.id === product.category_id)?.name || "Uncategorized";
                       return (
                         <tr 
@@ -567,13 +607,14 @@ export default function POSTerminal() {
                           <td className="px-4 py-3 font-semibold text-slate-900">{product.name}</td>
                           <td className="px-4 py-3 font-mono text-slate-500 font-bold">{product.sku}</td>
                           <td className="px-4 py-3 text-slate-500">{catName}</td>
+                          <td className="px-4 py-3 text-slate-500">{product.supplier_name || "—"}</td>
                           <td className="px-4 py-3 text-center">
                             <span className={`px-2.5 py-0.5 rounded-full font-bold text-[10px] ${
                               outOfStock 
                                 ? "bg-red-100 text-red-800" 
                                 : "bg-slate-100 text-slate-600"
                             }`}>
-                              {outOfStock ? "Out of Stock" : `${product.current_stock} pcs`}
+                              {outOfStock ? "Out of Stock" : `${availableStock} pcs`}
                             </span>
                           </td>
                           <td className="px-4 py-3 text-right font-bold text-slate-900">৳{product.selling_price.toFixed(2)}</td>
@@ -631,11 +672,13 @@ export default function POSTerminal() {
           ) : (
             cart.map((item) => (
               <div 
-                key={item.id} 
+                key={`${item.id}-${item.supplier_name || 'no-supplier'}`}
                 className="flex justify-between items-center bg-slate-50 border border-slate-200/60 rounded-xl p-2.5 gap-2 transition hover:border-slate-300"
               >
                 <div className="min-w-0 flex-1">
-                  <h4 className="font-semibold text-slate-900 text-xs truncate leading-tight">{item.name}</h4>
+                  <h4 className="font-semibold text-slate-900 text-xs truncate leading-tight">
+                    {item.name} {item.supplier_name ? `(${item.supplier_name})` : ""}
+                  </h4>
                   <div className="text-[10px] text-slate-400 font-mono mt-0.5">
                     SKU: {item.sku} &bull; ৳{item.selling_price.toFixed(2)}
                   </div>
@@ -643,14 +686,14 @@ export default function POSTerminal() {
                 
                 <div className="flex items-center bg-white border rounded-lg overflow-hidden flex-shrink-0">
                   <button 
-                    onClick={() => updateQuantity(item.id, -1)} 
+                    onClick={() => updateQuantity(item.id, item.supplier_name, -1)} 
                     className="text-slate-500 hover:bg-slate-100 px-2 py-1 text-xs font-bold"
                   >
                     −
                   </button>
                   <span className="font-bold text-slate-800 w-6 text-center text-xs">{item.cartQuantity}</span>
                   <button 
-                    onClick={() => updateQuantity(item.id, 1)} 
+                    onClick={() => updateQuantity(item.id, item.supplier_name, 1)} 
                     className="text-slate-500 hover:bg-slate-100 px-2 py-1 text-xs font-bold"
                   >
                     +
@@ -805,48 +848,54 @@ export default function POSTerminal() {
 
                   {/* SCREEN VIEW */}
                   <div className="print:hidden">
-                    {completedSale.status === "pending" ? (
-                      <div className="space-y-2">
-                        <div className="grid grid-cols-2 gap-2">
-                          <div>
-                            <label className="text-[9px] font-bold text-slate-400">Customer Name</label>
-                            <input
-                              type="text"
-                              className="w-full p-1.5 border rounded bg-white text-xs font-semibold focus:ring-1 focus:ring-blue-500 outline-none"
-                              value={editName}
-                              onChange={(e) => setEditName(e.target.value)}
-                            />
-                          </div>
-                          <div>
-                            <label className="text-[9px] font-bold text-slate-400">Customer Phone</label>
-                            <input
-                              type="text"
-                              className="w-full p-1.5 border rounded bg-white text-xs font-semibold focus:ring-1 focus:ring-blue-500 outline-none"
-                              value={editPhone}
-                              onChange={(e) => setEditPhone(e.target.value)}
-                            />
-                          </div>
-                        </div>
+                    <div className="space-y-2">
+                      <div className="grid grid-cols-2 gap-2">
                         <div>
-                          <label className="text-[9px] font-bold text-slate-400">Customer Address</label>
+                          <label className="text-[9px] font-bold text-slate-400">Customer Name</label>
                           <input
                             type="text"
                             className="w-full p-1.5 border rounded bg-white text-xs font-semibold focus:ring-1 focus:ring-blue-500 outline-none"
-                            value={editAddress}
-                            onChange={(e) => setEditAddress(e.target.value)}
+                            value={editName}
+                            onChange={(e) => setEditName(e.target.value)}
                           />
                         </div>
-                        <div className="flex items-center justify-between gap-4 pt-1">
-                          <div>
-                            <label className="text-[9px] font-bold text-slate-400 block">Invoice Discount (৳)</label>
-                            <input
-                              type="number"
-                              step="0.01"
-                              min="0"
-                              className="p-1 border rounded text-xs font-bold text-slate-800 bg-white focus:ring-1 focus:ring-blue-500 outline-none w-28 text-right"
-                              value={editDiscount}
-                              onChange={(e) => setEditDiscount(e.target.value)}
-                            />
+                        <div>
+                          <label className="text-[9px] font-bold text-slate-400">Customer Phone</label>
+                          <input
+                            type="text"
+                            className="w-full p-1.5 border rounded bg-white text-xs font-semibold focus:ring-1 focus:ring-blue-500 outline-none"
+                            value={editPhone}
+                            onChange={(e) => setEditPhone(e.target.value)}
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-[9px] font-bold text-slate-400">Customer Address</label>
+                        <input
+                          type="text"
+                          className="w-full p-1.5 border rounded bg-white text-xs font-semibold focus:ring-1 focus:ring-blue-500 outline-none"
+                          value={editAddress}
+                          onChange={(e) => setEditAddress(e.target.value)}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between gap-4 pt-1">
+                        <div>
+                          <label className="text-[9px] font-bold text-slate-400 block">Invoice Discount (৳)</label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            className="p-1 border rounded text-xs font-bold text-slate-800 bg-white focus:ring-1 focus:ring-blue-500 outline-none w-28 text-right"
+                            value={editDiscount}
+                            onChange={(e) => setEditDiscount(e.target.value)}
+                          />
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="text-right">
+                            <span className="block font-bold text-slate-400 uppercase tracking-wider text-[8px]">Status</span>
+                            <span className={`font-bold uppercase tracking-wider text-[9px] ${completedSale.status === "paid" ? "text-emerald-600" : "text-amber-600"}`}>
+                              {completedSale.status === "paid" ? "Paid" : "Pending"}
+                            </span>
                           </div>
                           <button
                             onClick={async () => {
@@ -878,19 +927,7 @@ export default function POSTerminal() {
                           </button>
                         </div>
                       </div>
-                    ) : (
-                      <div className="flex justify-between gap-4">
-                        <div>
-                          <p className="font-bold text-slate-800 text-sm">{completedSale.customer_name}</p>
-                          <p className="text-slate-500 font-medium mt-0.5">Phone: {completedSale.customer_phone}</p>
-                          <p className="text-slate-500 font-medium mt-0.5">Address: {completedSale.customer_address}</p>
-                        </div>
-                        <div className="text-right">
-                          <span className="block font-bold text-slate-400 uppercase tracking-wider text-[9px] mb-1">Status</span>
-                          <p className="text-emerald-600 font-bold mt-0.5 uppercase tracking-wider text-[10px]">Payment Completed (Paid)</p>
-                        </div>
-                      </div>
-                    )}
+                    </div>
                   </div>
                 </div>
 
@@ -908,7 +945,7 @@ export default function POSTerminal() {
                     {completedSale.items.map((item, idx) => (
                       <tr key={idx} className="py-3">
                         <td className="py-3 pr-4">
-                          <p className="font-bold text-slate-900">{item.name}</p>
+                          <p className="font-bold text-slate-900">{item.name} {item.supplier_name ? `(${item.supplier_name})` : ""}</p>
                           <span className="text-[10px] text-slate-400 font-mono">SKU: {item.sku}</span>
                         </td>
                         <td className="py-3 text-center font-semibold">{item.quantity}</td>

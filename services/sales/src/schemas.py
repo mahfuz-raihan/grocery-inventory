@@ -9,6 +9,7 @@ class CheckoutItem(BaseModel):
     product_id: uuid.UUID
     quantity: float = Field(..., gt=0)
     unit_price: float = Field(..., ge=0)
+    supplier_name: Optional[str] = None
 
 class CheckoutRequest(BaseModel):
     branch_id: uuid.UUID
@@ -26,6 +27,7 @@ class SaleItemResponse(BaseModel):
     quantity: float
     unit_price: float
     subtotal: float
+    supplier_name: Optional[str] = None
     model_config = ConfigDict(from_attributes=True)
 
 class SaleResponse(BaseModel):

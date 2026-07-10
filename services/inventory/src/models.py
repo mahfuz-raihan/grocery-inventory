@@ -147,6 +147,7 @@ class StockLedger(Base, TimestampMixin):
         SAEnum(MovementType, native_enum=False),
         nullable=False,
     )
+    supplier_name = Column(String(200), nullable=True, index=True)
 
 
 class GRN(Base, TimestampMixin):

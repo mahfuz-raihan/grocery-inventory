@@ -67,6 +67,7 @@ class SaleItem(Base, TimestampMixin):
     quantity = Column(Float, nullable=False)
     unit_price = Column(Float, nullable=False)
     subtotal = Column(Float, nullable=False)
+    supplier_name = Column(String(200), nullable=True)
 
     sale = relationship("Sale", back_populates="items")
 

@@ -1,10 +1,12 @@
 // --- Type Definitions ---
 export interface Product {
     id: string;
+    product_id?: string;
     sku: string;
     name: string;
     selling_price: number;
     current_stock: number;
+    supplier_name?: string;
 }
 
 export interface CartItem extends Product {
@@ -19,6 +21,7 @@ export interface CheckoutRequest {
         product_id: string;
         quantity: number;
         unit_price: number;
+        supplier_name?: string | null;
     }[];
     status: "paid" | "pending";
     customer_name?: string;
@@ -58,10 +61,14 @@ const getApiBaseUrl = () => {
 };
 
 export const api = {
-    getProducts: async (): Promise<Product[]> => {
+    getProducts: async (branchId?: string): Promise<Product[]> => {
         try {
             const baseUrl = getApiBaseUrl();
-            const response = await fetch(`${baseUrl}/api/v1/inventory/products`);
+            let url = `${baseUrl}/api/v1/inventory/products?supplier_wise=true`;
+            if (branchId) {
+                url += `&branch_id=${branchId}`;
+            }
+            const response = await fetch(url);
             if (!response.ok) throw new Error("Failed to fetch products");
             return await response.json();
         } catch (error) {
