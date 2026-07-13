@@ -377,54 +377,81 @@ async def get_products(
         return response_list
     else:
         # supplier_wise = True
-        # Query stock ledger totals per (product_id, supplier_name)
+        # ── Use the SAME logic as stock-list: group by (product_id, branch_id, supplier_name)
+        # then merge NULL-supplier entries proportionally per branch,
+        # then SUM across branches per supplier — so POS stock == inventory stock list.
         ledger_query = select(
             StockLedger.product_id,
+            StockLedger.branch_id,
             StockLedger.supplier_name,
-            func.coalesce(func.sum(StockLedger.quantity_change), 0.0).label("net_qty")
+            func.coalesce(func.sum(StockLedger.quantity_change), 0.0).label("net_qty"),
         )
         if branch_id:
             ledger_query = ledger_query.where(StockLedger.branch_id == branch_id)
-        ledger_query = ledger_query.group_by(StockLedger.product_id, StockLedger.supplier_name)
+        ledger_query = ledger_query.group_by(
+            StockLedger.product_id, StockLedger.branch_id, StockLedger.supplier_name
+        )
         ledger_result = await session.execute(ledger_query)
-        
-        # Build map: product_id -> list of (supplier_name, net_qty)
-        supplier_stock_map = defaultdict(list)
+
+        # Separate named vs NULL entries, keyed by (product_id, branch_id)
+        from collections import defaultdict as _dd
+        named_rows: dict = _dd(dict)   # (pid, bid) -> {supplier: qty}
+        null_rows: dict  = {}          # (pid, bid) -> qty
+
         for row in ledger_result.all():
-            supplier_stock_map[row.product_id].append((row.supplier_name, row.net_qty))
-            
+            key = (row.product_id, row.branch_id)
+            sup  = row.supplier_name
+            qty  = row.net_qty
+            if sup is None:
+                null_rows[key] = null_rows.get(key, 0.0) + qty
+            else:
+                named_rows[key][sup] = named_rows[key].get(sup, 0.0) + qty
+
+        # Merge NULL proportionally per (product, branch), then aggregate across branches per supplier
+        # Result: product_id -> {supplier_name: total_qty_across_all_branches}
+        final_by_supplier: dict = _dd(lambda: _dd(float))  # pid -> {sup: qty}
+
+        all_keys = set(named_rows.keys()) | set(null_rows.keys())
+        for key in all_keys:
+            pid, _ = key
+            named    = named_rows.get(key, {})
+            untracked = null_rows.get(key, 0.0)
+
+            if named:
+                total_in = sum(max(0.0, q) for q in named.values())
+                for sup, grn_qty in named.items():
+                    share = (max(0.0, grn_qty) / total_in) if total_in > 0 else (1.0 / len(named))
+                    final_by_supplier[pid][sup] += grn_qty + (untracked * share)
+            else:
+                # No named supplier — accumulate under None
+                final_by_supplier[pid][None] += untracked
+
         response_list = []
         for p in products:
-            p_stocks = supplier_stock_map.get(p.id, [])
+            p_stocks = final_by_supplier.get(p.id, {})
             if not p_stocks:
-                # Default to None supplier and 0.0 stock so the template product shows up
-                p_stocks = [(None, 0.0)]
-                
-            for supplier_name, qty in p_stocks:
+                p_stocks = {None: 0.0}
+
+            for sup_name, qty in p_stocks.items():
                 variant_responses = []
                 for variant in p.variants:
-                    v_stocks = supplier_stock_map.get(variant.id, [])
-                    v_qty = 0.0
-                    for v_sup, v_q in v_stocks:
-                        if v_sup == supplier_name:
-                            v_qty = v_q
-                            break
-                    v_dict = variant.__dict__.copy()
-                    v_dict["current_stock"] = v_qty
-                    v_dict["supplier_name"] = supplier_name
-                    v_dict["product_id"] = variant.id
+                    v_stocks = final_by_supplier.get(variant.id, {})
+                    v_qty    = v_stocks.get(sup_name, 0.0)
+                    v_dict   = variant.__dict__.copy()
+                    v_dict["current_stock"] = max(0.0, v_qty)
+                    v_dict["supplier_name"] = sup_name
+                    v_dict["product_id"]    = variant.id
                     variant_responses.append(v_dict)
-                    
+
                 p_dict = p.__dict__.copy()
-                # Create a unique virtual id for each combination to prevent IndexedDB collision
-                p_dict["id"] = uuid.uuid4()
-                p_dict["product_id"] = p.id
-                p_dict["current_stock"] = qty
-                p_dict["supplier_name"] = supplier_name
-                p_dict["variants"] = variant_responses
-                
+                p_dict["id"]            = uuid.uuid4()   # unique virtual id per (product, supplier)
+                p_dict["product_id"]    = p.id
+                p_dict["current_stock"] = max(0.0, qty)
+                p_dict["supplier_name"] = sup_name
+                p_dict["variants"]      = variant_responses
+
                 response_list.append(ProductWithStockResponse(**p_dict))
-                
+
         return response_list
 
 
@@ -1111,13 +1138,48 @@ async def get_stock_list(
     branch_result = await session.execute(select(Branch))
     branch_map = {b.id: b.name for b in branch_result.scalars().all()}
 
-    stock_items = []
+    # ── Merge NULL-supplier rows proportionally into named suppliers (same logic as POS)
+    # Key: (product_id, branch_id) → {supplier_name: (net_qty, last_movement)}
+    from collections import defaultdict as _sl_dd
+    named_rows: dict = _sl_dd(dict)   # (pid, bid) -> {sup: (qty, ts)}
+    null_rows: dict = {}               # (pid, bid) -> (qty, ts)
+
     for row in ledger_rows:
-        prod_id = row.product_id
-        br_id = row.branch_id
-        item_supplier = row.supplier_name
-        supplier_qty = max(0.0, row.net_qty)
-        last_movement = row.last_movement
+        key = (row.product_id, row.branch_id)
+        sup = row.supplier_name
+        if sup is None:
+            prev_qty, prev_ts = null_rows.get(key, (0.0, None))
+            ts = row.last_movement if row.last_movement and (prev_ts is None or row.last_movement > prev_ts) else prev_ts
+            null_rows[key] = (prev_qty + row.net_qty, ts)
+        else:
+            prev_qty, prev_ts = named_rows[key].get(sup, (0.0, None))
+            ts = row.last_movement if row.last_movement and (prev_ts is None or row.last_movement > prev_ts) else prev_ts
+            named_rows[key][sup] = (prev_qty + row.net_qty, ts)
+
+    # Build final merged rows
+    all_keys = set(named_rows.keys()) | set(null_rows.keys())
+    merged: list = []
+    for key in all_keys:
+        pid, bid = key
+        named = named_rows.get(key, {})
+        untracked_qty, untracked_ts = null_rows.get(key, (0.0, None))
+
+        if named:
+            total_named_in = sum(max(0.0, q) for q, _ in named.values())
+            for sup, (grn_qty, ts) in named.items():
+                if total_named_in > 0:
+                    share = max(0.0, grn_qty) / total_named_in
+                else:
+                    share = 1.0 / len(named)
+                final_qty = grn_qty + (untracked_qty * share)
+                final_ts = ts if ts and (untracked_ts is None or ts >= untracked_ts) else untracked_ts
+                merged.append((pid, bid, sup, final_qty, final_ts))
+        else:
+            merged.append((pid, bid, None, untracked_qty, untracked_ts))
+
+    stock_items = []
+    for (prod_id, br_id, item_supplier, net_qty, last_movement) in merged:
+        supplier_qty = max(0.0, net_qty)
 
         prod = product_map.get(prod_id)
         if not prod:

@@ -3,12 +3,12 @@
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Product, CartItem, CheckoutRequest } from "../lib/api";
-import { 
-    saveProductsLocal, 
-    getProductsLocal, 
-    addToSyncQueue, 
-    getSyncQueue, 
-    clearSyncQueueItem 
+import {
+  saveProductsLocal,
+  getProductsLocal,
+  addToSyncQueue,
+  getSyncQueue,
+  clearSyncQueueItem
 } from "../lib/db";
 
 const getApiBaseUrl = () => {
@@ -19,94 +19,93 @@ const getApiBaseUrl = () => {
 };
 
 const posApi = {
-    getProducts: async (branchId?: string): Promise<Product[]> => {
-        try {
-            const baseUrl = getApiBaseUrl();
-            let url = `${baseUrl}/api/v1/inventory/products?supplier_wise=true`;
-            if (branchId) {
-                url += `&branch_id=${branchId}`;
-            }
-            const response = await fetch(url);
-            if (!response.ok) throw new Error("Failed to fetch products");
-            const data = await response.json();
-            
-            // Cache real data to local browser DB immediately via imported function
-            await saveProductsLocal(data);
-            return data;
-            
-        } catch (error) {
-            console.warn("Backend API not reachable. Loading from local Offline Database...", error);
-            
-            // Fallback: retrieve products from local DB via imported function
-            const localProducts = await getProductsLocal();
-            if (localProducts && localProducts.length > 0) {
-                return localProducts;
-            }
- 
-            // Final fallback for purely visual previews
-            return [
-                { id: "1", sku: "APP-01", name: "Organic Apples", selling_price: 2.99, current_stock: 100, supplier_name: "Supplier A" },
-                { id: "2", sku: "MIL-01", name: "Whole Milk 1 Gallon", selling_price: 4.50, current_stock: 45, supplier_name: "Supplier B" },
-                { id: "3", sku: "BRD-01", name: "Sourdough Bread", selling_price: 5.25, current_stock: 20, supplier_name: "Supplier A" },
-            ];
-        }
-    },
-    checkout: async (payload: CheckoutRequest) => {
-        try {
-            const baseUrl = getApiBaseUrl();
-            const response = await fetch(`${baseUrl}/api/v1/sales/checkout`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.detail || "Checkout failed");
-            }
-            return await response.json();
-        } catch (error) {
-            console.warn("Could not reach backend. Saving transaction to offline queue!", error);
-            
-            // Queue the checkout locally via imported function
-            await addToSyncQueue(payload);
-            return { receipt_number: `INV-OFFLINE-${Date.now().toString().slice(-6)}`, offline: true };
-        }
-    },
-    updateSale: async (saleId: string, payload: { customer_name?: string; customer_phone?: string; customer_address?: string; discount?: number }) => {
-        try {
-            const baseUrl = getApiBaseUrl();
-            const response = await fetch(`${baseUrl}/api/v1/sales/${saleId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.detail || "Update sale failed");
-            }
-            return await response.json();
-        } catch (error) {
-            console.error("API Error (updateSale):", error);
-            throw error;
-        }
-    },
-    completeSale: async (saleId: string) => {
-        try {
-            const baseUrl = getApiBaseUrl();
-            const response = await fetch(`${baseUrl}/api/v1/sales/${saleId}/complete`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
-            });
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.detail || "Complete sale failed");
-            }
-            return await response.json();
-        } catch (error) {
-            console.error("API Error (completeSale):", error);
-            throw error;
-        }
+  getProducts: async (): Promise<Product[]> => {
+    try {
+      const baseUrl = getApiBaseUrl();
+      // No branch filter — POS shows total stock across ALL warehouses per supplier
+      // (matches the inventory stock list "All Warehouses" view)
+      const url = `${baseUrl}/api/v1/inventory/products?supplier_wise=true`;
+      const response = await fetch(url);
+      if (!response.ok) throw new Error("Failed to fetch products");
+      const data = await response.json();
+
+      // Cache real data to local browser DB immediately via imported function
+      await saveProductsLocal(data);
+      return data;
+
+    } catch (error) {
+      console.warn("Backend API not reachable. Loading from local Offline Database...", error);
+
+      // Fallback: retrieve products from local DB via imported function
+      const localProducts = await getProductsLocal();
+      if (localProducts && localProducts.length > 0) {
+        return localProducts;
+      }
+
+      // Final fallback for purely visual previews
+      return [
+        { id: "1", sku: "APP-01", name: "Organic Apples", selling_price: 2.99, current_stock: 100, supplier_name: "Supplier A" },
+        { id: "2", sku: "MIL-01", name: "Whole Milk 1 Gallon", selling_price: 4.50, current_stock: 45, supplier_name: "Supplier B" },
+        { id: "3", sku: "BRD-01", name: "Sourdough Bread", selling_price: 5.25, current_stock: 20, supplier_name: "Supplier A" },
+      ];
     }
+  },
+  checkout: async (payload: CheckoutRequest) => {
+    try {
+      const baseUrl = getApiBaseUrl();
+      const response = await fetch(`${baseUrl}/api/v1/sales/checkout`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || "Checkout failed");
+      }
+      return await response.json();
+    } catch (error) {
+      console.warn("Could not reach backend. Saving transaction to offline queue!", error);
+
+      // Queue the checkout locally via imported function
+      await addToSyncQueue(payload);
+      return { receipt_number: `INV-OFFLINE-${Date.now().toString().slice(-6)}`, offline: true };
+    }
+  },
+  updateSale: async (saleId: string, payload: { customer_name?: string; customer_phone?: string; customer_address?: string; discount?: number }) => {
+    try {
+      const baseUrl = getApiBaseUrl();
+      const response = await fetch(`${baseUrl}/api/v1/sales/${saleId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || "Update sale failed");
+      }
+      return await response.json();
+    } catch (error) {
+      console.error("API Error (updateSale):", error);
+      throw error;
+    }
+  },
+  completeSale: async (saleId: string) => {
+    try {
+      const baseUrl = getApiBaseUrl();
+      const response = await fetch(`${baseUrl}/api/v1/sales/${saleId}/complete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || "Complete sale failed");
+      }
+      return await response.json();
+    } catch (error) {
+      console.error("API Error (completeSale):", error);
+      throw error;
+    }
+  }
 };
 
 export default function POSTerminal() {
@@ -129,6 +128,9 @@ export default function POSTerminal() {
   const [editPhone, setEditPhone] = useState("");
   const [editAddress, setEditAddress] = useState("");
   const [editDiscount, setEditDiscount] = useState("");
+
+  // --- POS SUPPLIER FILTER ---
+  const [posSupplierFilter, setPosSupplierFilter] = useState("");
 
   // --- CATEGORIES STATE ---
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
@@ -207,10 +209,9 @@ export default function POSTerminal() {
 
   const fetchProductsList = async () => {
     try {
-      const branchId = localStorage.getItem("erp_branch_id") || "00000000-0000-0000-0000-000000000001";
-      const data = await posApi.getProducts(branchId);
+      const data = await posApi.getProducts();
       setProducts(data);
-      
+
       const baseUrl = getApiBaseUrl();
       const catRes = await fetch(`${baseUrl}/api/v1/inventory/categories`);
       if (catRes.ok) {
@@ -234,14 +235,14 @@ export default function POSTerminal() {
     fetchProductsList();
 
     const checkSyncQueue = async () => {
-        const queue = await getSyncQueue();
-        setPendingSync(queue.length);
+      const queue = await getSyncQueue();
+      setPendingSync(queue.length);
     };
     checkSyncQueue();
 
     const handleOnline = () => {
-        setIsOnline(true);
-        syncPendingOrders(); // Auto-sync when internet comes back
+      setIsOnline(true);
+      syncPendingOrders(); // Auto-sync when internet comes back
     };
     const handleOffline = () => setIsOnline(false);
 
@@ -250,42 +251,42 @@ export default function POSTerminal() {
     setIsOnline(navigator.onLine);
 
     return () => {
-        window.removeEventListener("online", handleOnline);
-        window.removeEventListener("offline", handleOffline);
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const syncPendingOrders = async () => {
-      const queue = await getSyncQueue();
-      if (queue.length === 0) return;
-      
-      let successCount = 0;
-      const baseUrl = getApiBaseUrl();
-      
-      for (const item of queue) {
-          try {
-              const response = await fetch(`${baseUrl}/api/v1/sales/checkout`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify(item.payload)
-              });
-              if (response.ok) {
-                  await clearSyncQueueItem(item.id);
-                  successCount++;
-              }
-          } catch (error) {
-              console.error("Failed to sync offline order", error);
-          }
+    const queue = await getSyncQueue();
+    if (queue.length === 0) return;
+
+    let successCount = 0;
+    const baseUrl = getApiBaseUrl();
+
+    for (const item of queue) {
+      try {
+        const response = await fetch(`${baseUrl}/api/v1/sales/checkout`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(item.payload)
+        });
+        if (response.ok) {
+          await clearSyncQueueItem(item.id);
+          successCount++;
+        }
+      } catch (error) {
+        console.error("Failed to sync offline order", error);
       }
-      
-      const remaining = await getSyncQueue();
-      setPendingSync(remaining.length);
-      
-      if (successCount > 0) {
-          alert(`✅ Successfully synced ${successCount} offline orders to the Main Server!`);
-          fetchProductsList(); // Refresh stock
-      }
+    }
+
+    const remaining = await getSyncQueue();
+    setPendingSync(remaining.length);
+
+    if (successCount > 0) {
+      alert(`✅ Successfully synced ${successCount} offline orders to the Main Server!`);
+      fetchProductsList(); // Refresh stock
+    }
   };
 
   // Autocomplete Suggestions logic
@@ -298,14 +299,36 @@ export default function POSTerminal() {
     ).slice(0, 8);
   }, [products, searchQuery]);
 
-  // Main list filters
+  // Unique suppliers from product list for filter pills
+  const uniquePosSuppliers = useMemo(() => {
+    return Array.from(new Set(products.map(p => p.supplier_name || "— No Supplier"))).sort() as string[];
+  }, [products]);
+
+  // Main list filters (search + supplier)
   const filteredProducts = useMemo(() => {
-    return products.filter((p) =>
-      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (p.supplier_name || "").toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }, [products, searchQuery]);
+    return products.filter((p) => {
+      const q = searchQuery.toLowerCase();
+      const matchSearch = !q ||
+        p.name.toLowerCase().includes(q) ||
+        p.sku.toLowerCase().includes(q) ||
+        (p.supplier_name || "").toLowerCase().includes(q);
+      const supplierKey = p.supplier_name || "— No Supplier";
+      const matchSupplier = !posSupplierFilter || supplierKey === posSupplierFilter;
+      return matchSearch && matchSupplier;
+    });
+  }, [products, searchQuery, posSupplierFilter]);
+
+  // Group filtered products by supplier
+  const posGrouped = useMemo(() => {
+    const groups: Record<string, typeof products> = {};
+    for (const p of filteredProducts) {
+      const key = p.supplier_name || "— No Supplier";
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(p);
+    }
+    return groups;
+  }, [filteredProducts]);
+  const posSupplierGroups = useMemo(() => Object.keys(posGrouped).sort(), [posGrouped]);
 
   // Calculate cart totals
   const cartTotal = useMemo(() => {
@@ -397,7 +420,7 @@ export default function POSTerminal() {
       };
 
       const response = await posApi.checkout(payload);
-      
+
       // Save details for printable invoice preview
       setCompletedSale({
         id: response.id,
@@ -427,15 +450,15 @@ export default function POSTerminal() {
       setDiscountStr("");
       setSearchQuery("");
       setLastReceipt(response.receipt_number);
-      
+
       if (response.offline) {
-          const queue = await getSyncQueue();
-          setPendingSync(queue.length);
+        const queue = await getSyncQueue();
+        setPendingSync(queue.length);
       }
 
       // Sync and reload available stocks immediately
       await fetchProductsList();
-      
+
     } catch (error) {
       console.error("Checkout process error:", error);
       alert("Checkout failed. Please check the console.");
@@ -464,7 +487,8 @@ export default function POSTerminal() {
   return (
     <div className="flex h-[calc(100vh-4rem)] bg-slate-50 font-sans text-slate-800 overflow-hidden relative">
       {/* Print Styles Block */}
-      <style dangerouslySetInnerHTML={{__html: `
+      <style dangerouslySetInnerHTML={{
+        __html: `
         @media print {
           body * {
             visibility: hidden;
@@ -490,14 +514,14 @@ export default function POSTerminal() {
             <h1 className="text-xl font-bold text-blue-600 flex items-center gap-1.5">
               <span>🛒</span> POS Terminal
             </h1>
-            
+
             {!isOnline && (
               <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-bold border border-red-200 animate-pulse">
                 Offline Mode
               </span>
             )}
           </div>
-          
+
           {/* Autocomplete Search input wrapper */}
           <div className="relative flex-1 max-w-xl">
             <div className="flex items-center bg-slate-50 border rounded-xl focus-within:ring-2 focus-within:ring-blue-500 transition shadow-inner">
@@ -514,9 +538,9 @@ export default function POSTerminal() {
                 onFocus={() => setShowSuggestions(true)}
               />
               {searchQuery && (
-                <button 
-                  type="button" 
-                  onClick={() => { setSearchQuery(""); setShowSuggestions(false); }} 
+                <button
+                  type="button"
+                  onClick={() => { setSearchQuery(""); setShowSuggestions(false); }}
                   className="pr-3 text-slate-400 hover:text-slate-600 text-sm font-bold"
                 >
                   ✕
@@ -527,9 +551,9 @@ export default function POSTerminal() {
             {/* Dynamic Suggestions List Dropdown */}
             {showSuggestions && searchSuggestions.length > 0 && (
               <>
-                <div 
-                  className="fixed inset-0 z-25" 
-                  onClick={() => setShowSuggestions(false)} 
+                <div
+                  className="fixed inset-0 z-25"
+                  onClick={() => setShowSuggestions(false)}
                 />
                 <div className="absolute left-0 right-0 mt-1.5 bg-white border border-slate-200 rounded-xl shadow-xl z-30 overflow-hidden max-h-72 overflow-y-auto divide-y animate-fadeIn">
                   {searchSuggestions.map((product) => {
@@ -553,11 +577,10 @@ export default function POSTerminal() {
                         </div>
                         <div className="text-right flex-shrink-0">
                           <p className="font-bold text-slate-900 text-sm">৳{product.selling_price.toFixed(2)}</p>
-                          <p className={`text-[10px] px-1.5 py-0.5 rounded font-bold inline-block ${
-                            availableStock > 0 
-                              ? "bg-slate-100 text-slate-600" 
-                              : "bg-red-50 text-red-600"
-                          }`}>
+                          <p className={`text-[10px] px-1.5 py-0.5 rounded font-bold inline-block ${availableStock > 0
+                            ? "bg-slate-100 text-slate-600"
+                            : "bg-red-50 text-red-600"
+                            }`}>
                             Stock: {availableStock}
                           </p>
                         </div>
@@ -570,74 +593,132 @@ export default function POSTerminal() {
           </div>
         </div>
 
-        {/* Catalog List/Table View */}
-        <div className="flex-1 overflow-y-auto p-5">
+        {/* ── Supplier Filter Pills ── */}
+        {uniquePosSuppliers.length > 1 && (
+          <div className="px-5 py-2.5 bg-white border-b border-slate-100 flex items-center gap-2 flex-wrap">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Supplier:</span>
+            <button
+              onClick={() => setPosSupplierFilter("")}
+              className={`px-3 py-1 rounded-lg text-xs font-semibold border transition ${!posSupplierFilter
+                ? "bg-blue-600 text-white border-blue-600"
+                : "bg-white text-slate-600 border-slate-200 hover:border-blue-300"
+                }`}
+            >
+              All
+            </button>
+            {uniquePosSuppliers.map(s => (
+              <button
+                key={s}
+                onClick={() => setPosSupplierFilter(s === posSupplierFilter ? "" : s)}
+                className={`px-3 py-1 rounded-lg text-xs font-semibold border transition ${posSupplierFilter === s
+                  ? "bg-blue-600 text-white border-blue-600"
+                  : "bg-white text-slate-600 border-slate-200 hover:border-blue-300"
+                  }`}
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Catalog — Supplier-Grouped Table */}
+        <div className="flex-1 overflow-y-auto p-5 space-y-4">
           {loading ? (
             <div className="flex items-center justify-center h-full text-slate-500 font-medium animate-pulse">Loading products...</div>
           ) : filteredProducts.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-slate-400 space-y-2">
+            <div className="flex flex-col items-center justify-center h-64 text-slate-400 space-y-2">
               <span className="text-4xl">🔎</span>
               <p className="font-medium">No matching products found.</p>
+              {(searchQuery || posSupplierFilter) && (
+                <button
+                  onClick={() => { setSearchQuery(""); setPosSupplierFilter(""); }}
+                  className="text-blue-600 text-xs font-semibold hover:underline"
+                >Clear filters</button>
+              )}
             </div>
           ) : (
-            <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs text-left border-collapse">
-                  <thead>
-                    <tr className="bg-slate-50 border-b border-slate-200 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                      <th className="px-4 py-3">Product Name</th>
-                      <th className="px-4 py-3">SKU</th>
-                      <th className="px-4 py-3">Category</th>
-                      <th className="px-4 py-3">Supplier</th>
-                      <th className="px-4 py-3 text-center">Stock Level</th>
-                      <th className="px-4 py-3 text-right">Price</th>
-                      <th className="px-4 py-3 text-center">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
-                    {filteredProducts.map((product) => {
-                      const availableStock = getAvailableStock(product);
-                      const outOfStock = availableStock <= 0;
-                      const catName = categories.find(c => c.id === product.category_id)?.name || "Uncategorized";
-                      return (
-                        <tr 
-                          key={product.id} 
-                          className={`hover:bg-slate-50 transition-colors ${outOfStock ? "opacity-60" : ""}`}
-                        >
-                          <td className="px-4 py-3 font-semibold text-slate-900">{product.name}</td>
-                          <td className="px-4 py-3 font-mono text-slate-500 font-bold">{product.sku}</td>
-                          <td className="px-4 py-3 text-slate-500">{catName}</td>
-                          <td className="px-4 py-3 text-slate-500">{product.supplier_name || "—"}</td>
-                          <td className="px-4 py-3 text-center">
-                            <span className={`px-2.5 py-0.5 rounded-full font-bold text-[10px] ${
-                              outOfStock 
-                                ? "bg-red-100 text-red-800" 
-                                : "bg-slate-100 text-slate-600"
-                            }`}>
-                              {outOfStock ? "Out of Stock" : `${availableStock} pcs`}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 text-right font-bold text-slate-900">৳{product.selling_price.toFixed(2)}</td>
-                          <td className="px-4 py-3 text-center">
-                            <button
-                              onClick={() => !outOfStock && addToCart(product)}
-                              disabled={outOfStock}
-                              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm ${
-                                outOfStock 
-                                  ? "bg-slate-100 text-slate-400 cursor-not-allowed shadow-none" 
+            posSupplierGroups.map(supplierKey => (
+              <div key={supplierKey} className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+                {/* Supplier header */}
+                <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-lg bg-blue-100 flex items-center justify-center">
+                      <svg className="w-3.5 h-3.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                      </svg>
+                    </div>
+                    <span className="font-bold text-slate-800 text-sm">{supplierKey}</span>
+                    <span className="text-xs text-slate-400">{posGrouped[supplierKey].length} product{posGrouped[supplierKey].length !== 1 ? "s" : ""}</span>
+                  </div>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${posGrouped[supplierKey].every(p => getAvailableStock(p) <= 0)
+                    ? "bg-red-50 text-red-600 border-red-200"
+                    : posGrouped[supplierKey].some(p => getAvailableStock(p) <= 0)
+                      ? "bg-amber-50 text-amber-600 border-amber-200"
+                      : "bg-emerald-50 text-emerald-600 border-emerald-200"
+                    }`}>
+                    {posGrouped[supplierKey].filter(p => getAvailableStock(p) > 0).length} in stock
+                  </span>
+                </div>
+
+                {/* Product rows */}
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                        <th className="px-4 py-2.5">Product Name</th>
+                        <th className="px-4 py-2.5">SKU</th>
+                        <th className="px-4 py-2.5">Category</th>
+                        <th className="px-4 py-2.5 text-center">Stock</th>
+                        <th className="px-4 py-2.5 text-right">Price</th>
+                        <th className="px-4 py-2.5 text-center">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50 font-medium text-slate-700">
+                      {posGrouped[supplierKey].map((product) => {
+                        const availableStock = getAvailableStock(product);
+                        const outOfStock = availableStock <= 0;
+                        const catName = categories.find(c => c.id === product.category_id)?.name || "—";
+                        return (
+                          <tr
+                            key={product.id}
+                            className={`hover:bg-blue-50/40 transition-colors ${outOfStock ? "opacity-50" : ""}`}
+                          >
+                            <td className="px-4 py-2.5 font-semibold text-slate-900">{product.name}</td>
+                            <td className="px-4 py-2.5">
+                              <span className="font-mono text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded">{product.sku}</span>
+                            </td>
+                            <td className="px-4 py-2.5 text-slate-500">{catName}</td>
+                            <td className="px-4 py-2.5 text-center">
+                              <span className={`px-2.5 py-0.5 rounded-full font-bold text-[10px] border ${outOfStock
+                                ? "bg-red-50 text-red-700 border-red-200"
+                                : availableStock <= 5
+                                  ? "bg-amber-50 text-amber-700 border-amber-200"
+                                  : "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                }`}>
+                                {outOfStock ? "Out of Stock" : `${availableStock}`}
+                              </span>
+                            </td>
+                            <td className="px-4 py-2.5 text-right font-bold text-slate-900">৳{product.selling_price.toFixed(2)}</td>
+                            <td className="px-4 py-2.5 text-center">
+                              <button
+                                onClick={() => !outOfStock && addToCart(product)}
+                                disabled={outOfStock}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${outOfStock
+                                  ? "bg-slate-100 text-slate-400 cursor-not-allowed"
                                   : "bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white border border-blue-200"
-                              }`}
-                            >
-                              Add
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                                  }`}
+                              >
+                                + Add to Cart
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </div>
+            ))
           )}
         </div>
       </div>
@@ -650,8 +731,8 @@ export default function POSTerminal() {
           </h2>
           <div className="flex items-center space-x-2">
             {pendingSync > 0 && (
-              <button 
-                onClick={syncPendingOrders} 
+              <button
+                onClick={syncPendingOrders}
                 className="bg-amber-500 hover:bg-amber-400 text-slate-950 px-2.5 py-1 rounded-full text-xs font-bold shadow-sm transition flex items-center gap-1"
               >
                 ↻ Sync {pendingSync}
@@ -671,7 +752,7 @@ export default function POSTerminal() {
             </div>
           ) : (
             cart.map((item) => (
-              <div 
+              <div
                 key={`${item.id}-${item.supplier_name || 'no-supplier'}`}
                 className="flex justify-between items-center bg-slate-50 border border-slate-200/60 rounded-xl p-2.5 gap-2 transition hover:border-slate-300"
               >
@@ -683,23 +764,23 @@ export default function POSTerminal() {
                     SKU: {item.sku} &bull; ৳{item.selling_price.toFixed(2)}
                   </div>
                 </div>
-                
+
                 <div className="flex items-center bg-white border rounded-lg overflow-hidden flex-shrink-0">
-                  <button 
-                    onClick={() => updateQuantity(item.id, item.supplier_name, -1)} 
+                  <button
+                    onClick={() => updateQuantity(item.id, item.supplier_name, -1)}
                     className="text-slate-500 hover:bg-slate-100 px-2 py-1 text-xs font-bold"
                   >
                     −
                   </button>
                   <span className="font-bold text-slate-800 w-6 text-center text-xs">{item.cartQuantity}</span>
-                  <button 
-                    onClick={() => updateQuantity(item.id, item.supplier_name, 1)} 
+                  <button
+                    onClick={() => updateQuantity(item.id, item.supplier_name, 1)}
                     className="text-slate-500 hover:bg-slate-100 px-2 py-1 text-xs font-bold"
                   >
                     +
                   </button>
                 </div>
-                
+
                 <div className="w-16 text-right font-bold text-slate-900 text-xs flex-shrink-0">
                   ৳{item.subtotal.toFixed(2)}
                 </div>
@@ -773,10 +854,10 @@ export default function POSTerminal() {
             onClick={handleCheckout}
             disabled={cart.length === 0 || isProcessing}
             className={`w-full py-2.5 rounded-xl text-white font-bold text-sm transition-all shadow-md
-              ${cart.length === 0 
-                ? "bg-slate-300 cursor-not-allowed shadow-none" 
-                : isProcessing 
-                  ? "bg-blue-400 cursor-wait" 
+              ${cart.length === 0
+                ? "bg-slate-300 cursor-not-allowed shadow-none"
+                : isProcessing
+                  ? "bg-blue-400 cursor-wait"
                   : "bg-blue-600 hover:bg-blue-700 hover:shadow-blue-500/25 active:scale-[0.98]"
               }`}
           >
@@ -789,7 +870,7 @@ export default function POSTerminal() {
       {completedSale && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto animate-fadeIn">
           <div className="bg-white rounded-2xl border max-w-lg w-full shadow-2xl overflow-hidden flex flex-col my-8">
-            
+
             {/* Modal Actions Header */}
             <div className="p-4 bg-slate-50 border-b flex justify-between items-center gap-3">
               <h3 className="font-bold text-slate-800">Invoice Complete</h3>
@@ -812,7 +893,7 @@ export default function POSTerminal() {
             {/* Printable Invoice Container */}
             <div className="p-8 bg-white flex-1 overflow-y-auto" id="print-area">
               <div className="space-y-6">
-                
+
                 {/* Invoice Header */}
                 <div className="flex justify-between items-start border-b pb-4 gap-4">
                   <div>
@@ -830,7 +911,7 @@ export default function POSTerminal() {
                 {/* Customer Info */}
                 <div className="bg-slate-50 p-4 rounded-xl border flex flex-col text-xs gap-3">
                   <span className="block font-bold text-slate-400 uppercase tracking-wider text-[9px]">Billing & Customer Details</span>
-                  
+
                   {/* PRINT VIEW ONLY */}
                   <div className="hidden print:flex justify-between w-full">
                     <div>
