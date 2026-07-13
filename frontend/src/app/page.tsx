@@ -132,6 +132,9 @@ export default function POSTerminal() {
   // --- POS SUPPLIER FILTER ---
   const [posSupplierFilter, setPosSupplierFilter] = useState("");
 
+  // --- DEFAULT BRANCH (resolved from DB at startup) ---
+  const [defaultBranchId, setDefaultBranchId] = useState<string>("");
+
   // --- CATEGORIES STATE ---
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
 
@@ -213,17 +216,27 @@ export default function POSTerminal() {
       setProducts(data);
 
       const baseUrl = getApiBaseUrl();
-      const catRes = await fetch(`${baseUrl}/api/v1/inventory/categories`);
-      if (catRes.ok) {
-        const catData = await catRes.json();
-        setCategories(catData);
+
+      // Resolve a real branch_id from the DB so checkout FK never fails.
+      // Priority: localStorage (user-set) → first branch from DB → empty string.
+      const savedBranch = localStorage.getItem("erp_branch_id");
+      const branchRes = await fetch(`${baseUrl}/api/v1/inventory/branches`);
+      if (branchRes.ok) {
+        const branchList: { id: string; name: string }[] = await branchRes.json();
+        if (branchList.length > 0) {
+          // Use saved branch only if it's in the actual branches list
+          const validSaved = savedBranch && branchList.find(b => b.id === savedBranch);
+          const resolvedId = validSaved ? savedBranch! : branchList[0].id;
+          localStorage.setItem("erp_branch_id", resolvedId);
+          setDefaultBranchId(resolvedId);
+        }
       }
 
+      const catRes = await fetch(`${baseUrl}/api/v1/inventory/categories`);
+      if (catRes.ok) setCategories(await catRes.json());
+
       const profileRes = await fetch(`${baseUrl}/api/v1/inventory/company-profile`);
-      if (profileRes.ok) {
-        const profileData = await profileRes.json();
-        setCompanyProfile(profileData);
-      }
+      if (profileRes.ok) setCompanyProfile(await profileRes.json());
     } catch (error) {
       console.error("Failed to load products/categories/profile:", error);
     } finally {
@@ -399,9 +412,16 @@ export default function POSTerminal() {
     setIsProcessing(true);
     setLastReceipt(null);
 
+    // Snapshot cart before clearing (needed for optimistic update)
+    const cartSnapshot = [...cart];
+    const cartTotalSnapshot = cartTotal;
+    const netPayableSnapshot = netPayable;
+    const discountSnapshot = discountValue;
+
     try {
-      const branchId = localStorage.getItem("erp_branch_id") || "00000000-0000-0000-0000-000000000001";
-      const cashierId = localStorage.getItem("erp_user_id") || "00000000-0000-0000-0000-000000000002";
+      // Branch ID is guaranteed to be a real DB branch (resolved in fetchProductsList at startup)
+      const branchId = localStorage.getItem("erp_branch_id") || defaultBranchId;
+      const cashierId = localStorage.getItem("erp_user_id") || "";
 
       const payload: CheckoutRequest = {
         branch_id: branchId,
@@ -410,8 +430,8 @@ export default function POSTerminal() {
         customer_name: customerName.trim() || undefined,
         customer_phone: customerPhone.trim() || undefined,
         customer_address: customerAddress.trim() || undefined,
-        discount: discountValue,
-        items: cart.map((item) => ({
+        discount: discountSnapshot,
+        items: cartSnapshot.map((item) => ({
           product_id: item.product_id || item.id,
           quantity: item.cartQuantity,
           unit_price: item.selling_price,
@@ -428,7 +448,7 @@ export default function POSTerminal() {
         customer_name: customerName.trim() || "Walk-in Customer",
         customer_phone: customerPhone.trim() || "—",
         customer_address: customerAddress.trim() || "—",
-        items: cart.map(item => ({
+        items: cartSnapshot.map(item => ({
           name: item.name,
           sku: item.sku,
           quantity: item.cartQuantity,
@@ -436,12 +456,26 @@ export default function POSTerminal() {
           subtotal: item.subtotal,
           supplier_name: item.supplier_name
         })),
-        gross_total: cartTotal,
-        discount: discountValue,
-        net_total: netPayable,
+        gross_total: cartTotalSnapshot,
+        discount: discountSnapshot,
+        net_total: netPayableSnapshot,
         status: "paid",
         date: new Date().toLocaleString()
       });
+
+      // ── OPTIMISTIC STOCK DEDUCTION ──────────────────────────────────────
+      // Immediately subtract sold quantities from the local products state so the
+      // POS list shows correct stock without waiting for the async NATS round-trip.
+      setProducts(prev =>
+        prev.map(p => {
+          const soldItem = cartSnapshot.find(
+            c => (c.product_id || c.id) === p.product_id && c.supplier_name === p.supplier_name
+          );
+          if (!soldItem) return p;
+          return { ...p, current_stock: Math.max(0, p.current_stock - soldItem.cartQuantity) };
+        })
+      );
+      // ────────────────────────────────────────────────────────────────────
 
       setCart([]);
       setCustomerName("");
@@ -456,8 +490,13 @@ export default function POSTerminal() {
         setPendingSync(queue.length);
       }
 
-      // Sync and reload available stocks immediately
-      await fetchProductsList();
+      // Wait 500ms for NATS deduction to land in inventory DB, then re-fetch.
+      // (NATS round-trip: publish → broker → inventory subscriber → DB write ≈ 40-200ms)
+      // The optimistic update already shows the correct count instantly;
+      // this re-fetch syncs the authoritative server value.
+      setTimeout(() => { fetchProductsList(); }, 500);
+      // Second re-fetch at 3s as a safety net for slow environments
+      setTimeout(() => { fetchProductsList(); }, 3000);
 
     } catch (error) {
       console.error("Checkout process error:", error);
@@ -481,7 +520,7 @@ export default function POSTerminal() {
     }
     setTimeout(() => {
       window.print();
-    }, 100);
+    }, 150);
   };
 
   return (
@@ -490,20 +529,36 @@ export default function POSTerminal() {
       <style dangerouslySetInnerHTML={{
         __html: `
         @media print {
-          body * {
-            visibility: hidden;
-          }
-          #print-area, #print-area * {
-            visibility: visible;
-          }
+          /* Hide everything by default */
+          body * { visibility: hidden !important; }
+
+          /* Show only the print area and its children */
+          #print-area, #print-area * { visibility: visible !important; }
+
+          /* Position the print area to fill the page */
           #print-area {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            height: auto !important;
             background: white !important;
             color: black !important;
+            padding: 24px !important;
+            font-size: 11px !important;
+            overflow: visible !important;
           }
+
+          /* Page setup */
+          @page {
+            size: A4;
+            margin: 12mm 14mm;
+          }
+
+          /* Force visible for print-only elements */
+          .print\\:flex { display: flex !important; }
+          .hidden.print\\:flex { display: flex !important; visibility: visible !important; }
+          .print\\:hidden { display: none !important; }
         }
       `}} />
 

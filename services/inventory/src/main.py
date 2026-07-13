@@ -38,62 +38,51 @@ msg_manager = MessagingManager([settings.nats_url])
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     log.info("Starting Inventory Service...")
+
+    # ── Step 1: Create schema and ALL tables first (required on fresh DB) ──────
     async with db_manager.engine.begin() as conn:
         await conn.execute(text("CREATE SCHEMA IF NOT EXISTS inventory"))
-        
-        # Drop unique index/constraint on supplier name if it exists to allow duplicates dynamically
+        # Drop old unique index if present (allow duplicate supplier names)
         try:
             await conn.execute(text("DROP INDEX IF EXISTS inventory.ix_inventory_suppliers_name CASCADE"))
-        except Exception as e:
-            log.warning(f"Could not drop unique index: {e}")
-
-        # Ensure receiving_date and supplier details columns exist on grn table
-        try:
-            await conn.execute(text("ALTER TABLE inventory.grn ADD COLUMN IF NOT EXISTS receiving_date DATE NULL"))
-            await conn.execute(text("ALTER TABLE inventory.grn ADD COLUMN IF NOT EXISTS supplier_contact VARCHAR(100) NULL"))
-            await conn.execute(text("ALTER TABLE inventory.grn ADD COLUMN IF NOT EXISTS supplier_phone VARCHAR(50) NULL"))
-            await conn.execute(text("ALTER TABLE inventory.grn ADD COLUMN IF NOT EXISTS supplier_email VARCHAR(100) NULL"))
-            await conn.execute(text("ALTER TABLE inventory.grn ADD COLUMN IF NOT EXISTS supplier_address TEXT NULL"))
-        except Exception as e:
-            log.warning(f"Could not add columns to grn table: {e}")
-
-        # Ensure unit_price and commission columns exist on grn_items table
-        try:
-            await conn.execute(text("ALTER TABLE inventory.grn_items ADD COLUMN IF NOT EXISTS unit_price DOUBLE PRECISION NULL"))
-            await conn.execute(text("ALTER TABLE inventory.grn_items ADD COLUMN IF NOT EXISTS commission DOUBLE PRECISION NULL"))
-        except Exception as e:
-            log.warning(f"Could not add columns to grn_items table: {e}")
-
-        # Ensure is_active column exists on suppliers table
-        try:
-            await conn.execute(text("ALTER TABLE inventory.suppliers ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE NOT NULL"))
-        except Exception as e:
-            log.warning(f"Could not add is_active column to suppliers table: {e}")
-
-        # Ensure commission and additional_cost columns exist on products table
-        try:
-            await conn.execute(text("ALTER TABLE inventory.products ADD COLUMN IF NOT EXISTS commission DOUBLE PRECISION DEFAULT 0.0 NOT NULL"))
-            await conn.execute(text("ALTER TABLE inventory.products ADD COLUMN IF NOT EXISTS additional_cost DOUBLE PRECISION DEFAULT 0.0 NOT NULL"))
-        except Exception as e:
-            log.warning(f"Could not add commission/additional_cost columns to products table: {e}")
-
-        # Ensure discount column exists on grn table
-        try:
-            await conn.execute(text("ALTER TABLE inventory.grn ADD COLUMN IF NOT EXISTS discount DOUBLE PRECISION DEFAULT 0.0 NOT NULL"))
-        except Exception as e:
-            log.warning(f"Could not add discount column to grn table: {e}")
-
+        except Exception:
+            pass
         await conn.run_sync(Base.metadata.create_all)
 
-        # Ensure supplier_name column exists on stock_ledger table
-        try:
-            await conn.execute(text("ALTER TABLE inventory.stock_ledger ADD COLUMN IF NOT EXISTS supplier_name VARCHAR(200) NULL"))
-        except Exception as e:
-            log.warning(f"Could not add supplier_name column to stock_ledger table: {e}")
+    log.info("Database schema (Inventory tables) created/verified.")
 
-        # Backfill supplier_name from GRN history into purchase_receive ledger rows that have NULL supplier_name
-        # This joins stock_ledger (purchase_receive, no supplier_name) → product → grn_items → grn to get supplier
+    # ── Step 2: Run ALTER TABLE migrations — each in its own transaction ───────
+    # Tables are guaranteed to exist now, so these are safe to run.
+    migrations = [
+        # GRN columns
+        ("grn.receiving_date",   "ALTER TABLE inventory.grn ADD COLUMN IF NOT EXISTS receiving_date DATE NULL"),
+        ("grn.supplier_contact", "ALTER TABLE inventory.grn ADD COLUMN IF NOT EXISTS supplier_contact VARCHAR(100) NULL"),
+        ("grn.supplier_phone",   "ALTER TABLE inventory.grn ADD COLUMN IF NOT EXISTS supplier_phone VARCHAR(50) NULL"),
+        ("grn.supplier_email",   "ALTER TABLE inventory.grn ADD COLUMN IF NOT EXISTS supplier_email VARCHAR(100) NULL"),
+        ("grn.supplier_address", "ALTER TABLE inventory.grn ADD COLUMN IF NOT EXISTS supplier_address TEXT NULL"),
+        ("grn.discount",         "ALTER TABLE inventory.grn ADD COLUMN IF NOT EXISTS discount DOUBLE PRECISION DEFAULT 0.0 NOT NULL"),
+        # GRN items columns
+        ("grn_items.unit_price", "ALTER TABLE inventory.grn_items ADD COLUMN IF NOT EXISTS unit_price DOUBLE PRECISION NULL"),
+        ("grn_items.commission", "ALTER TABLE inventory.grn_items ADD COLUMN IF NOT EXISTS commission DOUBLE PRECISION NULL"),
+        # Suppliers columns
+        ("suppliers.is_active",  "ALTER TABLE inventory.suppliers ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE NOT NULL"),
+        # Products columns
+        ("products.commission",      "ALTER TABLE inventory.products ADD COLUMN IF NOT EXISTS commission DOUBLE PRECISION DEFAULT 0.0 NOT NULL"),
+        ("products.additional_cost", "ALTER TABLE inventory.products ADD COLUMN IF NOT EXISTS additional_cost DOUBLE PRECISION DEFAULT 0.0 NOT NULL"),
+        # Stock ledger columns
+        ("stock_ledger.supplier_name", "ALTER TABLE inventory.stock_ledger ADD COLUMN IF NOT EXISTS supplier_name VARCHAR(200) NULL"),
+    ]
+
+    for col_name, sql in migrations:
         try:
+            async with db_manager.engine.begin() as conn:
+                await conn.execute(text(sql))
+        except Exception as e:
+            log.warning(f"Migration skipped [{col_name}]: {e}")
+
+    # ── Step 3: Backfill supplier_name from GRN history ───────────────────────
+    try:
+        async with db_manager.engine.begin() as conn:
             await conn.execute(text("""
                 UPDATE inventory.stock_ledger sl
                 SET supplier_name = sub.supplier_name
@@ -110,30 +99,31 @@ async def lifespan(app: FastAPI):
                 ) sub
                 WHERE sl.id = sub.ledger_id
             """))
-            log.info("Backfilled supplier_name into stock_ledger from GRN history.")
-        except Exception as e:
-            log.warning(f"Could not backfill supplier_name from GRN history: {e}")
+        log.info("Backfilled supplier_name into stock_ledger from GRN history.")
+    except Exception as e:
+        log.warning(f"Could not backfill supplier_name from GRN history: {e}")
 
-        # Seed default company profile if empty
-        try:
-            profile_count_res = await conn.execute(text("SELECT COUNT(*) FROM inventory.company_profile"))
-            count = profile_count_res.scalar()
-            if count == 0:
+    # ── Step 4: Seed default company profile if table is empty ────────────────
+    try:
+        async with db_manager.engine.begin() as conn:
+            result = await conn.execute(text("SELECT COUNT(*) FROM inventory.company_profile"))
+            if result.scalar() == 0:
                 await conn.execute(text("""
-                    INSERT INTO inventory.company_profile (name, address, phone, email, contact_person) 
+                    INSERT INTO inventory.company_profile (name, address, phone, email, contact_person)
                     VALUES ('Manor Furniture', 'Bozlur Mor, Kushita', '01700000000', 'accounts@manorfurniture.com', 'Manager')
                 """))
                 log.info("Default company profile seeded.")
-        except Exception as e:
-            log.warning(f"Could not seed default company profile: {e}")
+    except Exception as e:
+        log.warning(f"Could not seed default company profile: {e}")
 
-        # Create non-unique index
-        try:
+    # ── Step 5: Create non-unique supplier name index ─────────────────────────
+    try:
+        async with db_manager.engine.begin() as conn:
             await conn.execute(text("CREATE INDEX IF NOT EXISTS ix_inventory_suppliers_name ON inventory.suppliers (name)"))
-        except Exception as e:
-            log.warning(f"Could not create non-unique index: {e}")
+    except Exception as e:
+        log.warning(f"Could not create supplier name index: {e}")
 
-        log.info("Database schema (Stock Ledger) initialized successfully.")
+    log.info("Database schema (Stock Ledger) initialized successfully.")
         
     await msg_manager.connect()
 
@@ -156,10 +146,30 @@ async def lifespan(app: FastAPI):
         async def handle_sales_order_completed(event: OrderCompletedEvent):
             log.info(f"Received sales.order.completed event for Sale {event.sale_id}")
             async with db_manager.session_factory() as session:
+                # ── Validate branch_id — resolve to a real branch to prevent FK violation ──
+                from sqlalchemy import select as _select
+                from src.models import Branch
+                branch_check = await session.execute(
+                    _select(Branch.id).where(Branch.id == event.branch_id).limit(1)
+                )
+                resolved_branch_id = branch_check.scalar_one_or_none()
+
+                if resolved_branch_id is None:
+                    # Fallback: use the first available branch
+                    fallback = await session.execute(_select(Branch.id).order_by(Branch.id).limit(1))
+                    resolved_branch_id = fallback.scalar_one_or_none()
+                    if resolved_branch_id is None:
+                        log.error(f"No branches found in DB — cannot deduct stock for Sale {event.sale_id}")
+                        return
+                    log.warning(
+                        f"Sale {event.sale_id}: branch_id {event.branch_id} not found, "
+                        f"falling back to branch {resolved_branch_id}"
+                    )
+
                 for item in event.items:
                     ledger = StockLedger(
                         product_id=item.product_id,
-                        branch_id=event.branch_id,
+                        branch_id=resolved_branch_id,
                         quantity_change=-float(item.quantity),
                         movement_type=MovementType.sales_delivery,
                         supplier_name=getattr(item, "supplier_name", None)
@@ -226,9 +236,13 @@ async def update_supplier(supplier_id: uuid.UUID, update_data: SupplierUpdate, s
 async def create_branch(branch: BranchCreate, session: AsyncSession = Depends(db_manager.get_session)):
     new_branch = Branch(**branch.model_dump())
     session.add(new_branch)
-    await session.commit()
-    await session.refresh(new_branch)
-    return new_branch
+    try:
+        await session.commit()
+        await session.refresh(new_branch)
+        return new_branch
+    except IntegrityError:
+        await session.rollback()
+        raise HTTPException(status_code=400, detail="Branch name already exists.")
 
 @app.get("/api/v1/inventory/branches", response_model=list[BranchResponse])
 async def get_branches(session: AsyncSession = Depends(db_manager.get_session)):

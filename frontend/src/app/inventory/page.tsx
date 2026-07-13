@@ -125,7 +125,10 @@ const api = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
-    if (!response.ok) throw new Error("Failed to create warehouse");
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.detail || "Failed to create warehouse");
+    }
     return await response.json();
   },
   getSuppliers: async (): Promise<Supplier[]> => {
@@ -139,7 +142,10 @@ const api = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
-    if (!response.ok) throw new Error("Failed to create supplier");
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.detail || "Failed to create supplier");
+    }
     return await response.json();
   },
   updateSupplier: async (id: string, payload: any): Promise<Supplier> => {
@@ -148,7 +154,10 @@ const api = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
-    if (!response.ok) throw new Error("Failed to update supplier");
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.detail || "Failed to update supplier");
+    }
     return await response.json();
   },
   getCategories: async (): Promise<any[]> => {
@@ -162,7 +171,10 @@ const api = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
-    if (!response.ok) throw new Error("Failed to create category");
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.detail || "Failed to create category");
+    }
     return await response.json();
   },
   updateCategory: async (id: string, payload: any): Promise<any> => {
@@ -1249,8 +1261,8 @@ export default function InventoryControlPage() {
       setWarehouseName("");
       setWarehouseAddress("");
       alert("✅ Warehouse created successfully!");
-    } catch (err) {
-      alert("Failed to create warehouse");
+    } catch (err: any) {
+      alert(err.message || "Failed to create warehouse");
     }
   };
 
@@ -1282,8 +1294,8 @@ export default function InventoryControlPage() {
       setSupplierPhone("");
       setSupplierEmail("");
       setSupplierAddress("");
-    } catch (err) {
-      alert("Failed to save supplier info");
+    } catch (err: any) {
+      alert(err.message || "Failed to save supplier info");
     }
   };
 
