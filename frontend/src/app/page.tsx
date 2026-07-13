@@ -19,12 +19,13 @@ const getApiBaseUrl = () => {
 };
 
 const posApi = {
-  getProducts: async (): Promise<Product[]> => {
+  getProducts: async (branchId?: string): Promise<Product[]> => {
     try {
       const baseUrl = getApiBaseUrl();
-      // No branch filter — POS shows total stock across ALL warehouses per supplier
-      // (matches the inventory stock list "All Warehouses" view)
-      const url = `${baseUrl}/api/v1/inventory/products?supplier_wise=true`;
+      let url = `${baseUrl}/api/v1/inventory/products?supplier_wise=true`;
+      if (branchId) {
+        url += `&branch_id=${branchId}`;
+      }
       const response = await fetch(url);
       if (!response.ok) throw new Error("Failed to fetch products");
       const data = await response.json();
@@ -134,6 +135,8 @@ export default function POSTerminal() {
 
   // --- DEFAULT BRANCH (resolved from DB at startup) ---
   const [defaultBranchId, setDefaultBranchId] = useState<string>("");
+  const [branches, setBranches] = useState<{ id: string; name: string }[]>([]);
+  const [selectedBranchId, setSelectedBranchId] = useState<string>("");
 
   // --- CATEGORIES STATE ---
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
@@ -210,9 +213,10 @@ export default function POSTerminal() {
     }
   }, [customerPhone]);
 
-  const fetchProductsList = async () => {
+  const fetchProductsList = async (branchId?: string) => {
     try {
-      const data = await posApi.getProducts();
+      setLoading(true);
+      const data = await posApi.getProducts(branchId);
       setProducts(data);
 
       const baseUrl = getApiBaseUrl();
@@ -223,6 +227,7 @@ export default function POSTerminal() {
       const branchRes = await fetch(`${baseUrl}/api/v1/inventory/branches`);
       if (branchRes.ok) {
         const branchList: { id: string; name: string }[] = await branchRes.json();
+        setBranches(branchList);
         if (branchList.length > 0) {
           // Use saved branch only if it's in the actual branches list
           const validSaved = savedBranch && branchList.find(b => b.id === savedBranch);
@@ -242,6 +247,11 @@ export default function POSTerminal() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleBranchChange = (branchId: string) => {
+    setSelectedBranchId(branchId);
+    fetchProductsList(branchId || undefined);
   };
 
   useEffect(() => {
@@ -419,8 +429,8 @@ export default function POSTerminal() {
     const discountSnapshot = discountValue;
 
     try {
-      // Branch ID is guaranteed to be a real DB branch (resolved in fetchProductsList at startup)
-      const branchId = localStorage.getItem("erp_branch_id") || defaultBranchId;
+      // Branch ID is resolved from selected warehouse, falling back to cashier default branch.
+      const branchId = selectedBranchId || localStorage.getItem("erp_branch_id") || defaultBranchId;
       const cashierId = localStorage.getItem("erp_user_id") || "";
 
       const payload: CheckoutRequest = {
@@ -494,9 +504,9 @@ export default function POSTerminal() {
       // (NATS round-trip: publish → broker → inventory subscriber → DB write ≈ 40-200ms)
       // The optimistic update already shows the correct count instantly;
       // this re-fetch syncs the authoritative server value.
-      setTimeout(() => { fetchProductsList(); }, 500);
+      setTimeout(() => { fetchProductsList(selectedBranchId || undefined); }, 500);
       // Second re-fetch at 3s as a safety net for slow environments
-      setTimeout(() => { fetchProductsList(); }, 3000);
+      setTimeout(() => { fetchProductsList(selectedBranchId || undefined); }, 3000);
 
     } catch (error) {
       console.error("Checkout process error:", error);
@@ -511,7 +521,7 @@ export default function POSTerminal() {
       try {
         await posApi.completeSale(completedSale.id);
         setCompletedSale((prev) => (prev ? { ...prev, status: "paid" } : null));
-        await fetchProductsList(); // Reload active stock counts
+        await fetchProductsList(selectedBranchId || undefined); // Reload active stock counts
       } catch (err) {
         console.error("Failed to finalize payment:", err);
         alert("Failed to finalize payment in database. Cannot print invoice.");
@@ -522,6 +532,8 @@ export default function POSTerminal() {
       window.print();
     }, 150);
   };
+
+  const activeBranchName = branches.find(b => b.id === (selectedBranchId || defaultBranchId))?.name || "Default Warehouse";
 
   return (
     <div className="flex h-[calc(100vh-4rem)] bg-slate-50 font-sans text-slate-800 overflow-hidden relative">
@@ -646,6 +658,21 @@ export default function POSTerminal() {
               </>
             )}
           </div>
+
+          {/* Warehouse Dropdown Selector */}
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            <span className="text-xs font-bold text-slate-500 whitespace-nowrap">Warehouse:</span>
+            <select
+              value={selectedBranchId}
+              onChange={(e) => handleBranchChange(e.target.value)}
+              className="p-2 border rounded-xl text-xs font-semibold text-slate-700 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition"
+            >
+              <option value="">All Warehouses</option>
+              {branches.map(b => (
+                <option key={b.id} value={b.id}>{b.name}</option>
+              ))}
+            </select>
+          </div>
         </div>
 
         {/* ── Supplier Filter Pills ── */}
@@ -723,6 +750,7 @@ export default function POSTerminal() {
                         <th className="px-4 py-2.5">Product Name</th>
                         <th className="px-4 py-2.5">SKU</th>
                         <th className="px-4 py-2.5">Category</th>
+                        <th className="px-4 py-2.5">Warehouse</th>
                         <th className="px-4 py-2.5 text-center">Stock</th>
                         <th className="px-4 py-2.5 text-right">Price</th>
                         <th className="px-4 py-2.5 text-center">Action</th>
@@ -743,6 +771,12 @@ export default function POSTerminal() {
                               <span className="font-mono text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded">{product.sku}</span>
                             </td>
                             <td className="px-4 py-2.5 text-slate-500">{catName}</td>
+                            <td className="px-4 py-2.5 text-slate-500">
+                              {selectedBranchId
+                                ? (branches.find(b => b.id === selectedBranchId)?.name || "—")
+                                : "All Warehouses"
+                              }
+                            </td>
                             <td className="px-4 py-2.5 text-center">
                               <span className={`px-2.5 py-0.5 rounded-full font-bold text-[10px] border ${outOfStock
                                 ? "bg-red-50 text-red-700 border-red-200"
@@ -781,8 +815,9 @@ export default function POSTerminal() {
       {/* RIGHT PANE: Cart & Checkout Summary */}
       <div className="w-[26rem] bg-white border-l shadow-xl flex flex-col h-full flex-shrink-0 z-20 overflow-hidden">
         <div className="p-4 bg-slate-900 text-slate-100 flex justify-between items-center shadow-md">
-          <h2 className="text-lg font-bold flex items-center gap-1.5">
-            <span>🛒</span> Current Cart
+          <h2 className="text-sm font-bold flex flex-col gap-0.5 leading-tight">
+            <span className="flex items-center gap-1.5 text-base"><span>🛒</span> Current Cart</span>
+            <span className="text-[10px] text-slate-300 font-normal">Selling from: <strong className="text-amber-400 font-semibold">{activeBranchName}</strong></span>
           </h2>
           <div className="flex items-center space-x-2">
             {pendingSync > 0 && (
@@ -813,10 +848,13 @@ export default function POSTerminal() {
               >
                 <div className="min-w-0 flex-1">
                   <h4 className="font-semibold text-slate-900 text-xs truncate leading-tight">
-                    {item.name} {item.supplier_name ? `(${item.supplier_name})` : ""}
+                    {item.name}
                   </h4>
-                  <div className="text-[10px] text-slate-400 font-mono mt-0.5">
-                    SKU: {item.sku} &bull; ৳{item.selling_price.toFixed(2)}
+                  <div className="text-[10px] text-slate-500 mt-0.5 flex flex-col gap-0.5">
+                    <span className="font-mono">SKU: {item.sku} &bull; ৳{item.selling_price.toFixed(2)}</span>
+                    <span className="text-[9px] font-semibold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-md inline-block w-fit mt-0.5">
+                      📍 {activeBranchName}
+                    </span>
                   </div>
                 </div>
 
@@ -1081,7 +1119,7 @@ export default function POSTerminal() {
                     {completedSale.items.map((item, idx) => (
                       <tr key={idx} className="py-3">
                         <td className="py-3 pr-4">
-                          <p className="font-bold text-slate-900">{item.name} {item.supplier_name ? `(${item.supplier_name})` : ""}</p>
+                          <p className="font-bold text-slate-900">{item.name}</p>
                           <span className="text-[10px] text-slate-400 font-mono">SKU: {item.sku}</span>
                         </td>
                         <td className="py-3 text-center font-semibold">{item.quantity}</td>
