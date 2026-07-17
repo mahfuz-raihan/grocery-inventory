@@ -11,7 +11,7 @@ export default function RootLayout({
 }>) {
   const pathname = usePathname();
   const router = useRouter();
-  
+
   const [isClient, setIsClient] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
@@ -19,7 +19,7 @@ export default function RootLayout({
 
   useEffect(() => {
     setIsClient(true);
-    
+
     // Fetch auth status
     const token = localStorage.getItem("erp_token");
     const role = localStorage.getItem("erp_role");
@@ -121,7 +121,7 @@ export default function RootLayout({
         />
       </head>
       <body className="bg-surface text-slate-800 flex h-screen overflow-hidden antialiased font-sans">
-        
+
         {/* Sidebar */}
         <aside className={`${isSidebarCollapsed ? 'w-20' : 'w-64'} bg-surface-dark text-slate-300 flex-shrink-0 hidden md:flex flex-col shadow-xl z-20 transition-all duration-300`}>
           <div className={`h-16 flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-between px-5'} border-b border-slate-700/50 bg-slate-900/50`}>
@@ -151,7 +151,7 @@ export default function RootLayout({
               </>
             )}
           </div>
-          
+
           <nav className="flex-1 py-6 px-4 space-y-2 overflow-y-auto">
             {/* Show Dashboard to Owner, Manager, Stock Handler */}
             {userRole && ["owner", "manager", "stock_handler"].includes(userRole) && (
@@ -168,7 +168,7 @@ export default function RootLayout({
                 {!isSidebarCollapsed && <span className="font-medium animate-fadeIn">Inventory</span>}
               </a>
             )}
-            
+
             {/* Show POS to Owner, Manager, Cashier */}
             {userRole && ["owner", "manager", "cashier"].includes(userRole) && (
               <a href="/" title={isSidebarCollapsed ? "Point of Sale" : ""} className={`flex items-center ${isSidebarCollapsed ? 'justify-center py-3.5 px-0' : 'px-4 py-3'} rounded-xl transition-all ${pathname === '/' ? 'text-white bg-brand-600 shadow-sm' : 'hover:bg-slate-800 hover:text-white'}`}>
@@ -187,7 +187,7 @@ export default function RootLayout({
           </nav>
 
           <div className="p-4 border-t border-slate-700/50">
-            <button 
+            <button
               onClick={handleLogout}
               title={isSidebarCollapsed ? "Logout" : ""}
               className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center py-3 px-0' : 'px-4 py-3'} text-red-400 hover:bg-red-950/30 hover:text-red-300 rounded-xl transition-all font-medium`}
@@ -214,7 +214,7 @@ export default function RootLayout({
                 </svg>
               </button>
               <h2 className="text-xl font-semibold text-slate-800">
-                {pathname === '/dashboard' ? 'HQ Enterprise Dashboard' : pathname === '/users' ? 'User & Role Management' : pathname === '/inventory' ? 'Factory Inventory Control' : 'Point of Sale Terminal'}
+                {pathname === '/dashboard' ? 'HQ Dashboard' : pathname === '/users' ? 'User & Role Management' : pathname === '/inventory' ? 'Factory Inventory Control' : 'Point of Sale Terminal'}
               </h2>
             </div>
             <div className="flex items-center space-x-4">

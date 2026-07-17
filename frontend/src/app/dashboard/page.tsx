@@ -4,141 +4,141 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 interface Product {
-    id: string;
-    sku: string;
-    barcode?: string | null;
-    name: string;
-    unit?: string | null;
-    selling_price: number;
-    purchase_cost?: number;
-    average_cost?: number;
-    min_stock_level?: number;
-    max_stock_level?: number;
-    reorder_quantity?: number;
-    is_active?: boolean;
-    product_type?: string;
-    parent_id?: string | null;
-    color?: string | null;
-    size?: string | null;
-    current_stock: number;
-    variants?: Product[];
+  id: string;
+  sku: string;
+  barcode?: string | null;
+  name: string;
+  unit?: string | null;
+  selling_price: number;
+  purchase_cost?: number;
+  average_cost?: number;
+  min_stock_level?: number;
+  max_stock_level?: number;
+  reorder_quantity?: number;
+  is_active?: boolean;
+  product_type?: string;
+  parent_id?: string | null;
+  color?: string | null;
+  size?: string | null;
+  current_stock: number;
+  variants?: Product[];
 }
 
 interface ProductCreate {
-    sku: string;
-    name: string;
-    unit: string;
-    selling_price: number;
+  sku: string;
+  name: string;
+  unit: string;
+  selling_price: number;
 }
 
 interface Branch {
-    id: string;
-    name: string;
-    address: string;
+  id: string;
+  name: string;
+  address: string;
 }
 
 
 interface GRNItemCreate {
-    product_id: string;
-    quantity_received: number;
-    cost_price: number;
-    ordered_quantity?: number;
-    damaged_quantity?: number;
-    batch_number?: string;
+  product_id: string;
+  quantity_received: number;
+  cost_price: number;
+  ordered_quantity?: number;
+  damaged_quantity?: number;
+  batch_number?: string;
 }
 
 interface GRNCreate {
-    branch_id: string;
-    supplier_name: string;
-    invoice_reference?: string;
-    items: GRNItemCreate[];
+  branch_id: string;
+  supplier_name: string;
+  invoice_reference?: string;
+  items: GRNItemCreate[];
 }
 
 interface DailyReport {
-    date: string;
-    branch_id: string | null;
-    total_revenue: number;
-    transaction_count: number;
+  date: string;
+  branch_id: string | null;
+  total_revenue: number;
+  transaction_count: number;
 }
 
 const getApiBaseUrl = () => {
-    if (typeof window !== 'undefined') {
-      return window.location.origin;
-    }
-    return '';
+  if (typeof window !== 'undefined') {
+    return window.location.origin;
+  }
+  return '';
 };
 
 const api = {
-    getProducts: async (): Promise<Product[]> => {
-        try {
-            const baseUrl = getApiBaseUrl();
-            const response = await fetch(`${baseUrl}/api/v1/inventory/products`);
-            if (!response.ok) throw new Error("Failed to fetch products");
-            return await response.json();
-        } catch (error) {
-            console.error("API Error (getProducts):", error);
-            return [];
-        }
-    },
-    getProductDetail: async (id: string): Promise<any> => {
-        const baseUrl = getApiBaseUrl();
-        const response = await fetch(`${baseUrl}/api/v1/inventory/products/${id}`);
-        if (!response.ok) throw new Error("Failed to fetch product details");
-        return await response.json();
-    },
-    createProduct: async (payload: any): Promise<Product> => {
-        const baseUrl = getApiBaseUrl();
-        const response = await fetch(`${baseUrl}/api/v1/inventory/products`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ...payload, is_active: true, initial_stock_quantity: 0 })
-        });
-        if (!response.ok) throw new Error("Failed to create product");
-        return await response.json();
-    },
-    updateProduct: async (id: string, payload: any): Promise<Product> => {
-        const baseUrl = getApiBaseUrl();
-        const response = await fetch(`${baseUrl}/api/v1/inventory/products/${id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-        if (!response.ok) throw new Error("Failed to update product");
-        return await response.json();
-    },
-    getBranches: async (): Promise<Branch[]> => {
-        try {
-            const baseUrl = getApiBaseUrl();
-            const response = await fetch(`${baseUrl}/api/v1/inventory/branches`);
-            if (!response.ok) throw new Error("Failed to fetch branches");
-            return await response.json();
-        } catch (error) {
-            console.error("API Error (getBranches):", error);
-            return [];
-        }
-    },
-    createBranch: async (payload: { name: string, address: string }): Promise<Branch> => {
-        const baseUrl = getApiBaseUrl();
-        const response = await fetch(`${baseUrl}/api/v1/inventory/branches`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-        if (!response.ok) throw new Error("Failed to create branch");
-        return await response.json();
-    },
-
-    getDailyReport: async (): Promise<DailyReport> => {
-        try {
-            const baseUrl = getApiBaseUrl();
-            const response = await fetch(`${baseUrl}/api/v1/sales/reports/daily`);
-            if (!response.ok) throw new Error("Failed to fetch report");
-            return await response.json();
-        } catch (error) {
-            console.error("API Error (getDailyReport):", error);
-            return { date: new Date().toISOString(), branch_id: null, total_revenue: 0, transaction_count: 0 };
-        }
+  getProducts: async (): Promise<Product[]> => {
+    try {
+      const baseUrl = getApiBaseUrl();
+      const response = await fetch(`${baseUrl}/api/v1/inventory/products`);
+      if (!response.ok) throw new Error("Failed to fetch products");
+      return await response.json();
+    } catch (error) {
+      console.error("API Error (getProducts):", error);
+      return [];
     }
+  },
+  getProductDetail: async (id: string): Promise<any> => {
+    const baseUrl = getApiBaseUrl();
+    const response = await fetch(`${baseUrl}/api/v1/inventory/products/${id}`);
+    if (!response.ok) throw new Error("Failed to fetch product details");
+    return await response.json();
+  },
+  createProduct: async (payload: any): Promise<Product> => {
+    const baseUrl = getApiBaseUrl();
+    const response = await fetch(`${baseUrl}/api/v1/inventory/products`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...payload, is_active: true, initial_stock_quantity: 0 })
+    });
+    if (!response.ok) throw new Error("Failed to create product");
+    return await response.json();
+  },
+  updateProduct: async (id: string, payload: any): Promise<Product> => {
+    const baseUrl = getApiBaseUrl();
+    const response = await fetch(`${baseUrl}/api/v1/inventory/products/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!response.ok) throw new Error("Failed to update product");
+    return await response.json();
+  },
+  getBranches: async (): Promise<Branch[]> => {
+    try {
+      const baseUrl = getApiBaseUrl();
+      const response = await fetch(`${baseUrl}/api/v1/inventory/branches`);
+      if (!response.ok) throw new Error("Failed to fetch branches");
+      return await response.json();
+    } catch (error) {
+      console.error("API Error (getBranches):", error);
+      return [];
+    }
+  },
+  createBranch: async (payload: { name: string, address: string }): Promise<Branch> => {
+    const baseUrl = getApiBaseUrl();
+    const response = await fetch(`${baseUrl}/api/v1/inventory/branches`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!response.ok) throw new Error("Failed to create branch");
+    return await response.json();
+  },
+
+  getDailyReport: async (): Promise<DailyReport> => {
+    try {
+      const baseUrl = getApiBaseUrl();
+      const response = await fetch(`${baseUrl}/api/v1/sales/reports/daily`);
+      if (!response.ok) throw new Error("Failed to fetch report");
+      return await response.json();
+    } catch (error) {
+      console.error("API Error (getDailyReport):", error);
+      return { date: new Date().toISOString(), branch_id: null, total_revenue: 0, transaction_count: 0 };
+    }
+  }
 };
 
 export default function Dashboard() {
@@ -146,7 +146,7 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<string>("analytics");
   const [currency, setCurrency] = useState<"BDT" | "USD">("BDT");
   const USD_EXCHANGE_RATE = 117.0;
-  
+
   const [report, setReport] = useState<DailyReport | null>(null);
   const [loadingReport, setLoadingReport] = useState(true);
 
@@ -165,7 +165,7 @@ export default function Dashboard() {
   useEffect(() => {
     const role = localStorage.getItem("erp_role");
     setUserRole(role);
-    
+
     if (role === "cashier") {
       router.push("/");
       return;
@@ -202,10 +202,10 @@ export default function Dashboard() {
   const handleCreateBranch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newBranchName || !newBranchLocation) return;
-    
+
     setIsSubmittingBranch(true);
     setBranchSuccessMessage("");
-    
+
     try {
       const newBranch = await api.createBranch({ name: newBranchName, address: newBranchLocation });
       setBranches(prev => [...prev, newBranch]);
@@ -248,7 +248,7 @@ export default function Dashboard() {
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-blue-900">Enterprise Dashboard</h1>
+            <h1 className="text-3xl font-bold text-blue-900">Dashboard</h1>
             <p className="text-gray-500 mt-1">Real-time HQ Analytics & Branch Management</p>
           </div>
           <div className="flex items-center space-x-4">
