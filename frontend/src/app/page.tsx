@@ -137,6 +137,7 @@ export default function POSTerminal() {
   const [defaultBranchId, setDefaultBranchId] = useState<string>("");
   const [branches, setBranches] = useState<{ id: string; name: string }[]>([]);
   const [selectedBranchId, setSelectedBranchId] = useState<string>("");
+  const [userRole, setUserRole] = useState<string | null>(null);
 
   // --- CATEGORIES STATE ---
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
@@ -224,6 +225,7 @@ export default function POSTerminal() {
       // Resolve a real branch_id from the DB so checkout FK never fails.
       // Priority: localStorage (user-set) → first branch from DB → empty string.
       const savedBranch = localStorage.getItem("erp_branch_id");
+      const role = localStorage.getItem("erp_role");
       const branchRes = await fetch(`${baseUrl}/api/v1/inventory/branches`);
       if (branchRes.ok) {
         const branchList: { id: string; name: string }[] = await branchRes.json();
@@ -232,8 +234,12 @@ export default function POSTerminal() {
           // Use saved branch only if it's in the actual branches list
           const validSaved = savedBranch && branchList.find(b => b.id === savedBranch);
           const resolvedId = validSaved ? savedBranch! : branchList[0].id;
-          localStorage.setItem("erp_branch_id", resolvedId);
-          setDefaultBranchId(resolvedId);
+          const forcedId = (role && role !== "owner" && savedBranch) ? savedBranch : resolvedId;
+          localStorage.setItem("erp_branch_id", forcedId);
+          setDefaultBranchId(forcedId);
+          if (role && role !== "owner") {
+            setSelectedBranchId(forcedId);
+          }
         }
       }
 
@@ -255,7 +261,16 @@ export default function POSTerminal() {
   };
 
   useEffect(() => {
-    fetchProductsList();
+    const role = localStorage.getItem("erp_role");
+    setUserRole(role);
+    const userBranchId = localStorage.getItem("erp_branch_id");
+    
+    if (role !== "owner" && userBranchId) {
+      setSelectedBranchId(userBranchId);
+      fetchProductsList(userBranchId);
+    } else {
+      fetchProductsList();
+    }
 
     const checkSyncQueue = async () => {
       const queue = await getSyncQueue();
@@ -665,9 +680,10 @@ export default function POSTerminal() {
             <select
               value={selectedBranchId}
               onChange={(e) => handleBranchChange(e.target.value)}
-              className="p-2 border rounded-xl text-xs font-semibold text-slate-700 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition"
+              disabled={userRole !== "owner"}
+              className={`p-2 border rounded-xl text-xs font-semibold text-slate-700 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition ${userRole !== "owner" ? "cursor-not-allowed bg-slate-100 opacity-80" : ""}`}
             >
-              <option value="">All Warehouses</option>
+              {userRole === "owner" && <option value="">All Warehouses</option>}
               {branches.map(b => (
                 <option key={b.id} value={b.id}>{b.name}</option>
               ))}

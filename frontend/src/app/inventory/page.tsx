@@ -629,6 +629,8 @@ export default function InventoryControlPage() {
 
     const loadData = async () => {
       try {
+        const role = localStorage.getItem("erp_role");
+        const userBranchId = localStorage.getItem("erp_branch_id") || "";
         const [branchesData, suppliersData, productsData, transfersData, adjustmentsData, valData, lowData, categoriesData, grnsData, stockListData, stockSummary] = await Promise.all([
           api.getBranches(),
           api.getSuppliers(),
@@ -639,7 +641,7 @@ export default function InventoryControlPage() {
           api.getLowStockReport(),
           api.getCategories(),
           api.getGRNs(),
-          api.getStockList(),
+          api.getStockList(role !== "owner" && userBranchId ? { branch_id: userBranchId } : undefined),
           api.getStockListSummary(),
         ]);
         setBranches(branchesData);
@@ -668,10 +670,16 @@ export default function InventoryControlPage() {
         }
 
         if (branchesData.length > 0) {
-          setTxFrom(branchesData[0].id);
-          setTxTo(branchesData.length > 1 ? branchesData[1].id : branchesData[0].id);
-          setAdjBranch(branchesData[0].id);
-          setSelectedBranchId(branchesData[0].id);
+          const defaultBranch = (role !== "owner" && userBranchId) ? userBranchId : branchesData[0].id;
+          setTxFrom(defaultBranch);
+          setTxTo(branchesData.length > 1 ? branchesData[1].id : defaultBranch);
+          setAdjBranch(defaultBranch);
+          setSelectedBranchId(defaultBranch);
+          if (role !== "owner" && userBranchId) {
+            setFilterMovementBranch(userBranchId);
+            setFilterConsumptionBranch(userBranchId);
+            setFilterDeadStockBranch(userBranchId);
+          }
         }
         if (productsData.length > 0) {
           setTxProduct(productsData[0].id);
@@ -1381,7 +1389,13 @@ export default function InventoryControlPage() {
     { id: "adjustments", label: "Adjustments Log", roles: ["owner", "manager"] },
     { id: "reports", label: "Valuation & Reports", roles: ["owner", "manager", "stock_handler"] }
   ];
-  const visibleTabs = allTabs.filter(tab => !userRole || tab.roles.includes(userRole));
+  const visibleTabs = allTabs.filter(tab => {
+    if (userRole && !tab.roles.includes(userRole)) return false;
+    if (userRole && userRole !== "owner" && ["warehouses", "suppliers", "transfers", "adjustments"].includes(tab.id)) {
+      return false;
+    }
+    return true;
+  });
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-800">
@@ -1552,7 +1566,12 @@ export default function InventoryControlPage() {
         const formatStockValue = (val: number) =>
           val.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-        const summary = stockListSummary;
+        const isOwner = userRole === "owner";
+        const summary = isOwner ? stockListSummary : {
+          total_products: new Set(filteredRows.map((r: any) => r.product_id)).size,
+          stock_value: filteredRows.reduce((sum: number, r: any) => sum + (r.available_qty * (r.average_cost || 0)), 0),
+          low_and_out_of_stock_count: filteredRows.filter((r: any) => r.status !== "available").length,
+        };
 
         return (
           <div className="space-y-6">
@@ -1570,7 +1589,7 @@ export default function InventoryControlPage() {
                   <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Products</div>
                   <div className="text-3xl font-black text-slate-800 mt-0.5">
                     {/* Show filtered unique product count when filters are active, full count otherwise */}
-                    {(stockListSearch || stockListSupplierFilter || stockListCategoryFilter || stockListWarehouseFilter || stockListStatusFilter)
+                    {(!isOwner || stockListSearch || stockListSupplierFilter || stockListCategoryFilter || stockListWarehouseFilter || stockListStatusFilter)
                       ? new Set(filteredRows.map((r: any) => r.product_id)).size
                       : (summary?.total_products ?? 0)}
                   </div>
@@ -1586,7 +1605,13 @@ export default function InventoryControlPage() {
                 </div>
                 <div className="min-w-0">
                   <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Stock Value</div>
-                  <div className="text-2xl font-black text-slate-800 mt-0.5 truncate">{formatStockValue(summary?.stock_value ?? 0)}</div>
+                  <div className="text-2xl font-black text-slate-800 mt-0.5 truncate">
+                    {formatStockValue(
+                      (!isOwner || stockListSearch || stockListSupplierFilter || stockListCategoryFilter || stockListWarehouseFilter || stockListStatusFilter)
+                        ? filteredRows.reduce((sum: number, r: any) => sum + (r.available_qty * (r.average_cost || 0)), 0)
+                        : (summary?.stock_value ?? 0)
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -1601,7 +1626,7 @@ export default function InventoryControlPage() {
                   <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Low / Out of Stock</div>
                   <div className="text-3xl font-black text-red-600 mt-0.5">
                     {/* Show filtered count when filters active, global summary otherwise */}
-                    {(stockListSearch || stockListSupplierFilter || stockListCategoryFilter || stockListWarehouseFilter || stockListStatusFilter)
+                    {(!isOwner || stockListSearch || stockListSupplierFilter || stockListCategoryFilter || stockListWarehouseFilter || stockListStatusFilter)
                       ? filteredRows.filter((r: any) => r.status !== "available").length
                       : (summary?.low_and_out_of_stock_count ?? 0)}
                   </div>
@@ -1660,7 +1685,7 @@ export default function InventoryControlPage() {
               </div>
 
               {/* Warehouse filter row */}
-              {uniqueWarehouses.length > 0 && (
+              {userRole === "owner" && uniqueWarehouses.length > 0 && (
                 <div className="mt-3 flex items-center gap-2 flex-wrap">
                   <span className="text-xs text-slate-500 font-medium">Warehouse:</span>
                   <button
@@ -2131,11 +2156,19 @@ export default function InventoryControlPage() {
       )}
 
       {activeTab === "receiving" && (() => {
+        const role = localStorage.getItem("erp_role");
+        const userBranchId = localStorage.getItem("erp_branch_id");
+        const isOwner = role === "owner";
+
         // Filter and Sort GRN Log entries
         const rawItems = grns.flatMap(grn => (grn.items || []).map(item => ({ ...item, grn })));
 
         // Filter items
         const filteredGrnItems = rawItems.filter(item => {
+          if (!isOwner && userBranchId && item.grn.branch_id !== userBranchId) {
+            return false;
+          }
+
           const matchesSupplier = filterSupplier === "" ||
             item.grn.supplier_name.toLowerCase().includes(filterSupplier.toLowerCase());
           
@@ -2834,7 +2867,7 @@ export default function InventoryControlPage() {
                 onClick={() => setReportsNestedTab(tab.id)}
                 className={`px-4 py-2 text-sm font-semibold rounded-md transition-all ${reportsNestedTab === tab.id
                   ? "bg-blue-600 text-white shadow-sm font-bold"
-                  : "text-gray-500 hover:text-gray-700 hover:bg-gray-105"
+                  : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
                   }`}
               >
                 {tab.label}
@@ -2842,97 +2875,127 @@ export default function InventoryControlPage() {
             ))}
           </div>
 
-          {reportsNestedTab === "valuation" && (
-            <div className="space-y-8">
-              {/* Valuation Summaries */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-blue-600 p-6 rounded-xl text-white shadow-md">
-                  <h4 className="text-blue-200 text-xs font-bold uppercase tracking-wider mb-2">Total Inventory Value</h4>
-                  <p className="text-4xl font-extrabold">৳{(valuation?.total_valuation || 0).toLocaleString()}</p>
-                </div>
-                <div className="bg-emerald-600 p-6 rounded-xl text-white shadow-md">
-                  <h4 className="text-emerald-200 text-xs font-bold uppercase tracking-wider mb-2">Total Storage Items</h4>
-                  <p className="text-4xl font-extrabold">{(valuation?.total_items || 0).toLocaleString()}</p>
-                </div>
-                <div className="bg-orange-600 p-6 rounded-xl text-white shadow-md">
-                  <h4 className="text-orange-200 text-xs font-bold uppercase tracking-wider mb-2">Low Stock Alerts</h4>
-                  <p className="text-4xl font-extrabold">{lowStock.length}</p>
-                </div>
-              </div>
+          {reportsNestedTab === "valuation" && (() => {
+            const isOwner = userRole === "owner";
+            const valuationDetails = isOwner 
+              ? (valuation?.valuation_details || [])
+              : stockListData.map(r => ({
+                  product_id: r.product_id,
+                  sku: r.sku,
+                  name: r.product_name,
+                  product_type: r.category || "General",
+                  current_stock: r.available_qty,
+                  unit_cost: r.average_cost || 0,
+                  total_value: r.available_qty * (r.average_cost || 0)
+                })).filter(item => item.current_stock > 0);
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* Valuation details list */}
-                <div className="bg-white p-6 rounded-xl border shadow-sm">
-                  <h3 className="text-lg font-bold text-gray-800 mb-4">Stock Valuation Breakdown</h3>
-                  {!valuation || valuation.valuation_details.length === 0 ? (
-                    <p className="text-sm text-gray-500">No valuation logs available.</p>
-                  ) : (
-                    <div className="max-h-96 overflow-y-auto pr-2">
-                      <table className="w-full text-left text-sm text-gray-500">
-                        <thead className="text-xs text-gray-700 bg-gray-100 uppercase font-bold">
-                          <tr>
-                            <th className="p-3">Product</th>
-                            <th className="p-3 text-right">Stock</th>
-                            <th className="p-3 text-right">Unit Cost</th>
-                            <th className="p-3 text-right">Valuation</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {valuation.valuation_details.map(d => (
-                            <tr key={d.product_id} className="border-b hover:bg-gray-50">
-                              <td className="p-3">
-                                <div className="font-semibold text-gray-900">{d.name}</div>
-                                <div className="text-xs text-gray-400">{d.sku} | {d.product_type}</div>
-                              </td>
-                              <td className="p-3 text-right font-semibold text-gray-800">{d.current_stock}</td>
-                              <td className="p-3 text-right">৳{d.unit_cost.toLocaleString()}</td>
-                              <td className="p-3 text-right font-bold text-blue-600">৳{d.total_value.toLocaleString()}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
+            const lowStockList = isOwner
+              ? lowStock
+              : stockListData.filter(r => r.status !== "available").map(r => ({
+                  product_id: r.product_id,
+                  sku: r.sku,
+                  name: r.product_name,
+                  product_type: r.category || "General",
+                  current_stock: r.available_qty,
+                  min_stock_level: r.min_stock_level || 5.0,
+                  reorder_quantity: (r.min_stock_level || 5.0) * 2
+                }));
+
+            const computedValuationSum = valuationDetails.reduce((sum, d) => sum + d.total_value, 0);
+            const computedItemsSum = valuationDetails.reduce((sum, d) => sum + d.current_stock, 0);
+
+            return (
+              <div className="space-y-8">
+                {/* Valuation Summaries */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="bg-blue-600 p-6 rounded-xl text-white shadow-md">
+                    <h4 className="text-blue-200 text-xs font-bold uppercase tracking-wider mb-2">Total Inventory Value</h4>
+                    <p className="text-4xl font-extrabold">৳{computedValuationSum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                  </div>
+                  <div className="bg-emerald-600 p-6 rounded-xl text-white shadow-md">
+                    <h4 className="text-emerald-200 text-xs font-bold uppercase tracking-wider mb-2">Total Storage Items</h4>
+                    <p className="text-4xl font-extrabold">{computedItemsSum.toLocaleString()}</p>
+                  </div>
+                  <div className="bg-orange-600 p-6 rounded-xl text-white shadow-md">
+                    <h4 className="text-orange-200 text-xs font-bold uppercase tracking-wider mb-2">Low Stock Alerts</h4>
+                    <p className="text-4xl font-extrabold">{lowStockList.length}</p>
+                  </div>
                 </div>
 
-                {/* Low stock alerts list */}
-                <div className="bg-white p-6 rounded-xl border shadow-sm">
-                  <h3 className="text-lg font-bold text-orange-850 mb-4">🚨 Critical Low Stock Alerts</h3>
-                  {lowStock.length === 0 ? (
-                    <div className="p-4 bg-green-50 text-green-700 border border-green-200 rounded-lg text-sm">
-                      ✓ All products are currently above their safety thresholds.
-                    </div>
-                  ) : (
-                    <div className="max-h-96 overflow-y-auto pr-2">
-                      <table className="w-full text-left text-sm text-gray-500">
-                        <thead className="text-xs text-gray-700 bg-gray-100 uppercase font-bold">
-                          <tr>
-                            <th className="p-3">Product</th>
-                            <th className="p-3 text-right">Stock</th>
-                            <th className="p-3 text-right">Min Threshold</th>
-                            <th className="p-3 text-right">Reorder Qty</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {lowStock.map(l => (
-                            <tr key={l.product_id} className="border-b hover:bg-red-55/30">
-                              <td className="p-3">
-                                <div className="font-semibold text-red-900">{l.name}</div>
-                                <div className="text-xs text-gray-400">{l.sku} | {l.product_type}</div>
-                              </td>
-                              <td className="p-3 text-right font-bold text-red-650">{l.current_stock}</td>
-                              <td className="p-3 text-right font-medium text-gray-650">{l.min_stock_level}</td>
-                              <td className="p-3 text-right font-semibold text-blue-600">{l.reorder_quantity}</td>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  {/* Valuation details list */}
+                  <div className="bg-white p-6 rounded-xl border shadow-sm">
+                    <h3 className="text-lg font-bold text-gray-800 mb-4">Stock Valuation Breakdown</h3>
+                    {valuationDetails.length === 0 ? (
+                      <p className="text-sm text-gray-500">No valuation logs available.</p>
+                    ) : (
+                      <div className="max-h-96 overflow-y-auto pr-2">
+                        <table className="w-full text-left text-sm text-gray-500">
+                          <thead className="text-xs text-gray-700 bg-gray-100 uppercase font-bold">
+                            <tr>
+                              <th className="p-3">Product</th>
+                              <th className="p-3 text-right">Stock</th>
+                              <th className="p-3 text-right">Unit Cost</th>
+                              <th className="p-3 text-right">Valuation</th>
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
+                          </thead>
+                          <tbody>
+                            {valuationDetails.map(d => (
+                              <tr key={d.product_id} className="border-b hover:bg-gray-55">
+                                <td className="p-3">
+                                  <div className="font-semibold text-gray-900">{d.name}</div>
+                                  <div className="text-xs text-gray-400">{d.sku} | {d.product_type}</div>
+                                </td>
+                                <td className="p-3 text-right font-semibold text-gray-800">{d.current_stock}</td>
+                                <td className="p-3 text-right">৳{d.unit_cost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                                <td className="p-3 text-right font-bold text-blue-600">৳{d.total_value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Low stock alerts list */}
+                  <div className="bg-white p-6 rounded-xl border shadow-sm">
+                    <h3 className="text-lg font-bold text-orange-850 mb-4">🚨 Critical Low Stock Alerts</h3>
+                    {lowStockList.length === 0 ? (
+                      <div className="p-4 bg-green-50 text-green-700 border border-green-200 rounded-lg text-sm">
+                        ✓ All products are currently above their safety thresholds.
+                      </div>
+                    ) : (
+                      <div className="max-h-96 overflow-y-auto pr-2">
+                        <table className="w-full text-left text-sm text-gray-500">
+                          <thead className="text-xs text-gray-700 bg-gray-100 uppercase font-bold">
+                            <tr>
+                              <th className="p-3">Product</th>
+                              <th className="p-3 text-right">Stock</th>
+                              <th className="p-3 text-right">Min Threshold</th>
+                              <th className="p-3 text-right">Reorder Qty</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {lowStockList.map(l => (
+                              <tr key={l.product_id} className="border-b hover:bg-red-55/30">
+                                <td className="p-3">
+                                  <div className="font-semibold text-red-900">{l.name}</div>
+                                  <div className="text-xs text-gray-400">{l.sku} | {l.product_type}</div>
+                                </td>
+                                <td className="p-3 text-right font-bold text-red-650">{l.current_stock}</td>
+                                <td className="p-3 text-right font-medium text-gray-650">{l.min_stock_level}</td>
+                                <td className="p-3 text-right font-semibold text-blue-600">{l.reorder_quantity}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
 
           {reportsNestedTab === "movement" && (
             <div className="bg-white p-6 rounded-xl border shadow-sm space-y-6">
@@ -2940,11 +3003,12 @@ export default function InventoryControlPage() {
                 <h3 className="text-lg font-bold text-gray-805">Stock Movement Log</h3>
                 <div className="flex flex-wrap gap-2">
                   <select
-                    className="p-2 border rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500"
+                    className={`p-2 border rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500 ${userRole !== "owner" ? "bg-gray-100 cursor-not-allowed text-gray-500 font-semibold" : ""}`}
                     value={filterMovementBranch}
                     onChange={(e) => setFilterMovementBranch(e.target.value)}
+                    disabled={userRole !== "owner"}
                   >
-                    <option value="">All Warehouses</option>
+                    {userRole === "owner" && <option value="">All Warehouses</option>}
                     {branches.map(b => (
                       <option key={b.id} value={b.id}>{b.name}</option>
                     ))}
@@ -3032,11 +3096,12 @@ export default function InventoryControlPage() {
                     />
                   </div>
                   <select
-                    className="p-2 border rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500"
+                    className={`p-2 border rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500 ${userRole !== "owner" ? "bg-gray-100 cursor-not-allowed text-gray-500 font-semibold" : ""}`}
                     value={filterDeadStockBranch}
                     onChange={(e) => setFilterDeadStockBranch(e.target.value)}
+                    disabled={userRole !== "owner"}
                   >
-                    <option value="">All Warehouses</option>
+                    {userRole === "owner" && <option value="">All Warehouses</option>}
                     {branches.map(b => (
                       <option key={b.id} value={b.id}>{b.name}</option>
                     ))}
@@ -3080,11 +3145,12 @@ export default function InventoryControlPage() {
               <div className="flex flex-wrap items-center gap-4 justify-between border-b pb-4">
                 <h3 className="text-lg font-bold text-gray-805">Production Consumption Summary</h3>
                 <select
-                  className="p-2 border rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500"
+                  className={`p-2 border rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500 ${userRole !== "owner" ? "bg-gray-100 cursor-not-allowed text-gray-500 font-semibold" : ""}`}
                   value={filterConsumptionBranch}
                   onChange={(e) => setFilterConsumptionBranch(e.target.value)}
+                  disabled={userRole !== "owner"}
                 >
-                  <option value="">All Warehouses</option>
+                  {userRole === "owner" && <option value="">All Warehouses</option>}
                   {branches.map(b => (
                     <option key={b.id} value={b.id}>{b.name}</option>
                   ))}
@@ -4126,9 +4192,10 @@ export default function InventoryControlPage() {
               <div>
                 <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Destination Warehouse *</label>
                 <select
-                  className="w-full p-2.5 border rounded-lg bg-white focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium"
+                  className={`w-full p-2.5 border rounded-lg bg-white focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium ${userRole !== "owner" ? "bg-gray-100 cursor-not-allowed text-gray-500" : ""}`}
                   value={selectedBranchId}
                   onChange={(e) => setSelectedBranchId(e.target.value)}
+                  disabled={userRole !== "owner"}
                   required
                 >
                   <option value="" disabled>-- Select destination warehouse --</option>

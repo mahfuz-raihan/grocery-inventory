@@ -219,7 +219,12 @@ export default function Dashboard() {
     setLoading(true);
     try {
       const baseUrl = window.location.origin;
-      const url = `${baseUrl}/api/v1/sales/reports/analytics?start_date=${encodeURIComponent(start.toISOString())}&end_date=${encodeURIComponent(end.toISOString())}`;
+      const role = localStorage.getItem("erp_role");
+      const branchId = localStorage.getItem("erp_branch_id");
+      let url = `${baseUrl}/api/v1/sales/reports/analytics?start_date=${encodeURIComponent(start.toISOString())}&end_date=${encodeURIComponent(end.toISOString())}`;
+      if (role !== "owner" && branchId) {
+        url += `&branch_id=${encodeURIComponent(branchId)}`;
+      }
       const response = await fetch(url);
       if (!response.ok) throw new Error("Failed to fetch analytics");
       const data: AnalyticsResponse = await response.json();
