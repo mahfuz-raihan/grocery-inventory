@@ -294,3 +294,132 @@ async def get_customer_by_phone(phone: str, session: AsyncSession = Depends(db_m
             "customer_address": sale.customer_address or ""
         }
     return {"customer_name": "", "customer_address": ""}
+
+
+async def get_grouped_data(session: AsyncSession, interval: str, start_dt: datetime, end_dt: datetime, branch_id: uuid.UUID | None):
+    trunc_expr = func.date_trunc(interval, Sale.created_at)
+    query = select(
+        trunc_expr.label("period"),
+        func.coalesce(func.sum(Sale.total_amount), 0).label("amount"),
+        func.count(Sale.id).label("count")
+    ).where(
+        Sale.created_at >= start_dt,
+        Sale.created_at <= end_dt,
+        Sale.status == OrderStatus.paid
+    )
+    if branch_id:
+        query = query.where(Sale.branch_id == branch_id)
+    query = query.group_by(trunc_expr).order_by(trunc_expr)
+    result = await session.execute(query)
+    rows = result.fetchall()
+    
+    data = []
+    for r in rows:
+        period_dt = r.period
+        if not period_dt:
+            continue
+        if interval == 'day':
+            label = period_dt.strftime("%Y-%m-%d")
+        elif interval == 'week':
+            label = period_dt.strftime("%Y-W%U")
+        elif interval == 'month':
+            label = period_dt.strftime("%Y-%m")
+        elif interval == 'year':
+            label = period_dt.strftime("%Y")
+        else:
+            label = period_dt.isoformat()
+        
+        data.append({
+            "label": label,
+            "amount": float(r.amount),
+            "count": int(r.count)
+        })
+    return data
+
+
+@app.get("/api/v1/sales/reports/analytics")
+async def get_sales_analytics(
+    start_date: datetime,
+    end_date: datetime,
+    branch_id: uuid.UUID | None = None,
+    session: AsyncSession = Depends(db_manager.get_session)
+):
+    """Aggregates total sales revenue, order counts, groups data for visualization, and fetches recent sales."""
+    if start_date.tzinfo is None:
+        start_date = start_date.replace(tzinfo=timezone.utc)
+    if end_date.tzinfo is None:
+        end_date = end_date.replace(tzinfo=timezone.utc)
+
+    # 1. Total revenue and total orders (Only count paid sales)
+    query_totals = select(
+        func.coalesce(func.sum(Sale.total_amount), 0).label("total_revenue"),
+        func.count(Sale.id).label("total_orders")
+    ).where(
+        Sale.created_at >= start_date,
+        Sale.created_at <= end_date,
+        Sale.status == OrderStatus.paid
+    )
+    if branch_id:
+        query_totals = query_totals.where(Sale.branch_id == branch_id)
+        
+    result_totals = await session.execute(query_totals)
+    row_totals = result_totals.fetchone()
+    total_revenue = float(row_totals.total_revenue) if row_totals else 0.0
+    total_orders = int(row_totals.total_orders) if row_totals else 0
+
+    # 2. Get grouped chart data (run sequentially to avoid concurrent AsyncSession usage)
+    daily_data = await get_grouped_data(session, 'day', start_date, end_date, branch_id)
+    weekly_data = await get_grouped_data(session, 'week', start_date, end_date, branch_id)
+    monthly_data = await get_grouped_data(session, 'month', start_date, end_date, branch_id)
+    yearly_data = await get_grouped_data(session, 'year', start_date, end_date, branch_id)
+
+    # 3. Get recent sales (both paid and pending) in the range
+    query_sales = select(
+        Sale
+    ).options(
+        selectinload(Sale.items)
+    ).where(
+        Sale.created_at >= start_date,
+        Sale.created_at <= end_date
+    )
+    if branch_id:
+        query_sales = query_sales.where(Sale.branch_id == branch_id)
+    query_sales = query_sales.order_by(Sale.created_at.desc()).limit(100)
+    
+    result_sales = await session.execute(query_sales)
+    sales_list = result_sales.scalars().all()
+
+    recent_sales_data = []
+    for s in sales_list:
+        recent_sales_data.append({
+            "id": str(s.id),
+            "receipt_number": s.receipt_number,
+            "branch_id": str(s.branch_id),
+            "customer_name": s.customer_name or "Walk-in Customer",
+            "customer_phone": s.customer_phone or "N/A",
+            "customer_address": s.customer_address or "N/A",
+            "total_amount": float(s.total_amount),
+            "discount": float(s.discount),
+            "status": "Paid" if s.status == OrderStatus.paid else "Due",
+            "created_at": s.created_at.isoformat(),
+            "items": [
+                {
+                    "product_id": str(item.product_id),
+                    "quantity": float(item.quantity),
+                    "unit_price": float(item.unit_price)
+                } for item in s.items
+            ]
+        })
+
+    return {
+        "total_revenue": total_revenue,
+        "total_orders": total_orders,
+        "charts": {
+            "daily": daily_data,
+            "weekly": weekly_data,
+            "monthly": monthly_data,
+            "yearly": yearly_data
+        },
+        "recent_sales": recent_sales_data
+    }
+
