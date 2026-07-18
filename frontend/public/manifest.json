@@ -1,0 +1,17 @@
+{
+    "name": "Grocery ERP Point of Sale",
+    "short_name": "Grocery POS",
+    "description": "Enterprise Point of Sale & Inventory Management System",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#f9fafb",
+    "theme_color": "#2563eb",
+    "orientation": "portrait-primary",
+    "icons": [
+        {
+            "src": "https://www.w3.org/Icons/SVG/svg-logo.svg",
+            "sizes": "192x192",
+            "type": "image/svg+xml"
+        }
+    ]
+}

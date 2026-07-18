@@ -1,96 +1,254 @@
-from datetime import datetime
-import uuid
+import datetime
 import enum
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import String, DateTime, ForeignKey, Boolean, Numeric, Enum as SQLEnum
-from sqlalchemy.sql import func
-from sqlalchemy.dialects.postgresql import UUID
-from shared.python.core import Base
+import uuid
+
+from sqlalchemy import Boolean, Column, Date, Enum as SAEnum, Float, ForeignKey, String, Text, DateTime, func, Integer
+from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy.orm import relationship, backref
+
+from shared.python.core import Base, TimestampMixin
+
 
 class MovementType(str, enum.Enum):
-    sale = "sale"
-    grn = "grn"
-    transfer_in = "transfer_in"
-    transfer_out = "transfer_out"
+    """Describes why a stock ledger entry was created."""
+    purchase_receive = "purchase_receive"
+    stock_transfer = "stock_transfer"
+    production_consumption = "production_consumption"
+    production_completion = "production_completion"
+    sales_delivery = "sales_delivery"
+    return_item = "return"
     damage = "damage"
     adjustment = "adjustment"
 
-class Branch(Base):
+
+class Supplier(Base, TimestampMixin):
+    """Product suppliers tracking."""
+    __tablename__ = "suppliers"
+    __table_args__ = {"schema": "inventory"}
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    name = Column(String(200), nullable=False, index=True)
+    contact_person = Column(String(100), nullable=True)
+    phone = Column(String(20), nullable=True)
+    email = Column(String(100), nullable=True)
+    address = Column(Text, nullable=True)
+    is_active = Column(Boolean, default=True, nullable=False)
+
+
+class Branch(Base, TimestampMixin):
+    """A physical store branch or warehouse location."""
     __tablename__ = "branches"
     __table_args__ = {"schema": "inventory"}
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    name: Mapped[str] = mapped_column(String(100))
-    address: Mapped[str | None] = mapped_column(String)
-    phone: Mapped[str | None] = mapped_column(String(20))
-    is_head_office: Mapped[bool] = mapped_column(Boolean, default=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    name = Column(String(100), unique=True, nullable=False, index=True)
+    address = Column(Text, nullable=True)
+    phone = Column(String(20), nullable=True)
+    is_head_office = Column(Boolean, default=False, nullable=False)
+    branch_type = Column(String(50), default="warehouse", nullable=False) # store, warehouse
 
-class Category(Base):
+
+class Category(Base, TimestampMixin):
+    """Product category for catalogue organisation."""
     __tablename__ = "categories"
     __table_args__ = {"schema": "inventory"}
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    name: Mapped[str] = mapped_column(String(100), unique=True)
-    
-    # Relationship
-    products: Mapped[list["Product"]] = relationship(back_populates="category")
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    name = Column(String(100), unique=True, nullable=False, index=True)
 
-class Product(Base):
+
+class Product(Base, TimestampMixin):
+    """
+    Master product record. Stock levels are NOT stored here —
+    they are derived on-the-fly from the StockLedger (event-sourced).
+    """
     __tablename__ = "products"
     __table_args__ = {"schema": "inventory"}
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    sku: Mapped[str] = mapped_column(String(50), unique=True, index=True)
-    barcode: Mapped[str | None] = mapped_column(String(50), unique=True, index=True)
-    name: Mapped[str] = mapped_column(String(200))
-    category_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("inventory.categories.id"))
-    unit: Mapped[str | None] = mapped_column(String(20))
-    selling_price: Mapped[float] = mapped_column(Numeric(10, 2))
-    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
-    
-    category: Mapped["Category"] = relationship(back_populates="products")
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    sku = Column(String(50), unique=True, nullable=False, index=True)
+    barcode = Column(String(100), unique=True, nullable=True, index=True)
+    name = Column(String(200), nullable=False, index=True)
+    unit = Column(String(50), nullable=True)
+    selling_price = Column(Float, nullable=False, default=0.0)
+    category_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("inventory.categories.id"),
+        nullable=True,
+    )
+    is_active = Column(Boolean, default=True, nullable=False)
 
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    # Variations (self-referencing parent-child structure)
+    parent_id = Column(UUID(as_uuid=True), ForeignKey("inventory.products.id"), nullable=True, index=True)
 
-class GRN(Base):
-    __tablename__ = "goods_receipt_notes"
-    __table_args__ = {"schema": "inventory"}
+    # Product Classification
+    product_type = Column(String(50), default="finished_product", nullable=False) # raw_material, finished_product, semi_finished_product, consumable, spare_parts
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    branch_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("inventory.branches.id"))
-    supplier_name: Mapped[str] = mapped_column(String(200))
-    invoice_reference: Mapped[str | None] = mapped_column(String(100))
-    total_amount: Mapped[float] = mapped_column(Numeric(10, 2))
-    status: Mapped[str] = mapped_column(String(20), default="completed")
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    # Furniture / Spec Dimensions
+    material_type = Column(String(100), nullable=True)
+    wood_type = Column(String(100), nullable=True)
+    board_type = Column(String(100), nullable=True)
+    color = Column(String(50), nullable=True)
+    size = Column(String(50), nullable=True)
+    length = Column(Float, nullable=True)
+    width = Column(Float, nullable=True)
+    height = Column(Float, nullable=True)
+    thickness = Column(Float, nullable=True)
+    weight = Column(Float, nullable=True)
 
-    items: Mapped[list["GRNItem"]] = relationship(back_populates="grn", cascade="all, delete-orphan")
+    # Costing & Inventory thresholds
+    purchase_cost = Column(Float, default=0.0, nullable=False)
+    commission = Column(Float, default=0.0, nullable=False)
+    additional_cost = Column(Float, default=0.0, nullable=False)
+    average_cost = Column(Float, default=0.0, nullable=False)
+    tax_rate = Column(Float, default=0.0, nullable=False)
+    min_stock_level = Column(Float, default=0.0, nullable=False)
+    max_stock_level = Column(Float, default=0.0, nullable=False)
+    reorder_quantity = Column(Float, default=0.0, nullable=False)
 
-class GRNItem(Base):
-    __tablename__ = "grn_items"
-    __table_args__ = {"schema": "inventory"}
+    # Image
+    product_image = Column(String(500), nullable=True)
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    grn_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("inventory.goods_receipt_notes.id"))
-    product_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("inventory.products.id"))
-    quantity_received: Mapped[float] = mapped_column(Numeric(10, 3))
-    cost_price: Mapped[float] = mapped_column(Numeric(10, 2))
-    subtotal: Mapped[float] = mapped_column(Numeric(10, 2))
+    # Supplier Link
+    supplier_id = Column(UUID(as_uuid=True), ForeignKey("inventory.suppliers.id"), nullable=True)
 
-    grn: Mapped["GRN"] = relationship(back_populates="items")
+    # Dynamically specifiable properties (JSONB)
+    custom_attributes = Column(JSONB, nullable=True)
 
-class StockLedger(Base):
+    # Self reference
+    parent = relationship("Product", remote_side=[id], back_populates="variants")
+    variants = relationship("Product", back_populates="parent", cascade="all, delete-orphan")
+
+
+class StockLedger(Base, TimestampMixin):
+    """
+    Append-only ledger of every stock movement.
+    Current stock = SUM(quantity_change) for a product/branch.
+    """
     __tablename__ = "stock_ledger"
     __table_args__ = {"schema": "inventory"}
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    branch_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("inventory.branches.id"))
-    product_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("inventory.products.id"))
-    quantity_change: Mapped[float] = mapped_column(Numeric(10, 3))
-    movement_type: Mapped[MovementType] = mapped_column(SQLEnum(MovementType))
-    reference_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
-    cost_price_at_time: Mapped[float | None] = mapped_column(Numeric(10, 2))
-    
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    branch_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("inventory.branches.id"),
+        nullable=False,
+        index=True,
+    )
+    product_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("inventory.products.id"),
+        nullable=False,
+        index=True,
+    )
+    # Positive = stock in, negative = stock out
+    quantity_change = Column(Float, nullable=False)
+    movement_type = Column(
+        SAEnum(MovementType, native_enum=False),
+        nullable=False,
+    )
+    supplier_name = Column(String(200), nullable=True, index=True)
+
+
+class GRN(Base, TimestampMixin):
+    """Goods Receipt Note — records an incoming supplier delivery."""
+    __tablename__ = "grn"
+    __table_args__ = {"schema": "inventory"}
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    branch_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("inventory.branches.id"),
+        nullable=False,
+    )
+    supplier_name = Column(String(200), nullable=False)
+    supplier_contact = Column(String(100), nullable=True)
+    supplier_phone = Column(String(50), nullable=True)
+    supplier_email = Column(String(100), nullable=True)
+    supplier_address = Column(Text, nullable=True)
+    invoice_reference = Column(String(100), nullable=True)
+    receiving_date = Column(Date, nullable=True, default=datetime.date.today)
+    total_amount = Column(Float, default=0.0, nullable=False)
+    discount = Column(Float, default=0.0, nullable=False)
+    status = Column(String(50), default="completed", nullable=False)
+
+    items = relationship("GRNItem", back_populates="grn", cascade="all, delete-orphan")
+
+
+class GRNItem(Base, TimestampMixin):
+    """Individual line item within a GRN."""
+    __tablename__ = "grn_items"
+    __table_args__ = {"schema": "inventory"}
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    grn_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("inventory.grn.id"),
+        nullable=False,
+    )
+    product_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("inventory.products.id"),
+        nullable=False,
+    )
+    quantity_received = Column(Float, nullable=False)
+    cost_price = Column(Float, nullable=False)
+    subtotal = Column(Float, nullable=False)
+    unit_price = Column(Float, nullable=True)
+    commission = Column(Float, default=0.0, nullable=True)
+
+    # Added columns for specs
+    ordered_quantity = Column(Float, default=0.0, nullable=False)
+    damaged_quantity = Column(Float, default=0.0, nullable=False)
+    batch_number = Column(String(100), nullable=True)
+
+    grn = relationship("GRN", back_populates="items")
+
+
+class StockTransfer(Base, TimestampMixin):
+    """Logs stock transfers between warehouses."""
+    __tablename__ = "stock_transfers"
+    __table_args__ = {"schema": "inventory"}
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    product_id = Column(UUID(as_uuid=True), ForeignKey("inventory.products.id"), nullable=False)
+    from_branch_id = Column(UUID(as_uuid=True), ForeignKey("inventory.branches.id"), nullable=False)
+    to_branch_id = Column(UUID(as_uuid=True), ForeignKey("inventory.branches.id"), nullable=False)
+    quantity = Column(Float, nullable=False)
+    status = Column(String(50), default="completed", nullable=False)
+    reference = Column(String(100), nullable=True)
+
+    product = relationship("Product")
+    from_branch = relationship("Branch", foreign_keys=[from_branch_id])
+    to_branch = relationship("Branch", foreign_keys=[to_branch_id])
+
+
+class StockAdjustment(Base, TimestampMixin):
+    """Logs manual stock corrections."""
+    __tablename__ = "stock_adjustments"
+    __table_args__ = {"schema": "inventory"}
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    product_id = Column(UUID(as_uuid=True), ForeignKey("inventory.products.id"), nullable=False)
+    branch_id = Column(UUID(as_uuid=True), ForeignKey("inventory.branches.id"), nullable=False)
+    current_quantity = Column(Float, nullable=False)
+    adjusted_quantity = Column(Float, nullable=False)
+    reason = Column(String(200), nullable=False)
+    notes = Column(Text, nullable=True)
+    approved_by = Column(String(100), nullable=False)
+
+    product = relationship("Product")
+    branch = relationship("Branch")
+
+
+class CompanyProfile(Base):
+    """Holds global settings for the company profile."""
+    __tablename__ = "company_profile"
+    __table_args__ = {"schema": "inventory"}
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String(200), default="Manor Furniture", nullable=False)
+    address = Column(Text, default="Bozlur Mor, Kushita", nullable=True)
+    phone = Column(String(50), default="01700000000", nullable=True)
+    email = Column(String(100), default="accounts@manorfurniture.com", nullable=True)
+    contact_person = Column(String(100), default="Manager", nullable=True)

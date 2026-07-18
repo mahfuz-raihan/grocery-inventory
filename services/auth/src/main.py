@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, text
 
 from shared.python.core import DatabaseManager, log, Base
-from src.models import User
+from src.models import User, Role
 from src.schemas import UserCreate, UserResponse, UserLogin, Token
 from src.security import get_password_hash, verify_password, create_access_token
 from src.config import settings
@@ -19,6 +19,29 @@ async def lifespan(app: FastAPI):
         await conn.execute(text("CREATE SCHEMA IF NOT EXISTS auth"))
         await conn.run_sync(Base.metadata.create_all)
         log.info("Database schema (Auth Users) initialized successfully.")
+    
+    # Seed default administrator account if empty
+    async with db_manager.session_factory() as session:
+        result = await session.execute(select(User))
+        user_list = result.scalars().all()
+        if not user_list:
+            if settings.default_admin_email and settings.default_admin_password:
+                log.info("No registered users found. Seeding default administrator account...")
+                default_admin = User(
+                    email=settings.default_admin_email,
+                    full_name="Default Administrator",
+                    hashed_password=get_password_hash(settings.default_admin_password),
+                    role=Role.owner,
+                    branch_id=None,
+                    is_active=True,
+                    is_superuser=True
+                )
+                session.add(default_admin)
+                await session.commit()
+                log.info(f"Default administrator seeded: {settings.default_admin_email} / [configured password]")
+            else:
+                log.warning("No users found in database, but default_admin_email or default_admin_password is not set in environment. Skipping automatic database seeding.")
+            
     yield
     await db_manager.engine.dispose()
 
@@ -41,7 +64,7 @@ async def register_user(user_data: UserCreate, session: AsyncSession = Depends(d
     new_user = User(
         email=user_data.email,
         full_name=user_data.full_name,
-        password_hash=get_password_hash(user_data.password),
+        hashed_password=get_password_hash(user_data.password),
         role=user_data.role,
         branch_id=user_data.branch_id
     )
@@ -57,7 +80,7 @@ async def login(login_data: UserLogin, session: AsyncSession = Depends(db_manage
     user = result.scalar_one_or_none()
 
     # Verify password and activity status
-    if not user or not verify_password(login_data.password, user.password_hash):
+    if not user or not verify_password(login_data.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Incorrect email or password")
     if not user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
@@ -77,3 +100,8 @@ async def login(login_data: UserLogin, session: AsyncSession = Depends(db_manage
         role=user.role, 
         branch_id=user.branch_id
     )
+
+@app.get("/api/v1/auth/users", response_model=list[UserResponse])
+async def get_users(session: AsyncSession = Depends(db_manager.get_session)):
+    result = await session.execute(select(User))
+    return result.scalars().all()

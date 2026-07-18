@@ -75,6 +75,10 @@ services:
       dockerfile: ./services/auth/Dockerfile
     container_name: erp-auth
     restart: unless-stopped
+    command: python -m uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      - ./services/auth/src:/app/src
+      - ./shared:/app/shared
     env_file:
       - .env
     networks:
@@ -87,7 +91,7 @@ services:
       - "traefik.http.routers.auth.rule=PathPrefix(`/api/v1/auth`)"
       - "traefik.http.routers.auth.entrypoints=web"
       - "traefik.http.services.auth.loadbalancer.server.port=8000"
-      - "traefik.docker.network=erp-network"
+      - "traefik.docker.network=erp_network"
 
   # --- INVENTORY SERVICE ---
   inventory-service:
@@ -96,6 +100,10 @@ services:
       dockerfile: ./services/inventory/Dockerfile
     container_name: erp-inventory
     restart: unless-stopped
+    command: python -m uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      - ./services/inventory/src:/app/src
+      - ./shared:/app/shared
     env_file:
       - .env
     networks:
@@ -110,7 +118,7 @@ services:
       - "traefik.http.routers.inventory.rule=PathPrefix(`/api/v1/inventory`)"
       - "traefik.http.routers.inventory.entrypoints=web"
       - "traefik.http.services.inventory.loadbalancer.server.port=8000"
-      - "traefik.docker.network=erp-network"
+      - "traefik.docker.network=erp_network"
     
 
   sales-service:
@@ -119,6 +127,10 @@ services:
       dockerfile: ./services/sales/Dockerfile
     container_name: erp-sales
     restart: unless-stopped
+    command: python -m uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      - ./services/sales/src:/app/src
+      - ./shared:/app/shared
     env_file:
       - .env
     networks:
@@ -131,7 +143,9 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.sales.rule=PathPrefix(`/api/v1/sales`)"
+      - "traefik.http.routers.sales.entrypoints=web"
       - "traefik.http.services.sales.loadbalancer.server.port=8000"
+      - "traefik.docker.network=erp_network"
 
   # --- FRONTEND SERVICE ---
   frontend-service:
@@ -140,6 +154,13 @@ services:
       dockerfile: Dockerfile
     container_name: erp-frontend
     restart: unless-stopped
+    command: npm run dev
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    environment:
+      - WATCHPACK_POLLING=true
     networks:
       - erp_network
     labels:

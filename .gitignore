@@ -11,3 +11,8 @@ __pycache__/
 *.bak
 *.backup
 *.swp
+.vscode
+stock_plan.md
+instructions
+.agents
+*.md
