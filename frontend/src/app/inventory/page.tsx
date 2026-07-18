@@ -863,8 +863,13 @@ export default function InventoryControlPage() {
     if (!editingProduct || !editSku || !editName) return;
     setIsUpdatingProduct(true);
     try {
-      const finalPrice = editPrice ? (currency === "USD" ? parseFloat(editPrice) * USD_EXCHANGE_RATE : parseFloat(editPrice)) : editingProduct.selling_price;
-      const costValue = editCost ? (currency === "USD" ? parseFloat(editCost) * USD_EXCHANGE_RATE : parseFloat(editCost)) : (editingProduct.purchase_cost || 0.0);
+      const isOwner = userRole === "owner";
+      const finalPrice = isOwner
+        ? (editPrice ? (currency === "USD" ? parseFloat(editPrice) * USD_EXCHANGE_RATE : parseFloat(editPrice)) : editingProduct.selling_price)
+        : editingProduct.selling_price;
+      const costValue = isOwner
+        ? (editCost ? (currency === "USD" ? parseFloat(editCost) * USD_EXCHANGE_RATE : parseFloat(editCost)) : (editingProduct.purchase_cost || 0.0))
+        : (editingProduct.purchase_cost || 0.0);
       const payload = {
         sku: editSku,
         name: editName,
@@ -987,7 +992,7 @@ export default function InventoryControlPage() {
         const netCost = rawPrice * (1 - commissionPct / 100);
         const finalCost = currency === "USD" ? netCost * USD_EXCHANGE_RATE : netCost;
 
-        const finalSellingPrice = item.selling_price
+        const finalSellingPrice = (userRole === "owner" && item.selling_price)
           ? (currency === "USD" ? parseFloat(item.selling_price) * USD_EXCHANGE_RATE : parseFloat(item.selling_price))
           : undefined;
 
@@ -1229,6 +1234,11 @@ export default function InventoryControlPage() {
 
   const handleUpdateCompanyProfile = async (e: React.FormEvent) => {
     e.preventDefault();
+    const role = localStorage.getItem("erp_role");
+    if (role !== "owner") {
+      alert("Unauthorized: Only Owner/Admin can modify the Company Profile.");
+      return;
+    }
     try {
       const payload = {
         name: companyName,
@@ -1447,22 +1457,24 @@ export default function InventoryControlPage() {
         {/* Notification Bell */}
         <div className="flex items-center gap-2 ml-4 flex-shrink-0 relative">
           {/* Company Profile Edit Button */}
-          <button
-            onClick={() => {
-              if (companyProfile) {
-                setCompanyName(companyProfile.name || "");
-                setCompanyAddress(companyProfile.address || "");
-                setCompanyPhone(companyProfile.phone || "");
-                setCompanyEmail(companyProfile.email || "");
-                setCompanyContact(companyProfile.contact_person || "");
-              }
-              setShowCompanyModal(true);
-            }}
-            className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl transition flex items-center gap-1.5 text-xs font-bold border border-gray-200 shadow-sm"
-            title="Update Company Profile"
-          >
-            🏢 Company Profile
-          </button>
+          {userRole === "owner" && (
+            <button
+              onClick={() => {
+                if (companyProfile) {
+                  setCompanyName(companyProfile.name || "");
+                  setCompanyAddress(companyProfile.address || "");
+                  setCompanyPhone(companyProfile.phone || "");
+                  setCompanyEmail(companyProfile.email || "");
+                  setCompanyContact(companyProfile.contact_person || "");
+                }
+                setShowCompanyModal(true);
+              }}
+              className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl transition flex items-center gap-1.5 text-xs font-bold border border-gray-200 shadow-sm"
+              title="Update Company Profile"
+            >
+              🏢 Company Profile
+            </button>
+          )}
 
           <button
             onClick={() => { setShowNotifications(!showNotifications); setNotificationsDismissed(true); }}
@@ -3282,6 +3294,74 @@ export default function InventoryControlPage() {
                   </select>
                 </div>
               </div>
+
+              {/* Pricing & Stock Levels */}
+              <div className="bg-slate-55 p-4 rounded-xl border border-slate-200 space-y-4">
+                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Pricing & Stock Levels</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Selling Price (৳)</label>
+                    <input
+                      type="number"
+                      step="any"
+                      className={`w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium ${userRole !== "owner" ? "bg-gray-100 cursor-not-allowed text-gray-400" : ""}`}
+                      value={editPrice}
+                      onChange={(e) => setEditPrice(e.target.value)}
+                      disabled={userRole !== "owner"}
+                      placeholder="0.00"
+                    />
+                    {userRole !== "owner" && <span className="text-[10px] text-red-500 font-semibold mt-1 block">Only Owner/Admin can change selling price.</span>}
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Purchase Cost (৳)</label>
+                    <input
+                      type="number"
+                      step="any"
+                      className={`w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium ${userRole !== "owner" ? "bg-gray-100 cursor-not-allowed text-gray-400" : ""}`}
+                      value={editCost}
+                      onChange={(e) => setEditCost(e.target.value)}
+                      disabled={userRole !== "owner"}
+                      placeholder="0.00"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Min Stock Level</label>
+                    <input
+                      type="number"
+                      step="any"
+                      className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                      value={editMinStock}
+                      onChange={(e) => setEditMinStock(e.target.value)}
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Max Stock Level</label>
+                    <input
+                      type="number"
+                      step="any"
+                      className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                      value={editMaxStock}
+                      onChange={(e) => setEditMaxStock(e.target.value)}
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Reorder Qty</label>
+                    <input
+                      type="number"
+                      step="any"
+                      className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                      value={editReorderQty}
+                      onChange={(e) => setEditReorderQty(e.target.value)}
+                      placeholder="0"
+                    />
+                  </div>
+                </div>
+              </div>
+
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Board Type</label>
@@ -4385,7 +4465,20 @@ export default function InventoryControlPage() {
                         const netPrice = rawCost * (1 - commPct / 100);
                         
                         const handleItemChange = (field: string, value: string) => {
-                          setGrnItemsList(prev => prev.map((it, i) => i === idx ? { ...it, [field]: value } : it));
+                          setGrnItemsList(prev => prev.map((it, i) => {
+                            if (i === idx) {
+                              const updatedItem = { ...it, [field]: value };
+                              if (field === "product_id") {
+                                const selectedProd = products.find(p => p.id === value);
+                                if (selectedProd) {
+                                  updatedItem.selling_price = selectedProd.selling_price.toString();
+                                  updatedItem.cost_price = (selectedProd.purchase_cost || selectedProd.average_cost || 0).toString();
+                                }
+                              }
+                              return updatedItem;
+                            }
+                            return it;
+                          }));
                         };
 
                         return (
@@ -4458,9 +4551,10 @@ export default function InventoryControlPage() {
                                 type="number"
                                 step="any"
                                 min="0"
-                                className="w-full p-1.5 border rounded-lg text-right font-medium outline-none focus:ring-1 focus:ring-emerald-450"
+                                className={`w-full p-1.5 border rounded-lg text-right font-medium outline-none focus:ring-1 focus:ring-emerald-450 ${userRole !== "owner" ? "bg-gray-100 cursor-not-allowed text-gray-500 font-semibold" : ""}`}
                                 value={item.selling_price}
                                 onChange={(e) => handleItemChange("selling_price", e.target.value)}
+                                disabled={userRole !== "owner"}
                                 placeholder="Optional"
                               />
                             </td>
