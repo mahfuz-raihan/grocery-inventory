@@ -1,4 +1,5 @@
 import os
+import uuid
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -6,7 +7,7 @@ from sqlalchemy import select, text
 
 from shared.python.core import DatabaseManager, log, Base
 from src.models import User, Role
-from src.schemas import UserCreate, UserResponse, UserLogin, Token
+from src.schemas import UserCreate, UserResponse, UserLogin, Token, UserUpdate
 from src.security import get_password_hash, verify_password, create_access_token
 from src.config import settings
 
@@ -105,3 +106,33 @@ async def login(login_data: UserLogin, session: AsyncSession = Depends(db_manage
 async def get_users(session: AsyncSession = Depends(db_manager.get_session)):
     result = await session.execute(select(User))
     return result.scalars().all()
+
+
+@app.get("/api/v1/auth/users/{user_id}", response_model=UserResponse)
+async def get_user_by_id(user_id: uuid.UUID, session: AsyncSession = Depends(db_manager.get_session)):
+    result = await session.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
+
+
+@app.put("/api/v1/auth/users/{user_id}", response_model=UserResponse)
+async def update_user_profile(
+    user_id: uuid.UUID,
+    payload: UserUpdate,
+    session: AsyncSession = Depends(db_manager.get_session)
+):
+    result = await session.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    if payload.full_name is not None:
+        user.full_name = payload.full_name
+    if payload.password is not None and payload.password.strip() != "":
+        user.hashed_password = get_password_hash(payload.password)
+        
+    await session.commit()
+    await session.refresh(user)
+    return user

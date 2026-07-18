@@ -321,3 +321,13 @@ class StockListSummaryResponse(BaseModel):
     total_products: int
     stock_value: float
     low_and_out_of_stock_count: int
+
+
+class AppSettingResponse(BaseModel):
+    key: str
+    value: str
+    model_config = ConfigDict(from_attributes=True)
+
+
+class AppSettingUpdate(BaseModel):
+    value: str

@@ -341,6 +341,12 @@ const api = {
     });
     if (!response.ok) throw new Error("Failed to update company profile");
     return await response.json();
+  },
+  getSetting: async (key: string): Promise<any> => {
+    const response = await fetch(`${getApiBaseUrl()}/api/v1/inventory/settings/${key}`);
+    if (!response.ok) throw new Error("Failed to fetch settings");
+    const data = await response.json();
+    return JSON.parse(data.value);
   }
 };
 
@@ -349,6 +355,7 @@ export default function InventoryControlPage() {
   const [activeTab, setActiveTab] = useState<string>("products");
   const [userRole, setUserRole] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string>("");
+  const [rbacRules, setRbacRules] = useState<any>(null);
   const [currency, setCurrency] = useState<"BDT" | "USD">("BDT");
   const USD_EXCHANGE_RATE = 117.0;
   const formatPrice = (priceInBDT: number) => currency === "USD" ? "$" + (priceInBDT / USD_EXCHANGE_RATE).toFixed(2) : "৳" + priceInBDT.toFixed(2);
@@ -631,6 +638,28 @@ export default function InventoryControlPage() {
       try {
         const role = localStorage.getItem("erp_role");
         const userBranchId = localStorage.getItem("erp_branch_id") || "";
+
+        let rulesData = null;
+        try {
+          rulesData = await api.getSetting("rbac_rules");
+          setRbacRules(rulesData);
+        } catch (rulesErr) {
+          console.error("Failed to load settings rules", rulesErr);
+          // Fallback settings
+          rulesData = {
+            visible_inventory_tabs: {
+              owner: ["stock_list", "products", "receiving", "warehouses", "suppliers", "transfers", "adjustments", "reports"],
+              manager: ["stock_list", "products", "receiving", "reports"],
+              cashier: ["stock_list", "products"],
+              stock_handler: ["stock_list", "products"]
+            },
+            pos_warehouse_select: ["owner"],
+            product_price_edit: ["owner"],
+            company_profile_edit: ["owner"]
+          };
+          setRbacRules(rulesData);
+        }
+
         const [branchesData, suppliersData, productsData, transfersData, adjustmentsData, valData, lowData, categoriesData, grnsData, stockListData, stockSummary] = await Promise.all([
           api.getBranches(),
           api.getSuppliers(),
@@ -863,11 +892,11 @@ export default function InventoryControlPage() {
     if (!editingProduct || !editSku || !editName) return;
     setIsUpdatingProduct(true);
     try {
-      const isOwner = userRole === "owner";
-      const finalPrice = isOwner
+      const canEditPrice = rbacRules ? rbacRules.product_price_edit?.includes(userRole) : (userRole === "owner");
+      const finalPrice = canEditPrice
         ? (editPrice ? (currency === "USD" ? parseFloat(editPrice) * USD_EXCHANGE_RATE : parseFloat(editPrice)) : editingProduct.selling_price)
         : editingProduct.selling_price;
-      const costValue = isOwner
+      const costValue = canEditPrice
         ? (editCost ? (currency === "USD" ? parseFloat(editCost) * USD_EXCHANGE_RATE : parseFloat(editCost)) : (editingProduct.purchase_cost || 0.0))
         : (editingProduct.purchase_cost || 0.0);
       const payload = {
@@ -992,7 +1021,8 @@ export default function InventoryControlPage() {
         const netCost = rawPrice * (1 - commissionPct / 100);
         const finalCost = currency === "USD" ? netCost * USD_EXCHANGE_RATE : netCost;
 
-        const finalSellingPrice = (userRole === "owner" && item.selling_price)
+        const canEditPrice = rbacRules ? rbacRules.product_price_edit?.includes(userRole) : (userRole === "owner");
+        const finalSellingPrice = (canEditPrice && item.selling_price)
           ? (currency === "USD" ? parseFloat(item.selling_price) * USD_EXCHANGE_RATE : parseFloat(item.selling_price))
           : undefined;
 
@@ -1235,8 +1265,9 @@ export default function InventoryControlPage() {
   const handleUpdateCompanyProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     const role = localStorage.getItem("erp_role");
-    if (role !== "owner") {
-      alert("Unauthorized: Only Owner/Admin can modify the Company Profile.");
+    const canEditProfile = rbacRules ? rbacRules.company_profile_edit?.includes(role) : (role === "owner");
+    if (!canEditProfile) {
+      alert("Unauthorized: You do not have permissions to modify the Company Profile.");
       return;
     }
     try {
@@ -1400,6 +1431,10 @@ export default function InventoryControlPage() {
     { id: "reports", label: "Valuation & Reports", roles: ["owner", "manager", "stock_handler"] }
   ];
   const visibleTabs = allTabs.filter(tab => {
+    if (rbacRules && userRole) {
+      const allowedTabs = rbacRules.visible_inventory_tabs[userRole] || [];
+      return allowedTabs.includes(tab.id);
+    }
     if (userRole && !tab.roles.includes(userRole)) return false;
     if (userRole && userRole !== "owner" && ["warehouses", "suppliers", "transfers", "adjustments"].includes(tab.id)) {
       return false;
@@ -1457,7 +1492,7 @@ export default function InventoryControlPage() {
         {/* Notification Bell */}
         <div className="flex items-center gap-2 ml-4 flex-shrink-0 relative">
           {/* Company Profile Edit Button */}
-          {userRole === "owner" && (
+          {(rbacRules ? rbacRules.company_profile_edit?.includes(userRole) : (userRole === "owner")) && (
             <button
               onClick={() => {
                 if (companyProfile) {
@@ -3304,23 +3339,23 @@ export default function InventoryControlPage() {
                     <input
                       type="number"
                       step="any"
-                      className={`w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium ${userRole !== "owner" ? "bg-gray-100 cursor-not-allowed text-gray-400" : ""}`}
+                      className={`w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium ${(rbacRules ? !rbacRules.product_price_edit?.includes(userRole) : (userRole !== "owner")) ? "bg-gray-100 cursor-not-allowed text-gray-400" : ""}`}
                       value={editPrice}
                       onChange={(e) => setEditPrice(e.target.value)}
-                      disabled={userRole !== "owner"}
+                      disabled={rbacRules ? !rbacRules.product_price_edit?.includes(userRole) : (userRole !== "owner")}
                       placeholder="0.00"
                     />
-                    {userRole !== "owner" && <span className="text-[10px] text-red-500 font-semibold mt-1 block">Only Owner/Admin can change selling price.</span>}
+                    {(rbacRules ? !rbacRules.product_price_edit?.includes(userRole) : (userRole !== "owner")) && <span className="text-[10px] text-red-500 font-semibold mt-1 block">Only configured roles can change selling price.</span>}
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Purchase Cost (৳)</label>
                     <input
                       type="number"
                       step="any"
-                      className={`w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium ${userRole !== "owner" ? "bg-gray-100 cursor-not-allowed text-gray-400" : ""}`}
+                      className={`w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium ${(rbacRules ? !rbacRules.product_price_edit?.includes(userRole) : (userRole !== "owner")) ? "bg-gray-100 cursor-not-allowed text-gray-400" : ""}`}
                       value={editCost}
                       onChange={(e) => setEditCost(e.target.value)}
-                      disabled={userRole !== "owner"}
+                      disabled={rbacRules ? !rbacRules.product_price_edit?.includes(userRole) : (userRole !== "owner")}
                       placeholder="0.00"
                     />
                   </div>
@@ -4551,10 +4586,10 @@ export default function InventoryControlPage() {
                                 type="number"
                                 step="any"
                                 min="0"
-                                className={`w-full p-1.5 border rounded-lg text-right font-medium outline-none focus:ring-1 focus:ring-emerald-450 ${userRole !== "owner" ? "bg-gray-100 cursor-not-allowed text-gray-500 font-semibold" : ""}`}
+                                className={`w-full p-1.5 border rounded-lg text-right font-medium outline-none focus:ring-1 focus:ring-emerald-450 ${(rbacRules ? !rbacRules.product_price_edit?.includes(userRole) : (userRole !== "owner")) ? "bg-gray-100 cursor-not-allowed text-gray-500 font-semibold" : ""}`}
                                 value={item.selling_price}
                                 onChange={(e) => handleItemChange("selling_price", e.target.value)}
-                                disabled={userRole !== "owner"}
+                                disabled={rbacRules ? !rbacRules.product_price_edit?.includes(userRole) : (userRole !== "owner")}
                                 placeholder="Optional"
                               />
                             </td>
