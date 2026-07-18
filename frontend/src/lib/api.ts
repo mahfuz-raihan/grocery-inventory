@@ -164,5 +164,75 @@ export const api = {
             console.error("API Error (submitGRN):", error);
             throw error;
         }
+    },
+
+    getSetting: async (key: string): Promise<any> => {
+        try {
+            const baseUrl = getApiBaseUrl();
+            const response = await fetch(`${baseUrl}/api/v1/inventory/settings/${key}`);
+            if (!response.ok) throw new Error("Failed to fetch settings");
+            const data = await response.json();
+            return JSON.parse(data.value);
+        } catch (error) {
+            console.error("API Error (getSetting):", error);
+            if (key === "rbac_rules") {
+                return {
+                    visible_inventory_tabs: {
+                        owner: ["stock_list", "products", "receiving", "warehouses", "suppliers", "transfers", "adjustments", "reports"],
+                        manager: ["stock_list", "products", "receiving", "reports"],
+                        cashier: ["stock_list", "products"],
+                        stock_handler: ["stock_list", "products"]
+                    },
+                    pos_warehouse_select: ["owner"],
+                    product_price_edit: ["owner"],
+                    company_profile_edit: ["owner"]
+                };
+            }
+            throw error;
+        }
+    },
+
+    updateSetting: async (key: string, value: string): Promise<any> => {
+        try {
+            const baseUrl = getApiBaseUrl();
+            const response = await fetch(`${baseUrl}/api/v1/inventory/settings/${key}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ value })
+            });
+            if (!response.ok) throw new Error("Failed to update setting");
+            return await response.json();
+        } catch (error) {
+            console.error("API Error (updateSetting):", error);
+            throw error;
+        }
+    },
+
+    getUser: async (userId: string): Promise<any> => {
+        try {
+            const baseUrl = getApiBaseUrl();
+            const response = await fetch(`${baseUrl}/api/v1/auth/users/${userId}`);
+            if (!response.ok) throw new Error("Failed to fetch user profile");
+            return await response.json();
+        } catch (error) {
+            console.error("API Error (getUser):", error);
+            throw error;
+        }
+    },
+
+    updateUser: async (userId: string, payload: any): Promise<any> => {
+        try {
+            const baseUrl = getApiBaseUrl();
+            const response = await fetch(`${baseUrl}/api/v1/auth/users/${userId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (!response.ok) throw new Error("Failed to update user profile");
+            return await response.json();
+        } catch (error) {
+            console.error("API Error (updateUser):", error);
+            throw error;
+        }
     }
 };

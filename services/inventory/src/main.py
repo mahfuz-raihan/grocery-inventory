@@ -15,7 +15,10 @@ from sqlalchemy.exc import IntegrityError
 from shared.python.core import DatabaseManager, MessagingManager, log, Base
 
 # Import all updated models
-from src.models import Product, Branch, Category, StockLedger, MovementType, GRN, GRNItem, Supplier, StockTransfer, StockAdjustment, CompanyProfile
+from src.models import (
+    Supplier, Branch, Category, Product, StockLedger, GRN, GRNItem,
+    StockTransfer, StockAdjustment, CompanyProfile, MovementType, AppSetting
+)
 
 # Import all updated schemas
 from src.schemas import (
@@ -26,8 +29,8 @@ from src.schemas import (
     StockTransferCreate, StockTransferResponse,
     StockAdjustmentCreate, StockAdjustmentResponse,
     ProductUpdate, StockMovementResponse, ConsumptionReportResponse, DeadStockResponse,
-    CompanyProfileResponse, CompanyProfileUpdate,
-    StockListItemResponse, StockListSummaryResponse
+    CompanyProfileResponse,    CompanyProfileUpdate, StockListItemResponse, StockListSummaryResponse,
+    StockUpdateEvent, AppSettingResponse, AppSettingUpdate
 )
 from src.config import settings
 
@@ -1326,3 +1329,45 @@ async def update_company_profile(profile_data: CompanyProfileUpdate, session: As
     await session.commit()
     await session.refresh(profile)
     return profile
+
+
+@app.get("/api/v1/inventory/settings/{key}", response_model=AppSettingResponse)
+async def get_setting(key: str, session: AsyncSession = Depends(db_manager.get_session)):
+    result = await session.execute(select(AppSetting).where(AppSetting.key == key))
+    setting = result.scalar_one_or_none()
+    if not setting:
+        # Provide default configurations for rbac_rules
+        if key == "rbac_rules":
+            default_val = {
+                "visible_inventory_tabs": {
+                    "owner": ["stock_list", "products", "receiving", "warehouses", "suppliers", "transfers", "adjustments", "reports"],
+                    "manager": ["stock_list", "products", "receiving", "reports"],
+                    "cashier": ["stock_list", "products"],
+                    "stock_handler": ["stock_list", "products"]
+                },
+                "pos_warehouse_select": ["owner"],
+                "product_price_edit": ["owner"],
+                "company_profile_edit": ["owner"]
+            }
+            import json
+            setting = AppSetting(key=key, value=json.dumps(default_val))
+            session.add(setting)
+            await session.commit()
+            await session.refresh(setting)
+        else:
+            raise HTTPException(status_code=404, detail="Setting not found")
+    return setting
+
+
+@app.put("/api/v1/inventory/settings/{key}", response_model=AppSettingResponse)
+async def update_setting(key: str, payload: AppSettingUpdate, session: AsyncSession = Depends(db_manager.get_session)):
+    result = await session.execute(select(AppSetting).where(AppSetting.key == key))
+    setting = result.scalar_one_or_none()
+    if not setting:
+        setting = AppSetting(key=key, value=payload.value)
+        session.add(setting)
+    else:
+        setting.value = payload.value
+    await session.commit()
+    await session.refresh(setting)
+    return setting

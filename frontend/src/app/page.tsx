@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Product, CartItem, CheckoutRequest } from "../lib/api";
+import { Product, CartItem, CheckoutRequest, api } from "../lib/api";
 import {
   saveProductsLocal,
   getProductsLocal,
@@ -138,6 +138,7 @@ export default function POSTerminal() {
   const [branches, setBranches] = useState<{ id: string; name: string }[]>([]);
   const [selectedBranchId, setSelectedBranchId] = useState<string>("");
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [rbacRules, setRbacRules] = useState<any>(null);
 
   // --- CATEGORIES STATE ---
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
@@ -265,12 +266,33 @@ export default function POSTerminal() {
     setUserRole(role);
     const userBranchId = localStorage.getItem("erp_branch_id");
     
-    if (role !== "owner" && userBranchId) {
-      setSelectedBranchId(userBranchId);
-      fetchProductsList(userBranchId);
-    } else {
-      fetchProductsList();
+    async function initPage() {
+      try {
+        const rules = await api.getSetting("rbac_rules");
+        setRbacRules(rules);
+        
+        // Use dynamically configured permission instead of hardcoded check
+        const canSelectWarehouse = rules ? rules.pos_warehouse_select?.includes(role) : (role === "owner");
+        
+        if (!canSelectWarehouse && userBranchId) {
+          setSelectedBranchId(userBranchId);
+          fetchProductsList(userBranchId);
+        } else {
+          fetchProductsList();
+        }
+      } catch (err) {
+        console.error("Failed to load settings rules", err);
+        // Fallback to static rules
+        if (role !== "owner" && userBranchId) {
+          setSelectedBranchId(userBranchId);
+          fetchProductsList(userBranchId);
+        } else {
+          fetchProductsList();
+        }
+      }
     }
+
+    initPage();
 
     const checkSyncQueue = async () => {
       const queue = await getSyncQueue();
@@ -680,10 +702,10 @@ export default function POSTerminal() {
             <select
               value={selectedBranchId}
               onChange={(e) => handleBranchChange(e.target.value)}
-              disabled={userRole !== "owner"}
-              className={`p-2 border rounded-xl text-xs font-semibold text-slate-700 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition ${userRole !== "owner" ? "cursor-not-allowed bg-slate-100 opacity-80" : ""}`}
+              disabled={rbacRules ? !rbacRules.pos_warehouse_select?.includes(userRole) : (userRole !== "owner")}
+              className={`p-2 border rounded-xl text-xs font-semibold text-slate-700 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition ${(rbacRules ? !rbacRules.pos_warehouse_select?.includes(userRole) : (userRole !== "owner")) ? "cursor-not-allowed bg-slate-100 opacity-80" : ""}`}
             >
-              {userRole === "owner" && <option value="">All Warehouses</option>}
+              {(rbacRules ? rbacRules.pos_warehouse_select?.includes(userRole) : (userRole === "owner")) && <option value="">All Warehouses</option>}
               {branches.map(b => (
                 <option key={b.id} value={b.id}>{b.name}</option>
               ))}

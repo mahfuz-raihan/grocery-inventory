@@ -33,3 +33,8 @@ class Token(BaseModel):
     token_type: str = "bearer"
     role: Role
     branch_id: Optional[uuid.UUID]
+
+
+class UserUpdate(BaseModel):
+    full_name: Optional[str] = None
+    password: Optional[str] = None

@@ -252,3 +252,12 @@ class CompanyProfile(Base):
     phone = Column(String(50), default="01700000000", nullable=True)
     email = Column(String(100), default="accounts@manorfurniture.com", nullable=True)
     contact_person = Column(String(100), default="Manager", nullable=True)
+
+
+class AppSetting(Base):
+    """Holds global key-value configuration settings (e.g. JSON strings)."""
+    __tablename__ = "app_settings"
+    __table_args__ = {"schema": "inventory"}
+
+    key = Column(String(100), primary_key=True)
+    value = Column(Text, nullable=False)
