@@ -49,7 +49,7 @@ export default function LoginPage() {
       localStorage.setItem("erp_token", data.access_token);
       localStorage.setItem("erp_role", data.role);
       localStorage.setItem("erp_email", email);
-      
+
       try {
         const payload = JSON.parse(atob(data.access_token.split('.')[1]));
         if (payload && payload.id) {
@@ -95,7 +95,7 @@ export default function LoginPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
             </svg>
           </div>
-          <h1 className="text-3xl font-extrabold text-white tracking-tight">Grocery ERP Pro</h1>
+          <h1 className="text-3xl font-extrabold text-white tracking-tight">Login to ERP</h1>
           <p className="text-slate-400 mt-2 text-sm text-center">Enter credentials to access the ERP Terminal</p>
         </div>
 
