@@ -6,6 +6,6 @@ from services.inventory.src.models import Product, Category, Branch, StockLedger
 from services.auth.src.models import User
 from services.sales.src.models import Sale, SaleItem
 
-print("✅ All models loaded successfully!")
+print("[OK] All models loaded successfully!")
 # If this script runs without an ImportError or SyntaxError,
 # the database models are correctly configured.
