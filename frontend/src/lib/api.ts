@@ -5,6 +5,7 @@ export interface Product {
     sku: string;
     name: string;
     selling_price: number;
+    min_selling_price?: number;
     current_stock: number;
     supplier_name?: string;
 }
