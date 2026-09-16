@@ -3,7 +3,9 @@ import uuid
 from datetime import datetime, date, time, timezone
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, HTTPException, Query
+from pydantic import BaseModel
+from typing import Optional, List
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text, select, func
 from sqlalchemy.orm import selectinload
@@ -50,19 +52,14 @@ app = FastAPI(
     openapi_url="/api/v1/sales/openapi.json"
 )
 
-# --- AUDIT LOG HELPER ---
+# Helper function to write audit entries to prevent code repetition
 async def write_audit_log(session: AsyncSession, action: str, sale_id: uuid.UUID, detail: str):
-    """Logs financial mutations and payment states to the database sale_audit_logs table."""
-    try:
-        log_entry = SaleAuditLog(
-            sale_id=sale_id,
-            action=action,
-            detail=detail
-        )
-        session.add(log_entry)
-        log.info(f"[DB-AUDIT] [{action.upper()}] Sale {sale_id}: {detail}")
-    except Exception as e:
-        log.error(f"Failed to write DB audit log: {e}")
+    audit = SaleAuditLog(
+        sale_id=sale_id,
+        action=action,
+        detail=detail
+    )
+    session.add(audit)
 
 
 # --- CHECKOUT ENDPOINT ---
@@ -72,8 +69,19 @@ async def process_checkout(request: CheckoutRequest, session: AsyncSession = Dep
     """Processes a POS cart, generates a receipt, and publishes a NATS event if paid."""
     
     date_str = datetime.now().strftime("%Y%m%d")
-    short_uuid = str(uuid.uuid4()).split('-')[0].upper()
-    receipt_no = f"INV-{date_str}-{short_uuid}"
+    prefix = f"INV-SOLD-{date_str}-"
+    stmt = select(Sale.receipt_number).where(Sale.receipt_number.like(f"{prefix}%"))
+    existing_receipts = (await session.execute(stmt)).scalars().all()
+    max_seq = 0
+    for r in existing_receipts:
+        try:
+            seq_val = int(r.split("-")[-1])
+            if seq_val > max_seq:
+                max_seq = seq_val
+        except (ValueError, IndexError):
+            pass
+    seq = max_seq + 1
+    receipt_no = f"{prefix}{seq:03d}"
 
     gross_total = sum(item.quantity * item.unit_price for item in request.items)
     total = max(0.0, gross_total - request.discount)
@@ -234,6 +242,137 @@ async def complete_sale(sale_id: uuid.UUID, session: AsyncSession = Depends(db_m
     await msg_manager.publish("sales.order.completed", event)
 
     return sale
+
+
+class CustomerUpdateRequest(BaseModel):
+    current_phone: Optional[str] = None
+    current_name: Optional[str] = None
+    new_name: Optional[str] = None
+    new_phone: Optional[str] = None
+    new_address: Optional[str] = None
+
+
+@app.get("/api/v1/sales/invoices")
+async def get_sold_invoices(
+    start_date: Optional[datetime] = None,
+    end_date: Optional[datetime] = None,
+    branch_id: Optional[uuid.UUID] = None,
+    status: Optional[str] = None,
+    search: Optional[str] = None,
+    limit: int = 1000,
+    session: AsyncSession = Depends(db_manager.get_session)
+):
+    """Fetches sold invoices with line items, supporting filtering, search, and sorting."""
+    query = select(Sale).options(selectinload(Sale.items))
+
+    if start_date:
+        if start_date.tzinfo is None:
+            start_date = start_date.replace(tzinfo=timezone.utc)
+        query = query.where(Sale.created_at >= start_date)
+
+    if end_date:
+        if end_date.tzinfo is None:
+            end_date = end_date.replace(tzinfo=timezone.utc)
+        query = query.where(Sale.created_at <= end_date)
+
+    if branch_id:
+        query = query.where(Sale.branch_id == branch_id)
+
+    if status and status.lower() != "all":
+        try:
+            order_status = OrderStatus(status.lower())
+            query = query.where(Sale.status == order_status)
+        except ValueError:
+            pass
+
+    if search and search.strip():
+        term = f"%{search.strip()}%"
+        query = query.where(
+            (Sale.receipt_number.ilike(term)) |
+            (Sale.customer_name.ilike(term)) |
+            (Sale.customer_phone.ilike(term))
+        )
+
+    query = query.order_by(Sale.created_at.desc()).limit(limit)
+    result = await session.execute(query)
+    sales = result.scalars().all()
+
+    invoices = []
+    for s in sales:
+        invoices.append({
+            "id": str(s.id),
+            "receipt_number": s.receipt_number,
+            "branch_id": str(s.branch_id),
+            "customer_name": s.customer_name or "Walk-in Customer",
+            "customer_phone": s.customer_phone or "—",
+            "customer_address": s.customer_address or "—",
+            "total_amount": float(s.total_amount),
+            "discount": float(s.discount),
+            "status": "Paid" if s.status == OrderStatus.paid else "Due",
+            "created_at": s.created_at.isoformat(),
+            "items": [
+                {
+                    "id": str(item.id),
+                    "product_id": str(item.product_id),
+                    "quantity": float(item.quantity),
+                    "unit_price": float(item.unit_price),
+                    "subtotal": float(item.subtotal),
+                    "supplier_name": item.supplier_name
+                }
+                for item in s.items
+            ]
+        })
+    return invoices
+
+
+@app.delete("/api/v1/sales/{sale_id}", status_code=204)
+async def delete_sale(sale_id: uuid.UUID, session: AsyncSession = Depends(db_manager.get_session)):
+    """Deletes a sale invoice and its associated line items."""
+    result = await session.execute(
+        select(Sale).options(selectinload(Sale.items)).where(Sale.id == sale_id)
+    )
+    sale = result.scalar_one_or_none()
+    if not sale:
+        raise HTTPException(status_code=404, detail="Sale not found")
+
+    receipt_no = sale.receipt_number
+    await write_audit_log(
+        session,
+        "deleted",
+        sale.id,
+        f"Sale invoice {receipt_no} deleted. Customer: {sale.customer_name}, Amount: {sale.total_amount:.2f}"
+    )
+    await session.delete(sale)
+    await session.commit()
+    return None
+
+
+@app.put("/api/v1/sales/customers/update")
+async def update_customer(request: CustomerUpdateRequest, session: AsyncSession = Depends(db_manager.get_session)):
+    """Updates customer name, phone, and address across all sales records matching the customer."""
+    query = select(Sale)
+    if request.current_phone and request.current_phone != "—":
+        query = query.where(Sale.customer_phone == request.current_phone)
+    elif request.current_name:
+        query = query.where(Sale.customer_name == request.current_name)
+    else:
+        raise HTTPException(status_code=400, detail="Must provide current phone or current name")
+
+    result = await session.execute(query)
+    sales = result.scalars().all()
+    if not sales:
+        raise HTTPException(status_code=404, detail="No customer records found")
+
+    for s in sales:
+        if request.new_name is not None and request.new_name.strip():
+            s.customer_name = request.new_name.strip()
+        if request.new_phone is not None and request.new_phone.strip():
+            s.customer_phone = request.new_phone.strip()
+        if request.new_address is not None:
+            s.customer_address = request.new_address.strip() or None
+
+    await session.commit()
+    return {"updated_count": len(sales)}
 
 
 # --- ANALYTICS & REPORTING ENDPOINTS ---
@@ -422,4 +561,4 @@ async def get_sales_analytics(
         },
         "recent_sales": recent_sales_data
     }
-
+

@@ -97,6 +97,12 @@ export const ProductsTab: React.FC<ProductsTabProps> = ({
       return;
     }
 
+    const avgCostFloor = prod.average_cost || 0;
+    if (avgCostFloor > 0 && newMinPrice < avgCostFloor) {
+      alert(`Minimum selling price cannot be lower than the average cost (${formatPrice(avgCostFloor)}). Setting to average cost.`);
+      return;
+    }
+
     try {
       const updated = await api.updateProduct(prod.id, {
         selling_price: newSellingPrice,
@@ -343,10 +349,12 @@ export const ProductsTab: React.FC<ProductsTabProps> = ({
 
                     const sellingNum = parseFloat(currentSelling || "0");
                     const minNum = parseFloat(currentMin || "0");
-                    const costNum = prod.purchase_cost || prod.average_cost || 0;
+                    const costNum = prod.average_cost && prod.average_cost > 0 ? prod.average_cost : (prod.purchase_cost || 0);
                     const markup = costNum > 0 ? (((sellingNum - costNum) / costNum) * 100).toFixed(1) : "—";
                     const isModified = pending !== undefined;
                     const isBelowMin = sellingNum > 0 && minNum > 0 && sellingNum < minNum;
+                    const avgFloor = currency === "USD" ? (prod.average_cost || 0) / USD_EXCHANGE_RATE : (prod.average_cost || 0);
+                    const isBelowAvg = minNum > 0 && avgFloor > 0 && minNum < avgFloor;
 
                     return (
                       <tr key={prod.id} className={`hover:bg-gray-50/60 ${isModified ? "bg-amber-50/40" : ""}`}>
@@ -375,12 +383,19 @@ export const ProductsTab: React.FC<ProductsTabProps> = ({
                             value={currentMin}
                             onChange={(e) => handlePriceChange(prod.id, "min_selling_price", e.target.value)}
                             className={`w-32 p-1.5 border rounded-lg text-right font-bold text-xs outline-none focus:ring-2 focus:ring-sky-400 ${
-                              !canEditPrice
+                              isBelowAvg
+                                ? "border-amber-500 bg-amber-50 text-amber-800"
+                                : !canEditPrice
                                 ? "bg-gray-100 cursor-not-allowed text-gray-400"
                                 : "bg-white text-sky-900 border-sky-200"
                             }`}
                             placeholder="0.00"
                           />
+                          {isBelowAvg && (
+                            <span className="text-[9px] font-bold text-amber-600 block text-right mt-0.5">
+                              ⚠️ Below Avg Cost
+                            </span>
+                          )}
                         </td>
                         <td className="p-3 text-right">
                           <input

@@ -127,6 +127,19 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         log.warning(f"Could not create supplier name index: {e}")
 
+    # ── Step 6: Synchronize min_selling_price floor with average_cost ─────────
+    try:
+        async with db_manager.engine.begin() as conn:
+            await conn.execute(text("""
+                UPDATE inventory.products
+                SET min_selling_price = ROUND(CAST(average_cost AS numeric), 2)
+                WHERE average_cost IS NOT NULL AND average_cost > 0
+                  AND (min_selling_price IS NULL OR min_selling_price < average_cost)
+            """))
+        log.info("Synchronized min_selling_price floor with average_cost.")
+    except Exception as e:
+        log.warning(f"Could not synchronize min_selling_price with average_cost: {e}")
+
     log.info("Database schema (Stock Ledger) initialized successfully.")
         
     await msg_manager.connect()
@@ -560,6 +573,11 @@ async def update_product(
     for key, value in update_data.items():
         setattr(product, key, value)
         
+    # Enforce min_selling_price floor to average_cost / purchase_cost
+    cost_floor = max(product.average_cost or 0.0, product.purchase_cost or 0.0)
+    if product.min_selling_price is not None and cost_floor > 0 and product.min_selling_price < cost_floor:
+        product.min_selling_price = round(cost_floor, 2)
+        
     try:
         await session.commit()
         await session.refresh(product)
@@ -757,10 +775,10 @@ async def create_grn(grn_data: GRNCreate, session: AsyncSession = Depends(db_man
             else:
                 product_obj.average_cost = new_cost
 
-            # Option C: Auto-update min_selling_price to ensure it never falls below the highest purchase/landed cost
+            # Option C: Auto-update min_selling_price to ensure it never falls below average_cost or new landed cost
             current_min = product_obj.min_selling_price or 0.0
-            if new_cost > current_min:
-                product_obj.min_selling_price = new_cost
+            highest_baseline = max(current_min, product_obj.average_cost or 0.0, new_cost)
+            product_obj.min_selling_price = round(highest_baseline, 2)
 
             # Update selling price if explicitly provided in the GRN item
             if item.selling_price is not None and item.selling_price > 0:
