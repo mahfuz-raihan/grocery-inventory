@@ -72,6 +72,7 @@ async def lifespan(app: FastAPI):
         # Products columns
         ("products.commission",      "ALTER TABLE inventory.products ADD COLUMN IF NOT EXISTS commission DOUBLE PRECISION DEFAULT 0.0 NOT NULL"),
         ("products.additional_cost", "ALTER TABLE inventory.products ADD COLUMN IF NOT EXISTS additional_cost DOUBLE PRECISION DEFAULT 0.0 NOT NULL"),
+        ("products.min_selling_price", "ALTER TABLE inventory.products ADD COLUMN IF NOT EXISTS min_selling_price DOUBLE PRECISION DEFAULT 0.0 NOT NULL"),
         # Stock ledger columns
         ("stock_ledger.supplier_name", "ALTER TABLE inventory.stock_ledger ADD COLUMN IF NOT EXISTS supplier_name VARCHAR(200) NULL"),
     ]
@@ -755,6 +756,12 @@ async def create_grn(grn_data: GRNCreate, session: AsyncSession = Depends(db_man
                 product_obj.average_cost = ((existing_stock * old_avg_cost) + (new_qty * new_cost)) / (existing_stock + new_qty)
             else:
                 product_obj.average_cost = new_cost
+
+            # Option C: Auto-update min_selling_price to ensure it never falls below the highest purchase/landed cost
+            current_min = product_obj.min_selling_price or 0.0
+            if new_cost > current_min:
+                product_obj.min_selling_price = new_cost
+
             # Update selling price if explicitly provided in the GRN item
             if item.selling_price is not None and item.selling_price > 0:
                 product_obj.selling_price = item.selling_price

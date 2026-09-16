@@ -71,6 +71,7 @@ class Product(Base, TimestampMixin):
     name = Column(String(200), nullable=False, index=True)
     unit = Column(String(50), nullable=True)
     selling_price = Column(Float, nullable=False, default=0.0)
+    min_selling_price = Column(Float, nullable=False, default=0.0)
     category_id = Column(
         UUID(as_uuid=True),
         ForeignKey("inventory.categories.id"),
