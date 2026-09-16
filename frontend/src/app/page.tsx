@@ -69,7 +69,8 @@ const posApi = {
 
       // Queue the checkout locally via imported function
       await addToSyncQueue(payload);
-      return { receipt_number: `INV-OFFLINE-${Date.now().toString().slice(-6)}`, offline: true };
+      const todayStr = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+      return { receipt_number: `INV-SOLD-${todayStr}-OFF-${Date.now().toString().slice(-3)}`, offline: true };
     }
   },
   updateSale: async (saleId: string, payload: { customer_name?: string; customer_phone?: string; customer_address?: string; discount?: number }) => {
@@ -491,7 +492,7 @@ export default function POSTerminal() {
       // Save details for printable invoice preview
       setCompletedSale({
         id: response.id,
-        receipt_number: response.receipt_number || `INV-LOCAL-${Date.now().toString().slice(-6)}`,
+        receipt_number: response.receipt_number || `INV-SOLD-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-001`,
         customer_name: customerName.trim() || "Walk-in Customer",
         customer_phone: customerPhone.trim() || "—",
         customer_address: customerAddress.trim() || "—",
