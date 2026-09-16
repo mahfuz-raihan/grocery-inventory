@@ -10,6 +10,8 @@ import {
   getSyncQueue,
   clearSyncQueueItem
 } from "../lib/db";
+import { InvoiceModal } from "./dashboard/components/InvoiceModal";
+import { SaleInvoice, Branch, CompanyProfile } from "./dashboard/types";
 
 const getApiBaseUrl = () => {
   if (typeof window !== 'undefined') {
@@ -125,18 +127,12 @@ export default function POSTerminal() {
   const [customerAddress, setCustomerAddress] = useState("");
   const [discountStr, setDiscountStr] = useState("");
 
-  // --- EDIT MODAL STATES ---
-  const [editName, setEditName] = useState("");
-  const [editPhone, setEditPhone] = useState("");
-  const [editAddress, setEditAddress] = useState("");
-  const [editDiscount, setEditDiscount] = useState("");
-
   // --- POS SUPPLIER FILTER ---
   const [posSupplierFilter, setPosSupplierFilter] = useState("");
 
   // --- DEFAULT BRANCH (resolved from DB at startup) ---
   const [defaultBranchId, setDefaultBranchId] = useState<string>("");
-  const [branches, setBranches] = useState<{ id: string; name: string }[]>([]);
+  const [branches, setBranches] = useState<Branch[]>([]);
   const [selectedBranchId, setSelectedBranchId] = useState<string>("");
   const [userRole, setUserRole] = useState<string | null>(null);
   const [rbacRules, setRbacRules] = useState<any>(null);
@@ -145,38 +141,10 @@ export default function POSTerminal() {
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
 
   // --- COMPANY PROFILE STATE ---
-  const [companyProfile, setCompanyProfile] = useState<{ name: string; address: string; phone: string } | null>(null);
+  const [companyProfile, setCompanyProfile] = useState<CompanyProfile | null>(null);
 
   // --- COMPLETED SALE (INVOICE) STATE ---
-  const [completedSale, setCompletedSale] = useState<{
-    id?: string;
-    receipt_number: string;
-    customer_name: string;
-    customer_phone: string;
-    customer_address: string;
-    items: {
-      name: string;
-      sku: string;
-      quantity: number;
-      unit_price: number;
-      subtotal: number;
-      supplier_name?: string;
-    }[];
-    gross_total: number;
-    discount: number;
-    net_total: number;
-    status: "pending" | "paid";
-    date: string;
-  } | null>(null);
-
-  useEffect(() => {
-    if (completedSale) {
-      setEditName(completedSale.customer_name);
-      setEditPhone(completedSale.customer_phone);
-      setEditAddress(completedSale.customer_address);
-      setEditDiscount(completedSale.discount.toString());
-    }
-  }, [completedSale]);
+  const [completedInvoice, setCompletedInvoice] = useState<SaleInvoice | null>(null);
 
   const [showSuggestions, setShowSuggestions] = useState(false);
 
@@ -489,27 +457,31 @@ export default function POSTerminal() {
 
       const response = await posApi.checkout(payload);
 
-      // Save details for printable invoice preview
-      setCompletedSale({
-        id: response.id,
-        receipt_number: response.receipt_number || `INV-SOLD-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-001`,
+      // Save details for printable invoice preview (matches Dashboard Sold Invoices)
+      const createdInvoice: SaleInvoice = {
+        id: response.id || `inv-${Date.now()}`,
+        receipt_number:
+          response.receipt_number ||
+          `INV-SOLD-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-001`,
+        branch_id: branchId,
         customer_name: customerName.trim() || "Walk-in Customer",
         customer_phone: customerPhone.trim() || "—",
         customer_address: customerAddress.trim() || "—",
-        items: cartSnapshot.map(item => ({
-          name: item.name,
-          sku: item.sku,
+        total_amount: netPayableSnapshot,
+        discount: discountSnapshot,
+        status: "Paid",
+        created_at: new Date().toISOString(),
+        items: cartSnapshot.map((item) => ({
+          id: item.id,
+          product_id: item.product_id || item.id,
+          product_name: item.name,
           quantity: item.cartQuantity,
           unit_price: item.selling_price,
           subtotal: item.subtotal,
-          supplier_name: item.supplier_name
         })),
-        gross_total: cartTotalSnapshot,
-        discount: discountSnapshot,
-        net_total: netPayableSnapshot,
-        status: "paid",
-        date: new Date().toLocaleString()
-      });
+      };
+
+      setCompletedInvoice(createdInvoice);
 
       // ── OPTIMISTIC STOCK DEDUCTION ──────────────────────────────────────
       // Immediately subtract sold quantities from the local products state so the
@@ -554,64 +526,10 @@ export default function POSTerminal() {
     }
   };
 
-  const handlePrint = async () => {
-    if (completedSale && completedSale.id && completedSale.status === "pending") {
-      try {
-        await posApi.completeSale(completedSale.id);
-        setCompletedSale((prev) => (prev ? { ...prev, status: "paid" } : null));
-        await fetchProductsList(selectedBranchId || undefined); // Reload active stock counts
-      } catch (err) {
-        console.error("Failed to finalize payment:", err);
-        alert("Failed to finalize payment in database. Cannot print invoice.");
-        return;
-      }
-    }
-    setTimeout(() => {
-      window.print();
-    }, 150);
-  };
-
   const activeBranchName = branches.find(b => b.id === (selectedBranchId || defaultBranchId))?.name || "Default Warehouse";
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] bg-slate-50 font-sans text-slate-800 overflow-hidden relative">
-      {/* Print Styles Block */}
-      <style dangerouslySetInnerHTML={{
-        __html: `
-        @media print {
-          /* Hide everything by default */
-          body * { visibility: hidden !important; }
-
-          /* Show only the print area and its children */
-          #print-area, #print-area * { visibility: visible !important; }
-
-          /* Position the print area to fill the page */
-          #print-area {
-            position: fixed !important;
-            top: 0 !important;
-            left: 0 !important;
-            width: 100% !important;
-            height: auto !important;
-            background: white !important;
-            color: black !important;
-            padding: 24px !important;
-            font-size: 11px !important;
-            overflow: visible !important;
-          }
-
-          /* Page setup */
-          @page {
-            size: A4;
-            margin: 12mm 14mm;
-          }
-
-          /* Force visible for print-only elements */
-          .print\\:flex { display: flex !important; }
-          .hidden.print\\:flex { display: flex !important; visibility: visible !important; }
-          .print\\:hidden { display: none !important; }
-        }
-      `}} />
-
+    <div className="flex h-full w-full bg-slate-50 font-sans text-slate-800 overflow-hidden relative">
       {/* LEFT PANE: Product Catalog */}
       <div className="flex-1 flex flex-col h-full overflow-hidden">
         <div className="bg-white p-4 shadow-sm border-b z-10 flex items-center justify-between gap-4">
@@ -853,7 +771,7 @@ export default function POSTerminal() {
 
       {/* RIGHT PANE: Cart & Checkout Summary */}
       <div className="w-[26rem] bg-white border-l shadow-xl flex flex-col h-full flex-shrink-0 z-20 overflow-hidden">
-        <div className="p-4 bg-slate-900 text-slate-100 flex justify-between items-center shadow-md">
+        <div className="p-3.5 bg-slate-900 text-slate-100 flex justify-between items-center shadow-md flex-shrink-0">
           <h2 className="text-sm font-bold flex flex-col gap-0.5 leading-tight">
             <span className="flex items-center gap-1.5 text-base"><span>🛒</span> Current Cart</span>
             <span className="text-[10px] text-slate-300 font-normal">Selling from: <strong className="text-amber-400 font-semibold">{activeBranchName}</strong></span>
@@ -871,8 +789,8 @@ export default function POSTerminal() {
           </div>
         </div>
 
-        {/* Scrollable Cart Items - Compact & Styled */}
-        <div className="flex-1 overflow-y-auto max-h-[calc(100vh-27rem)] min-h-[10rem] p-3 space-y-2">
+        {/* Scrollable Cart Items - flex-1 min-h-0 so it shrinks/expands properly */}
+        <div className="flex-1 min-h-0 overflow-y-auto p-3 space-y-2">
           {cart.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-slate-400 space-y-2 py-8">
               <span className="text-4xl">🛍️</span>
@@ -921,22 +839,22 @@ export default function POSTerminal() {
           )}
         </div>
 
-        {/* Customer Information & Calculations - Completely Compact to stay above fold */}
-        <div className="p-3 bg-slate-50 border-t space-y-3 flex-shrink-0">
-          <div className="bg-white p-2.5 rounded-xl border border-slate-200/80 space-y-2">
+        {/* Customer Information & Calculations - Completely Pinned & Fixed to screen */}
+        <div className="p-3 bg-slate-50 border-t space-y-2.5 flex-shrink-0">
+          <div className="bg-white p-2.5 rounded-xl border border-slate-200/80 space-y-1.5 shadow-sm">
             <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Customer Details</h3>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-1.5">
               <input
                 type="text"
                 placeholder="Customer Name"
-                className="p-1.5 border rounded-lg text-xs bg-slate-50 focus:bg-white focus:ring-1 focus:ring-blue-500 outline-none font-medium w-full"
+                className="p-1.5 border border-slate-200 rounded-lg text-xs bg-slate-50 focus:bg-white focus:ring-1 focus:ring-blue-500 outline-none font-medium w-full"
                 value={customerName}
                 onChange={(e) => setCustomerName(e.target.value)}
               />
               <input
                 type="text"
                 placeholder="Phone Number"
-                className="p-1.5 border rounded-lg text-xs bg-slate-50 focus:bg-white focus:ring-1 focus:ring-blue-500 outline-none font-medium w-full"
+                className="p-1.5 border border-slate-200 rounded-lg text-xs bg-slate-50 focus:bg-white focus:ring-1 focus:ring-blue-500 outline-none font-medium w-full"
                 value={customerPhone}
                 onChange={(e) => setCustomerPhone(e.target.value)}
               />
@@ -944,11 +862,11 @@ export default function POSTerminal() {
             <input
               type="text"
               placeholder="Customer Address"
-              className="p-1.5 border rounded-lg text-xs bg-slate-50 focus:bg-white focus:ring-1 focus:ring-blue-500 outline-none font-medium w-full"
+              className="p-1.5 border border-slate-200 rounded-lg text-xs bg-slate-50 focus:bg-white focus:ring-1 focus:ring-blue-500 outline-none font-medium w-full"
               value={customerAddress}
               onChange={(e) => setCustomerAddress(e.target.value)}
             />
-            <div className="pt-2 flex items-center justify-between border-t gap-4">
+            <div className="pt-1.5 flex items-center justify-between border-t border-slate-100 gap-4">
               <label className="text-[10px] font-bold text-slate-400 uppercase">Discount</label>
               <div className="relative w-28">
                 <span className="absolute left-2 top-1 text-xs font-bold text-slate-400">৳</span>
@@ -957,7 +875,7 @@ export default function POSTerminal() {
                   step="0.01"
                   min="0"
                   placeholder="0.00"
-                  className="p-1 pl-5 border rounded-lg text-xs bg-slate-50 focus:bg-white focus:ring-1 focus:ring-blue-500 outline-none text-right font-bold w-full"
+                  className="p-1 pl-5 border border-slate-200 rounded-lg text-xs bg-slate-50 focus:bg-white focus:ring-1 focus:ring-blue-500 outline-none text-right font-bold w-full"
                   value={discountStr}
                   onChange={(e) => setDiscountStr(e.target.value)}
                 />
@@ -976,9 +894,9 @@ export default function POSTerminal() {
                 <span className="font-bold">-৳{discountValue.toFixed(2)}</span>
               </div>
             )}
-            <div className="flex justify-between items-center text-slate-800 font-bold border-t pt-1.5 mt-1.5">
+            <div className="flex justify-between items-center text-slate-800 font-bold border-t pt-1 mt-1">
               <span className="text-xs">Net Payable:</span>
-              <span className="text-xl text-emerald-600">৳{netPayable.toFixed(2)}</span>
+              <span className="text-lg text-emerald-600 font-black">৳{netPayable.toFixed(2)}</span>
             </div>
           </div>
 
@@ -998,206 +916,20 @@ export default function POSTerminal() {
         </div>
       </div>
 
-      {/* COMPLETED SALE / PREMIUM INVOICE MODAL */}
-      {completedSale && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto animate-fadeIn">
-          <div className="bg-white rounded-2xl border max-w-lg w-full shadow-2xl overflow-hidden flex flex-col my-8">
-
-            {/* Modal Actions Header */}
-            <div className="p-4 bg-slate-50 border-b flex justify-between items-center gap-3">
-              <h3 className="font-bold text-slate-800">Invoice Complete</h3>
-              <div className="flex gap-2">
-                <button
-                  onClick={handlePrint}
-                  className="px-3.5 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 font-bold rounded-lg text-xs transition flex items-center gap-1 shadow-sm border border-blue-200"
-                >
-                  🖨️ Print Invoice
-                </button>
-                <button
-                  onClick={() => setCompletedSale(null)}
-                  className="px-3.5 py-1.5 bg-slate-800 text-white hover:bg-slate-900 font-bold rounded-lg text-xs transition shadow-sm"
-                >
-                  Close & New Sale
-                </button>
-              </div>
-            </div>
-
-            {/* Printable Invoice Container */}
-            <div className="p-8 bg-white flex-1 overflow-y-auto" id="print-area">
-              <div className="space-y-6">
-
-                {/* Invoice Header */}
-                <div className="flex justify-between items-start border-b pb-4 gap-4">
-                  <div>
-                    <h1 className="text-xl font-bold text-slate-900">{companyProfile?.name || "GROCERY ERP"}</h1>
-                    <p className="text-xs text-slate-500 font-medium">{companyProfile?.address || "Bozlur Mor, Kushita Road"}</p>
-                    <p className="text-xs text-slate-500 font-medium">Phone: {companyProfile?.phone || "01700-000000"}</p>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Invoice ID</span>
-                    <h2 className="text-base font-mono font-bold text-blue-600">{completedSale.receipt_number}</h2>
-                    <p className="text-xs text-slate-400 font-medium">{completedSale.date}</p>
-                  </div>
-                </div>
-
-                {/* Customer Info */}
-                <div className="bg-slate-50 p-4 rounded-xl border flex flex-col text-xs gap-3">
-                  <span className="block font-bold text-slate-400 uppercase tracking-wider text-[9px]">Billing & Customer Details</span>
-
-                  {/* PRINT VIEW ONLY */}
-                  <div className="hidden print:flex justify-between w-full">
-                    <div>
-                      <p className="font-bold text-slate-800 text-sm">{completedSale.customer_name}</p>
-                      <p className="text-slate-500 font-medium mt-0.5">Phone: {completedSale.customer_phone}</p>
-                      <p className="text-slate-500 font-medium mt-0.5">Address: {completedSale.customer_address}</p>
-                    </div>
-                    <div className="text-right">
-                      <span className="block font-bold text-slate-400 uppercase tracking-wider text-[9px] mb-1">Status</span>
-                      <p className="text-emerald-600 font-bold mt-0.5 uppercase tracking-wider text-[10px]">
-                        {completedSale.status === "paid" ? "Payment Paid" : "Payment Pending"}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* SCREEN VIEW */}
-                  <div className="print:hidden">
-                    <div className="space-y-2">
-                      <div className="grid grid-cols-2 gap-2">
-                        <div>
-                          <label className="text-[9px] font-bold text-slate-400">Customer Name</label>
-                          <input
-                            type="text"
-                            className="w-full p-1.5 border rounded bg-white text-xs font-semibold focus:ring-1 focus:ring-blue-500 outline-none"
-                            value={editName}
-                            onChange={(e) => setEditName(e.target.value)}
-                          />
-                        </div>
-                        <div>
-                          <label className="text-[9px] font-bold text-slate-400">Customer Phone</label>
-                          <input
-                            type="text"
-                            className="w-full p-1.5 border rounded bg-white text-xs font-semibold focus:ring-1 focus:ring-blue-500 outline-none"
-                            value={editPhone}
-                            onChange={(e) => setEditPhone(e.target.value)}
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <label className="text-[9px] font-bold text-slate-400">Customer Address</label>
-                        <input
-                          type="text"
-                          className="w-full p-1.5 border rounded bg-white text-xs font-semibold focus:ring-1 focus:ring-blue-500 outline-none"
-                          value={editAddress}
-                          onChange={(e) => setEditAddress(e.target.value)}
-                        />
-                      </div>
-                      <div className="flex items-center justify-between gap-4 pt-1">
-                        <div>
-                          <label className="text-[9px] font-bold text-slate-400 block">Invoice Discount (৳)</label>
-                          <input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            className="p-1 border rounded text-xs font-bold text-slate-800 bg-white focus:ring-1 focus:ring-blue-500 outline-none w-28 text-right"
-                            value={editDiscount}
-                            onChange={(e) => setEditDiscount(e.target.value)}
-                          />
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <div className="text-right">
-                            <span className="block font-bold text-slate-400 uppercase tracking-wider text-[8px]">Status</span>
-                            <span className={`font-bold uppercase tracking-wider text-[9px] ${completedSale.status === "paid" ? "text-emerald-600" : "text-amber-600"}`}>
-                              {completedSale.status === "paid" ? "Paid" : "Pending"}
-                            </span>
-                          </div>
-                          <button
-                            onClick={async () => {
-                              if (!completedSale.id) return;
-                              try {
-                                const updated = await posApi.updateSale(completedSale.id, {
-                                  customer_name: editName,
-                                  customer_phone: editPhone,
-                                  customer_address: editAddress,
-                                  discount: parseFloat(editDiscount) || 0.0
-                                });
-                                setCompletedSale(prev => prev ? {
-                                  ...prev,
-                                  customer_name: updated.customer_name || "Walk-in Customer",
-                                  customer_phone: updated.customer_phone || "—",
-                                  customer_address: updated.customer_address || "—",
-                                  discount: updated.discount,
-                                  net_total: updated.total_amount
-                                } : null);
-                                alert("✅ Invoice updated in database successfully!");
-                              } catch (err) {
-                                console.error("Failed to update sale:", err);
-                                alert("Failed to update sale in DB");
-                              }
-                            }}
-                            className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded text-xs transition shadow self-end"
-                          >
-                            Save Changes
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Item List Table */}
-                <table className="w-full text-left text-xs border-collapse">
-                  <thead>
-                    <tr className="border-b border-slate-200 text-slate-400 font-bold uppercase text-[9px]">
-                      <th className="py-2.5">Item Description</th>
-                      <th className="py-2.5 text-center">Qty</th>
-                      <th className="py-2.5 text-right">Price</th>
-                      <th className="py-2.5 text-right">Total</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
-                    {completedSale.items.map((item, idx) => (
-                      <tr key={idx} className="py-3">
-                        <td className="py-3 pr-4">
-                          <p className="font-bold text-slate-900">{item.name}</p>
-                          <span className="text-[10px] text-slate-400 font-mono">SKU: {item.sku}</span>
-                        </td>
-                        <td className="py-3 text-center font-semibold">{item.quantity}</td>
-                        <td className="py-3 text-right">৳{item.unit_price.toFixed(2)}</td>
-                        <td className="py-3 text-right font-bold text-slate-900">৳{item.subtotal.toFixed(2)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-
-                {/* Financial Summary */}
-                <div className="border-t pt-4 flex flex-col items-end text-xs gap-1.5">
-                  <div className="w-48 flex justify-between font-medium text-slate-500">
-                    <span>Subtotal:</span>
-                    <span className="font-bold text-slate-800">৳{completedSale.gross_total.toFixed(2)}</span>
-                  </div>
-                  {completedSale.discount > 0 && (
-                    <div className="w-48 flex justify-between text-red-500 font-medium">
-                      <span>Discount:</span>
-                      <span>-৳{completedSale.discount.toFixed(2)}</span>
-                    </div>
-                  )}
-                  <div className="w-48 flex justify-between items-center text-sm font-bold text-slate-900 border-t pt-2 mt-1">
-                    <span>Grand Total:</span>
-                    <span className="text-lg text-emerald-600">৳{completedSale.net_total.toFixed(2)}</span>
-                  </div>
-                </div>
-
-                {/* Footer Message */}
-                <div className="text-center text-[10px] text-slate-400 font-medium pt-8 border-t border-dashed">
-                  <p>Thank you for shopping with us!</p>
-                  <p className="mt-0.5">Please keep this invoice copy for your records.</p>
-                </div>
-
-              </div>
-            </div>
-
-          </div>
-        </div>
+      {/* UNIFIED A4 INVOICE PREVIEW MODAL (SAME AS SOLD INVOICES) */}
+      {completedInvoice && (
+        <InvoiceModal
+          invoice={completedInvoice}
+          onClose={() => setCompletedInvoice(null)}
+          catalogProducts={products.map((p) => ({
+            id: p.product_id || p.id,
+            name: p.name,
+            sku: p.sku,
+            average_cost: p.selling_price,
+          }))}
+          branches={branches}
+          companyProfile={companyProfile}
+        />
       )}
 
     </div>

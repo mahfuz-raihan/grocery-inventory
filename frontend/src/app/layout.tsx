@@ -236,8 +236,8 @@ export default function RootLayout({
             </div>
           </header>
 
-          <main className="flex-1 overflow-y-auto p-6 md:p-8">
-            <div className="max-w-7xl mx-auto">
+          <main className={`flex-1 ${pathname === '/' ? 'overflow-hidden p-0' : 'overflow-y-auto p-6 md:p-8'}`}>
+            <div className={pathname === '/' ? 'h-full w-full' : 'max-w-7xl mx-auto'}>
               {children}
             </div>
           </main>
