@@ -29,6 +29,7 @@ interface Product {
   name: string;
   unit?: string | null;
   selling_price: number;
+  min_selling_price?: number;
   purchase_cost?: number;
   commission?: number;
   additional_cost?: number;
@@ -374,6 +375,7 @@ export default function InventoryControlPage() {
   const [invoiceDiscount, setInvoiceDiscount] = useState("0");
   const [activeGRN, setActiveGRN] = useState<any>(null);
   const [grnSellingPrice, setGrnSellingPrice] = useState("");
+  const [grnAdditionalCost, setGrnAdditionalCost] = useState("");
   const [companyProfile, setCompanyProfile] = useState<any>(null);
   const [showCompanyModal, setShowCompanyModal] = useState(false);
   const [companyName, setCompanyName] = useState("");
@@ -381,7 +383,43 @@ export default function InventoryControlPage() {
   const [companyPhone, setCompanyPhone] = useState("");
   const [companyEmail, setCompanyEmail] = useState("");
   const [companyContact, setCompanyContact] = useState("");
-  const [catalogSubTab, setCatalogSubTab] = useState<"catalog" | "by_product_type" | "by_category">("catalog");
+  const [catalogSubTab, setCatalogSubTab] = useState<"catalog" | "by_product_type" | "by_category" | "price_panel">("catalog");
+  const [showPricePanel, setShowPricePanel] = useState(false);
+  const [pricePanelSearch, setPricePanelSearch] = useState("");
+  const [pendingPrices, setPendingPrices] = useState<{ [productId: string]: { selling_price: string; min_selling_price: string } }>({});
+  const [isSavingPrices, setIsSavingPrices] = useState(false);
+
+  const getLocalDateString = () => {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  const generateInvoiceRef = (existingGrns: any[] = grns) => {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    const dateStr = `${year}${month}${day}`;
+    const prefix = `GRN-${dateStr}-`;
+
+    let count = 0;
+    if (Array.isArray(existingGrns)) {
+      for (const g of existingGrns) {
+        if (g?.invoice_reference && typeof g.invoice_reference === "string" && g.invoice_reference.startsWith(prefix)) {
+          const parts = g.invoice_reference.split("-");
+          const lastPart = parseInt(parts[parts.length - 1], 10);
+          if (!isNaN(lastPart) && lastPart > count) {
+            count = lastPart;
+          }
+        }
+      }
+    }
+    const nextNum = String(count + 1).padStart(3, "0");
+    return `${prefix}${nextNum}`;
+  };
 
   const updateProductTypes = (newTypes: typeof productTypes) => {
     setProductTypes(newTypes);
@@ -487,6 +525,7 @@ export default function InventoryControlPage() {
   const [editAdditionalCost, setEditAdditionalCost] = useState("");
   const [editColor, setEditColor] = useState("");
   const [editSize, setEditSize] = useState("");
+  const [editMinSellingPrice, setEditMinSellingPrice] = useState("");
   const [editMinStock, setEditMinStock] = useState("");
   const [editMaxStock, setEditMaxStock] = useState("");
   const [editReorderQty, setEditReorderQty] = useState("");
@@ -523,7 +562,7 @@ export default function InventoryControlPage() {
   const [grnQty, setGrnQty] = useState("");
   const [grnCostPrice, setGrnCostPrice] = useState("");
   const [grnCommission, setGrnCommission] = useState("");
-  const [grnReceivingDate, setGrnReceivingDate] = useState(new Date().toISOString().split("T")[0]);
+  const [grnReceivingDate, setGrnReceivingDate] = useState(getLocalDateString());
   const [grnOrderedQty, setGrnOrderedQty] = useState("");
   const [grnDamagedQty, setGrnDamagedQty] = useState("");
   const [grnBatchNumber, setGrnBatchNumber] = useState("");
@@ -532,7 +571,6 @@ export default function InventoryControlPage() {
       product_id: "",
       quantity_received: "",
       cost_price: "",
-      selling_price: "",
       commission: "0",
       ordered_quantity: "",
       damaged_quantity: "0",
@@ -552,7 +590,7 @@ export default function InventoryControlPage() {
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
   // Time-based stock level lookup state
-  const [historicalDate, setHistoricalDate] = useState(new Date().toISOString().split('T')[0]);
+  const [historicalDate, setHistoricalDate] = useState(getLocalDateString());
 
   // Forms
   const [warehouseName, setWarehouseName] = useState("");
@@ -715,7 +753,7 @@ export default function InventoryControlPage() {
           setAdjProduct(productsData[0].id);
           setSelectedProductId(productsData[0].id);
         }
-        setInvoiceRef(`INV-GRN-${Date.now().toString().slice(-6)}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`);
+        setInvoiceRef(generateInvoiceRef(grnsData));
       } catch (err) {
         console.error("Failed to load inventory control data", err);
       } finally {
@@ -843,11 +881,9 @@ export default function InventoryControlPage() {
       setNewProductBoardType("");
       setNewProductParentId("");
       
-      // Close modal on success
-      setTimeout(() => {
-        setShowAddProductModal(false);
-        setProductSuccessMessage("");
-      }, 1500);
+      // Close modal immediately on success
+      setShowAddProductModal(false);
+      setProductSuccessMessage("");
     } catch (error: any) {
       console.error(error);
       alert(error.message || "Failed to create product. SKU might already exist.");
@@ -862,6 +898,7 @@ export default function InventoryControlPage() {
     setEditName(p.name);
     setEditUnit(p.unit || "Pieces");
     setEditPrice(currency === "USD" ? (p.selling_price / USD_EXCHANGE_RATE).toFixed(2) : p.selling_price.toString());
+    setEditMinSellingPrice(p.min_selling_price != null ? (currency === "USD" ? (p.min_selling_price / USD_EXCHANGE_RATE).toFixed(2) : p.min_selling_price.toString()) : "0");
     setEditType(p.product_type || "finished_product");
     setEditParentId(p.parent_id || "");
     setEditCost(p.purchase_cost ? (currency === "USD" ? (p.purchase_cost / USD_EXCHANGE_RATE).toFixed(2) : p.purchase_cost.toString()) : "");
@@ -896,6 +933,9 @@ export default function InventoryControlPage() {
       const finalPrice = canEditPrice
         ? (editPrice ? (currency === "USD" ? parseFloat(editPrice) * USD_EXCHANGE_RATE : parseFloat(editPrice)) : editingProduct.selling_price)
         : editingProduct.selling_price;
+      const finalMinPrice = canEditPrice
+        ? (editMinSellingPrice ? (currency === "USD" ? parseFloat(editMinSellingPrice) * USD_EXCHANGE_RATE : parseFloat(editMinSellingPrice)) : (editingProduct.min_selling_price || 0.0))
+        : (editingProduct.min_selling_price || 0.0);
       const costValue = canEditPrice
         ? (editCost ? (currency === "USD" ? parseFloat(editCost) * USD_EXCHANGE_RATE : parseFloat(editCost)) : (editingProduct.purchase_cost || 0.0))
         : (editingProduct.purchase_cost || 0.0);
@@ -904,6 +944,7 @@ export default function InventoryControlPage() {
         name: editName,
         unit: editUnit,
         selling_price: finalPrice,
+        min_selling_price: finalMinPrice,
         parent_id: editParentId || null,
         product_type: editType,
         color: editColor || null,
@@ -950,8 +991,6 @@ export default function InventoryControlPage() {
       alert("Failed to load product details");
     }
   };
-
-  const generateInvoiceRef = () => `INV-GRN-${Date.now().toString().slice(-6)}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
 
   const handleSaveInvoiceDiscount = async () => {
     if (!activeGRN) return;
@@ -1015,25 +1054,39 @@ export default function InventoryControlPage() {
     setGrnSuccessMessage("");
 
     try {
-      const payloadItems = grnItemsList.map(item => {
+      const addCost = parseFloat(grnAdditionalCost || "0");
+      // Calculate base net values for all items to rationally distribute additional cost
+      const baseSubtotals = grnItemsList.map(item => {
+        const raw = parseFloat(item.cost_price || "0");
+        const comm = parseFloat(item.commission || "0");
+        const qty = parseFloat(item.quantity_received || "0");
+        return qty * raw * (1 - comm / 100);
+      });
+      const totalBaseNet = baseSubtotals.reduce((a, b) => a + b, 0);
+
+      const payloadItems = grnItemsList.map((item, idx) => {
         const rawPrice = parseFloat(item.cost_price);
         const commissionPct = parseFloat(item.commission || "0");
-        const netCost = rawPrice * (1 - commissionPct / 100);
-        const finalCost = currency === "USD" ? netCost * USD_EXCHANGE_RATE : netCost;
+        const baseNetUnit = rawPrice * (1 - commissionPct / 100);
+        const qty = parseFloat(item.quantity_received);
 
-        const canEditPrice = rbacRules ? rbacRules.product_price_edit?.includes(userRole) : (userRole === "owner");
-        const finalSellingPrice = (canEditPrice && item.selling_price)
-          ? (currency === "USD" ? parseFloat(item.selling_price) * USD_EXCHANGE_RATE : parseFloat(item.selling_price))
-          : undefined;
+        // Proportional additional cost based on item's share of total value
+        const itemAdditionalShare = (addCost > 0 && totalBaseNet > 0)
+          ? (baseSubtotals[idx] / totalBaseNet) * addCost
+          : 0;
+        const addCostPerUnit = qty > 0 ? itemAdditionalShare / qty : 0;
+        const netCostWithAdditional = baseNetUnit + addCostPerUnit;
+
+        const finalCost = currency === "USD" ? netCostWithAdditional * USD_EXCHANGE_RATE : netCostWithAdditional;
 
         return {
           product_id: item.product_id,
-          quantity_received: parseFloat(item.quantity_received),
+          quantity_received: qty,
           cost_price: finalCost,
-          ordered_quantity: item.ordered_quantity ? parseFloat(item.ordered_quantity) : parseFloat(item.quantity_received),
+          ordered_quantity: item.ordered_quantity ? parseFloat(item.ordered_quantity) : qty,
           damaged_quantity: item.damaged_quantity ? parseFloat(item.damaged_quantity) : 0.0,
           batch_number: item.batch_number || undefined,
-          selling_price: finalSellingPrice,
+          selling_price: undefined, // Selling price removed from GRN
           unit_price: currency === "USD" ? rawPrice * USD_EXCHANGE_RATE : rawPrice,
           commission: commissionPct
         };
@@ -1058,8 +1111,7 @@ export default function InventoryControlPage() {
       
       // Auto open Invoice Preview Modal
       setActiveGRN(newGRN);
-      const grossVal = (newGRN.items || []).reduce((sum: number, it: any) => sum + (it.quantity_received * (it.unit_price || it.cost_price)), 0);
-      setInvoiceDiscount((newGRN.discount != null ? newGRN.discount : (grossVal - newGRN.total_amount)).toFixed(2));
+      setInvoiceDiscount("0");
       setShowInvoiceModal(true);
 
       // Reset
@@ -1072,18 +1124,18 @@ export default function InventoryControlPage() {
       setGrnQty("");
       setGrnCostPrice("");
       setGrnSellingPrice("");
+      setGrnAdditionalCost("");
       setGrnCommission("");
       setGrnOrderedQty("");
       setGrnDamagedQty("");
       setGrnBatchNumber("");
-      setGrnReceivingDate(new Date().toISOString().split("T")[0]);
-      setInvoiceRef(generateInvoiceRef());
+      setGrnReceivingDate(getLocalDateString());
+      setInvoiceRef(generateInvoiceRef([newGRN, ...grns]));
       setGrnItemsList([
         {
           product_id: "",
           quantity_received: "",
           cost_price: "",
-          selling_price: "",
           commission: "0",
           ordered_quantity: "",
           damaged_quantity: "0",
@@ -1126,39 +1178,25 @@ export default function InventoryControlPage() {
     // Build items rows
     const itemsHtml = (activeGRN.items || []).map((item: any) => {
       const p = products.find(prod => prod.id === item.product_id);
-      const unitPriceVal = item.unit_price || item.cost_price;
+      const netCostVal = item.cost_price;
       return `
         <tr style="border-bottom: 1px solid #e2e8f0;">
           <td style="padding: 12px; text-align: left; font-size: 13px;">${p?.name || "Unknown Product"}</td>
           <td style="padding: 12px; text-align: left; font-size: 13px; font-family: monospace;">${p?.sku || "—"}</td>
           <td style="padding: 12px; text-align: center; font-size: 13px;">${item.ordered_quantity || item.quantity_received}</td>
           <td style="padding: 12px; text-align: center; font-size: 13px; font-weight: bold; color: #16a34a;">${item.quantity_received}</td>
-          <td style="padding: 12px; text-align: right; font-size: 13px;">${formatPrice(unitPriceVal)}</td>
-          <td style="padding: 12px; text-align: right; font-size: 13px; font-weight: bold; color: #1e293b;">${formatPrice(item.quantity_received * unitPriceVal)}</td>
+          <td style="padding: 12px; text-align: right; font-size: 13px;">${formatPrice(netCostVal)}</td>
+          <td style="padding: 12px; text-align: right; font-size: 13px; font-weight: bold; color: #1e293b;">${formatPrice(item.quantity_received * netCostVal)}</td>
         </tr>
       `;
     }).join("");
 
-    const grossTotal = (activeGRN.items || []).reduce((sum: number, item: any) => sum + (item.quantity_received * (item.unit_price || item.cost_price)), 0);
-    const discountAmount = parseFloat(invoiceDiscount || "0");
-    const netPayable = Math.max(0, grossTotal - discountAmount);
-    let summaryRowsHtml = "";
-    if (discountAmount > 0.01) {
-      summaryRowsHtml += `
-        <tr style="background-color: #f8fafc; font-weight: 500;">
-          <td colspan="4" style="padding: 10px 12px; text-align: right; font-size: 13px; color: #475569;">Gross Subtotal:</td>
-          <td colspan="2" style="padding: 10px 12px; text-align: right; font-size: 13px; font-weight: bold;">${formatPrice(grossTotal)}</td>
-        </tr>
-        <tr style="background-color: #f8fafc; font-weight: 500; color: #c2410c;">
-          <td colspan="4" style="padding: 10px 12px; text-align: right; font-size: 13px;">Less: Commission / Discounts:</td>
-          <td colspan="2" style="padding: 10px 12px; text-align: right; font-size: 13px; font-weight: bold;">− ${formatPrice(discountAmount)}</td>
-        </tr>
-      `;
-    }
-    summaryRowsHtml += `
+    const netTotal = (activeGRN.items || []).reduce((sum: number, item: any) => sum + (item.quantity_received * item.cost_price), 0);
+    const invoiceGrandTotal = activeGRN.total_amount || netTotal;
+    const summaryRowsHtml = `
       <tr class="total-row">
-        <td colspan="4" style="padding: 16px 12px; text-align: right; font-size: 15px;">Grand Total (Net Payable):</td>
-        <td colspan="2" style="padding: 16px 12px; text-align: right; font-size: 18px; color: #1e3a8a;">${formatPrice(netPayable)}</td>
+        <td colspan="4" style="padding: 16px 12px; text-align: right; font-size: 15px; font-weight: bold;">Grand Total (Net Amount):</td>
+        <td colspan="2" style="padding: 16px 12px; text-align: right; font-size: 18px; color: #1e3a8a; font-weight: bold;">${formatPrice(invoiceGrandTotal)}</td>
       </tr>
     `;
 
@@ -1938,6 +1976,13 @@ export default function InventoryControlPage() {
               </button>
               <button
                 type="button"
+                onClick={() => setCatalogSubTab("price_panel")}
+                className={`px-3.5 py-2 text-xs font-bold rounded-xl transition-all shadow-sm flex items-center gap-1.5 ${catalogSubTab === "price_panel" ? "bg-emerald-600 text-white hover:bg-emerald-700" : "bg-emerald-50 text-emerald-700 border border-emerald-300 hover:bg-emerald-100"}`}
+              >
+                💲 Central Price Panel
+              </button>
+              <button
+                type="button"
                 onClick={() => setShowAddProductModal(true)}
                 className="px-4 py-2 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-all shadow-sm flex items-center gap-1.5"
               >
@@ -1955,6 +2000,12 @@ export default function InventoryControlPage() {
               📦 Current Catalog
             </button>
             <button
+              onClick={() => setCatalogSubTab("price_panel")}
+              className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all ${catalogSubTab === "price_panel" ? "bg-emerald-600 text-white shadow-sm font-bold" : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"}`}
+            >
+              💲 Central Price Panel
+            </button>
+            <button
               onClick={() => setCatalogSubTab("by_product_type")}
               className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all ${catalogSubTab === "by_product_type" ? "bg-blue-600 text-white shadow-sm" : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"}`}
             >
@@ -1967,6 +2018,232 @@ export default function InventoryControlPage() {
               📁 By Category
             </button>
           </div>
+
+          {/* Central Price Set Panel View */}
+          {catalogSubTab === "price_panel" && (() => {
+            const canEditPrice = rbacRules ? rbacRules.product_price_edit?.includes(userRole) : (userRole === "owner");
+            const filteredProducts = products.filter(p => {
+              const query = pricePanelSearch.toLowerCase();
+              return !query ||
+                p.name.toLowerCase().includes(query) ||
+                p.sku.toLowerCase().includes(query) ||
+                (p.barcode && p.barcode.toLowerCase().includes(query));
+            });
+
+            const handlePriceChange = (prodId: string, field: "selling_price" | "min_selling_price", value: string) => {
+              setPendingPrices(prev => ({
+                ...prev,
+                [prodId]: {
+                  selling_price: field === "selling_price" ? value : (prev[prodId]?.selling_price ?? (products.find(p => p.id === prodId)?.selling_price?.toString() ?? "0")),
+                  min_selling_price: field === "min_selling_price" ? value : (prev[prodId]?.min_selling_price ?? (products.find(p => p.id === prodId)?.min_selling_price?.toString() ?? "0")),
+                }
+              }));
+            };
+
+            const handleSaveSinglePrice = async (prod: Product) => {
+              if (!canEditPrice) {
+                alert("You do not have permission to edit product prices.");
+                return;
+              }
+              const pending = pendingPrices[prod.id];
+              if (!pending) return;
+
+              const newSellingPrice = currency === "USD" ? parseFloat(pending.selling_price || "0") * USD_EXCHANGE_RATE : parseFloat(pending.selling_price || "0");
+              const newMinPrice = currency === "USD" ? parseFloat(pending.min_selling_price || "0") * USD_EXCHANGE_RATE : parseFloat(pending.min_selling_price || "0");
+
+              if (newSellingPrice < 0 || newMinPrice < 0) {
+                alert("Prices cannot be negative.");
+                return;
+              }
+
+              try {
+                const updated = await api.updateProduct(prod.id, {
+                  selling_price: newSellingPrice,
+                  min_selling_price: newMinPrice
+                });
+                setProducts(prev => prev.map(p => p.id === prod.id ? { ...p, ...updated } : p));
+                setPendingPrices(prev => {
+                  const copy = { ...prev };
+                  delete copy[prod.id];
+                  return copy;
+                });
+                alert(`✅ Price updated for "${prod.name}"!`);
+              } catch (err: any) {
+                alert(err.message || "Failed to update price");
+              }
+            };
+
+            const handleSaveAllPrices = async () => {
+              if (!canEditPrice) {
+                alert("You do not have permission to edit product prices.");
+                return;
+              }
+              const prodIdsToUpdate = Object.keys(pendingPrices);
+              if (prodIdsToUpdate.length === 0) {
+                alert("No pending price changes to save.");
+                return;
+              }
+              setIsSavingPrices(true);
+              try {
+                let successCount = 0;
+                for (const prodId of prodIdsToUpdate) {
+                  const pending = pendingPrices[prodId];
+                  const newSellingPrice = currency === "USD" ? parseFloat(pending.selling_price || "0") * USD_EXCHANGE_RATE : parseFloat(pending.selling_price || "0");
+                  const newMinPrice = currency === "USD" ? parseFloat(pending.min_selling_price || "0") * USD_EXCHANGE_RATE : parseFloat(pending.min_selling_price || "0");
+
+                  const updated = await api.updateProduct(prodId, {
+                    selling_price: newSellingPrice,
+                    min_selling_price: newMinPrice
+                  });
+                  setProducts(prev => prev.map(p => p.id === prodId ? { ...p, ...updated } : p));
+                  successCount++;
+                }
+                setPendingPrices({});
+                alert(`✅ Successfully updated prices for ${successCount} products! All channels & POS will reflect this immediately.`);
+              } catch (err: any) {
+                alert(err.message || "Failed during bulk price save");
+              } finally {
+                setIsSavingPrices(false);
+              }
+            };
+
+            const pendingCount = Object.keys(pendingPrices).length;
+
+            return (
+              <div className="bg-white rounded-xl border shadow-sm overflow-hidden space-y-4 p-5">
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b pb-4">
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                      <span>🏷️</span> Central Product Price Setting Panel
+                    </h3>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Set standard Selling Price &amp; Minimum Selling Price floor for every product. Updates reflect instantly across POS, Stock, and Quotations.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="text"
+                      value={pricePanelSearch}
+                      onChange={(e) => setPricePanelSearch(e.target.value)}
+                      placeholder="Search products..."
+                      className="p-2 border rounded-lg text-xs w-56 outline-none focus:ring-2 focus:ring-emerald-500 bg-white font-medium"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleSaveAllPrices}
+                      disabled={isSavingPrices || pendingCount === 0 || !canEditPrice}
+                      className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-300 text-white font-bold rounded-xl text-xs transition shadow-sm flex items-center gap-1.5"
+                    >
+                      {isSavingPrices ? "Saving All..." : `💾 Save All Changes (${pendingCount})`}
+                    </button>
+                  </div>
+                </div>
+
+                {!canEditPrice && (
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 font-medium">
+                    ⚠️ Your user role only has read-only access to product prices. Only owners/authorized managers can save price changes.
+                  </div>
+                )}
+
+                <div className="overflow-x-auto border rounded-xl">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead className="bg-gray-100 font-bold text-gray-700 uppercase border-b">
+                      <tr>
+                        <th className="p-3">Product Name &amp; SKU</th>
+                        <th className="p-3 text-center">Current Stock</th>
+                        <th className="p-3 text-right">Purchase Cost</th>
+                        <th className="p-3 text-right">Average Cost</th>
+                        <th className="p-3 text-right w-36">Min Selling Price ({currency === "USD" ? "$" : "৳"})</th>
+                        <th className="p-3 text-right w-36">Selling Price ({currency === "USD" ? "$" : "৳"})</th>
+                        <th className="p-3 text-center">Markup %</th>
+                        <th className="p-3 text-center">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {filteredProducts.map(prod => {
+                        const pending = pendingPrices[prod.id];
+                        const currentSelling = pending?.selling_price !== undefined
+                          ? pending.selling_price
+                          : (currency === "USD" ? (prod.selling_price / USD_EXCHANGE_RATE).toFixed(2) : prod.selling_price.toString());
+                        const currentMin = pending?.min_selling_price !== undefined
+                          ? pending.min_selling_price
+                          : (prod.min_selling_price != null ? (currency === "USD" ? (prod.min_selling_price / USD_EXCHANGE_RATE).toFixed(2) : prod.min_selling_price.toString()) : "0");
+
+                        const sellingNum = parseFloat(currentSelling || "0");
+                        const minNum = parseFloat(currentMin || "0");
+                        const costNum = prod.purchase_cost || prod.average_cost || 0;
+                        const markup = costNum > 0 ? (((sellingNum - costNum) / costNum) * 100).toFixed(1) : "—";
+                        const isModified = pending !== undefined;
+                        const isBelowMin = sellingNum > 0 && minNum > 0 && sellingNum < minNum;
+
+                        return (
+                          <tr key={prod.id} className={`hover:bg-gray-50/60 ${isModified ? "bg-amber-50/40" : ""}`}>
+                            <td className="p-3">
+                              <span className="font-bold text-gray-800 block">{prod.name}</span>
+                              <span className="text-[11px] font-mono text-gray-400">SKU: {prod.sku} {prod.barcode ? `| Barcode: ${prod.barcode}` : ""}</span>
+                            </td>
+                            <td className="p-3 text-center font-bold text-gray-700">
+                              {prod.current_stock} <span className="text-[10px] text-gray-400 font-normal">{prod.unit || 'pcs'}</span>
+                            </td>
+                            <td className="p-3 text-right text-gray-600 font-medium">
+                              {formatPrice(prod.purchase_cost || 0)}
+                            </td>
+                            <td className="p-3 text-right text-gray-600 font-medium">
+                              {formatPrice(prod.average_cost || 0)}
+                            </td>
+                            <td className="p-3 text-right">
+                              <input
+                                type="number"
+                                step="any"
+                                min="0"
+                                disabled={!canEditPrice}
+                                value={currentMin}
+                                onChange={(e) => handlePriceChange(prod.id, "min_selling_price", e.target.value)}
+                                className={`w-32 p-1.5 border rounded-lg text-right font-bold text-xs outline-none focus:ring-2 focus:ring-sky-400 ${!canEditPrice ? "bg-gray-100 cursor-not-allowed text-gray-400" : "bg-white text-sky-900 border-sky-200"}`}
+                                placeholder="0.00"
+                              />
+                            </td>
+                            <td className="p-3 text-right">
+                              <input
+                                type="number"
+                                step="any"
+                                min="0"
+                                disabled={!canEditPrice}
+                                value={currentSelling}
+                                onChange={(e) => handlePriceChange(prod.id, "selling_price", e.target.value)}
+                                className={`w-32 p-1.5 border rounded-lg text-right font-bold text-xs outline-none focus:ring-2 focus:ring-emerald-400 ${isBelowMin ? "border-red-500 bg-red-50 text-red-700" : (!canEditPrice ? "bg-gray-100 cursor-not-allowed text-gray-400" : "bg-white text-emerald-900 border-emerald-200")}`}
+                                placeholder="0.00"
+                              />
+                              {isBelowMin && (
+                                <span className="text-[9px] font-bold text-red-600 block text-right mt-0.5">⚠️ Below Min Price</span>
+                              )}
+                            </td>
+                            <td className="p-3 text-center font-bold text-xs text-gray-600">
+                              {markup !== "—" ? `${markup}%` : "—"}
+                            </td>
+                            <td className="p-3 text-center">
+                              {isModified ? (
+                                <button
+                                  type="button"
+                                  onClick={() => handleSaveSinglePrice(prod)}
+                                  disabled={!canEditPrice}
+                                  className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition shadow-sm"
+                                >
+                                  Save
+                                </button>
+                              ) : (
+                                <span className="text-[10px] text-gray-400">Up to date</span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Catalog Tab View */}
           {catalogSubTab === "catalog" && (() => {
@@ -3333,7 +3610,7 @@ export default function InventoryControlPage() {
               {/* Pricing & Stock Levels */}
               <div className="bg-slate-55 p-4 rounded-xl border border-slate-200 space-y-4">
                 <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Pricing & Stock Levels</h4>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Selling Price (৳)</label>
                     <input
@@ -3346,6 +3623,19 @@ export default function InventoryControlPage() {
                       placeholder="0.00"
                     />
                     {(rbacRules ? !rbacRules.product_price_edit?.includes(userRole) : (userRole !== "owner")) && <span className="text-[10px] text-red-500 font-semibold mt-1 block">Only configured roles can change selling price.</span>}
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Min Selling Price (৳)</label>
+                    <input
+                      type="number"
+                      step="any"
+                      className={`w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium ${(rbacRules ? !rbacRules.product_price_edit?.includes(userRole) : (userRole !== "owner")) ? "bg-gray-100 cursor-not-allowed text-gray-400" : ""}`}
+                      value={editMinSellingPrice}
+                      onChange={(e) => setEditMinSellingPrice(e.target.value)}
+                      disabled={rbacRules ? !rbacRules.product_price_edit?.includes(userRole) : (userRole !== "owner")}
+                      placeholder="0.00"
+                    />
+                    <span className="text-[10px] text-gray-400 block mt-1">Floor price for POS / discounts</span>
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Purchase Cost (৳)</label>
@@ -3493,6 +3783,10 @@ export default function InventoryControlPage() {
                         <div className="p-4 bg-emerald-50/50 rounded-xl border border-emerald-100">
                           <span className="text-xs text-gray-500 uppercase font-bold block mb-1">Selling Price</span>
                           <span className="text-2xl font-bold text-emerald-955">{formatPrice(viewingProductDetail.product.selling_price)}</span>
+                        </div>
+                        <div className="p-4 bg-sky-50/50 rounded-xl border border-sky-100">
+                          <span className="text-xs text-gray-500 uppercase font-bold block mb-1">Min Selling Price</span>
+                          <span className="text-2xl font-bold text-sky-955">{formatPrice(viewingProductDetail.product.min_selling_price || 0)}</span>
                         </div>
                         <div className="p-4 bg-purple-50/50 rounded-xl border border-purple-100">
                           <span className="text-xs text-gray-500 uppercase font-bold block mb-1">Unit Price (DP)</span>
@@ -4464,7 +4758,6 @@ export default function InventoryControlPage() {
                         product_id: "",
                         quantity_received: "",
                         cost_price: "",
-                        selling_price: "",
                         commission: "0",
                         ordered_quantity: "",
                         damaged_quantity: "0",
@@ -4486,7 +4779,6 @@ export default function InventoryControlPage() {
                         <th className="p-2.5 w-24 text-right">Unit Price (DP) *</th>
                         <th className="p-2.5 w-20 text-center">Comm (%)</th>
                         <th className="p-2.5 w-24 text-right">Net Cost</th>
-                        <th className="p-2.5 w-24 text-right">Selling Price</th>
                         <th className="p-2.5 w-24 text-right">Ordered Qty</th>
                         <th className="p-2.5 w-20 text-right">Damaged</th>
                         <th className="p-2.5 w-24">Batch No.</th>
@@ -4506,7 +4798,6 @@ export default function InventoryControlPage() {
                               if (field === "product_id") {
                                 const selectedProd = products.find(p => p.id === value);
                                 if (selectedProd) {
-                                  updatedItem.selling_price = selectedProd.selling_price.toString();
                                   updatedItem.cost_price = (selectedProd.purchase_cost || selectedProd.average_cost || 0).toString();
                                 }
                               }
@@ -4580,20 +4871,6 @@ export default function InventoryControlPage() {
                               {item.cost_price ? formatPrice(netPrice) : "—"}
                             </td>
 
-                            {/* Selling Price */}
-                            <td className="p-2">
-                              <input
-                                type="number"
-                                step="any"
-                                min="0"
-                                className={`w-full p-1.5 border rounded-lg text-right font-medium outline-none focus:ring-1 focus:ring-emerald-450 ${(rbacRules ? !rbacRules.product_price_edit?.includes(userRole) : (userRole !== "owner")) ? "bg-gray-100 cursor-not-allowed text-gray-500 font-semibold" : ""}`}
-                                value={item.selling_price}
-                                onChange={(e) => handleItemChange("selling_price", e.target.value)}
-                                disabled={rbacRules ? !rbacRules.product_price_edit?.includes(userRole) : (userRole !== "owner")}
-                                placeholder="Optional"
-                              />
-                            </td>
-
                             {/* Ordered Qty */}
                             <td className="p-2">
                               <input
@@ -4655,29 +4932,70 @@ export default function InventoryControlPage() {
                   </table>
                 </div>
 
+                {/* Additional Cost (Customs / Freight / Labor) */}
+                <div className="p-3.5 bg-amber-50/70 border-t border-amber-200 flex flex-wrap items-center justify-between gap-4">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <span className="text-amber-900 font-bold text-xs flex items-center gap-1.5">
+                      🚚 Additional Cost (Customs / Freight / Transport):
+                    </span>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        step="any"
+                        min="0"
+                        placeholder="0.00"
+                        className="p-1.5 border border-amber-300 rounded-lg text-right font-bold text-amber-900 bg-white text-xs w-36 outline-none focus:ring-2 focus:ring-amber-500 shadow-sm"
+                        value={grnAdditionalCost}
+                        onChange={(e) => setGrnAdditionalCost(e.target.value)}
+                      />
+                    </div>
+                    <span className="text-[11px] text-amber-700 italic">
+                      * Rationally added to each product's cost proportional to item value
+                    </span>
+                  </div>
+                  {(() => {
+                    const addCostNum = parseFloat(grnAdditionalCost || "0");
+                    if (addCostNum > 0) {
+                      return (
+                        <div className="text-xs font-semibold text-amber-900">
+                          Total Added: <span className="font-black text-amber-950 text-sm">+{formatPrice(addCostNum)}</span>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
+                </div>
+
                 {/* Grand Order value summary */}
                 {(() => {
                   const grossTotal = grnItemsList.reduce((sum, item) => sum + (parseFloat(item.quantity_received || "0") * parseFloat(item.cost_price || "0")), 0);
-                  const totalOrderValue = grnItemsList.reduce((sum, item) => {
+                  const totalBaseNet = grnItemsList.reduce((sum, item) => {
                     const raw = parseFloat(item.cost_price || "0");
                     const comm = parseFloat(item.commission || "0");
                     const qty = parseFloat(item.quantity_received || "0");
                     return sum + (qty * raw * (1 - comm / 100));
                   }, 0);
+                  const addCostNum = parseFloat(grnAdditionalCost || "0");
+                  const grandTotalWithAdd = totalBaseNet + addCostNum;
                   const totalItems = grnItemsList.reduce((sum, item) => sum + parseFloat(item.quantity_received || "0"), 0);
 
-                  if (grossTotal > 0) {
+                  if (grossTotal > 0 || addCostNum > 0) {
                     return (
                       <div className="p-4 bg-blue-50 border-t border-blue-200 flex flex-wrap justify-between items-center gap-4 text-xs font-semibold text-blue-900">
                         <div>
                           Received items total qty: <span className="font-bold text-gray-850">{totalItems}</span>
                         </div>
-                        <div className="flex gap-4">
+                        <div className="flex flex-wrap items-center gap-4">
                           <div>
                             Gross Subtotal: <span className="font-bold text-gray-850">{formatPrice(grossTotal)}</span>
                           </div>
+                          {addCostNum > 0 && (
+                            <div>
+                              Additional Cost: <span className="font-bold text-amber-800">+{formatPrice(addCostNum)}</span>
+                            </div>
+                          )}
                           <div>
-                            Total Order Value (Net): <span className="font-black text-emerald-800 text-sm">{formatPrice(totalOrderValue)}</span>
+                            Total Landed Cost (Net): <span className="font-black text-emerald-800 text-sm">{formatPrice(grandTotalWithAdd)}</span>
                           </div>
                         </div>
                       </div>
@@ -4790,7 +5108,7 @@ export default function InventoryControlPage() {
                       <th className="p-3 text-left">SKU</th>
                       <th className="p-3 text-center">Ordered</th>
                       <th className="p-3 text-center">Received</th>
-                      <th className="p-3 text-right">Unit Price (DP)</th>
+                      <th className="p-3 text-right">Net Unit Cost</th>
                       <th className="p-3 text-right">Total Amount</th>
                     </tr>
                   </thead>
@@ -4798,58 +5116,24 @@ export default function InventoryControlPage() {
                     {(activeGRN.items || []).map((item: any) => {
                       const p = products.find(prod => prod.id === item.product_id);
                       return (
-                        <tr key={item.id} className="hover:bg-gray-50/50">
+                        <tr key={item.id} className="hover:bg-gray-55">
                           <td className="p-3 font-semibold text-gray-800">{p?.name || "Unknown Product"}</td>
                           <td className="p-3 font-mono text-xs text-gray-500">{p?.sku || "—"}</td>
                           <td className="p-3 text-center font-medium">{item.ordered_quantity || item.quantity_received}</td>
                           <td className="p-3 text-center font-bold text-green-700">{item.quantity_received}</td>
-                          <td className="p-3 text-right font-semibold text-gray-700">{formatPrice(item.unit_price || item.cost_price)}</td>
-                          <td className="p-3 text-right font-bold text-gray-800">{formatPrice(item.quantity_received * (item.unit_price || item.cost_price))}</td>
+                          <td className="p-3 text-right font-semibold text-gray-700">{formatPrice(item.cost_price)}</td>
+                          <td className="p-3 text-right font-bold text-gray-800">{formatPrice(item.quantity_received * item.cost_price)}</td>
                         </tr>
                       );
                     })}
                     {(() => {
-                      const grossTotal = (activeGRN.items || []).reduce((sum: number, item: any) => sum + (item.quantity_received * (item.unit_price || item.cost_price)), 0);
-                      const currentDiscount = parseFloat(invoiceDiscount || "0");
-                      const netPayable = Math.max(0, grossTotal - currentDiscount);
+                      const netTotal = (activeGRN.items || []).reduce((sum: number, item: any) => sum + (item.quantity_received * item.cost_price), 0);
+                      const invoiceGrandTotal = activeGRN.total_amount || netTotal;
                       return (
-                        <>
-                          <tr className="bg-gray-50 text-gray-700 font-medium border-t">
-                            <td colSpan={5} className="p-3 text-right text-xs uppercase tracking-wider">Gross Subtotal:</td>
-                            <td colSpan={1} className="p-3 text-right text-sm font-bold text-gray-800">{formatPrice(grossTotal)}</td>
-                          </tr>
-                          <tr className="bg-gray-50 text-gray-750 font-medium">
-                            <td colSpan={5} className="p-3 text-right text-xs uppercase tracking-wider">
-                              <div className="flex items-center justify-end gap-2 text-orange-850">
-                                <span>Discount Amount manually edit ({currency === "USD" ? "$" : "৳"}):</span>
-                                <input
-                                  type="number"
-                                  step="0.01"
-                                  min="0"
-                                  max={grossTotal}
-                                  className="w-28 p-1.5 border rounded-lg text-right bg-white text-xs font-bold text-orange-700 outline-none focus:ring-2 focus:ring-orange-400"
-                                  value={invoiceDiscount}
-                                  onChange={(e) => setInvoiceDiscount(e.target.value)}
-                                  placeholder="0.00"
-                                />
-                                <button
-                                  type="button"
-                                  onClick={handleSaveInvoiceDiscount}
-                                  className="px-3 py-1.5 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-xs font-bold transition shadow-sm"
-                                >
-                                  Save
-                                </button>
-                              </div>
-                            </td>
-                            <td colSpan={1} className="p-3 text-right text-sm font-bold text-orange-700">
-                              − {formatPrice(currentDiscount)}
-                            </td>
-                          </tr>
-                          <tr className="bg-blue-50 font-bold text-gray-900 border-t">
-                            <td colSpan={5} className="p-4 text-right text-sm uppercase tracking-wider">Grand Total (Net Payable):</td>
-                            <td colSpan={1} className="p-4 text-right text-lg text-blue-900 font-black">{formatPrice(netPayable)}</td>
-                          </tr>
-                        </>
+                        <tr className="bg-blue-50 font-bold text-gray-900 border-t">
+                          <td colSpan={5} className="p-4 text-right text-sm uppercase tracking-wider">Grand Total (Net Amount):</td>
+                          <td colSpan={1} className="p-4 text-right text-lg text-blue-900 font-black">{formatPrice(invoiceGrandTotal)}</td>
+                        </tr>
                       );
                     })()}
                   </tbody>
