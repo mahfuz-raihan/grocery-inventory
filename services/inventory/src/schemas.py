@@ -63,6 +63,7 @@ class ProductBase(BaseModel):
     name: str = Field(..., min_length=2, max_length=200)
     unit: Optional[str] = Field(None, description="e.g., pcs, kg, litre, cubic feet")
     selling_price: float = Field(..., ge=0)
+    min_selling_price: float = Field(default=0.0, ge=0)
     category_id: Optional[uuid.UUID] = None
     is_active: bool = True
     
@@ -226,6 +227,7 @@ class ProductUpdate(BaseModel):
     name: Optional[str] = None
     unit: Optional[str] = None
     selling_price: Optional[float] = None
+    min_selling_price: Optional[float] = None
     category_id: Optional[uuid.UUID] = None
     is_active: Optional[bool] = None
     parent_id: Optional[uuid.UUID] = None
