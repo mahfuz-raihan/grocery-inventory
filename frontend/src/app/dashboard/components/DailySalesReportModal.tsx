@@ -131,7 +131,7 @@ export const DailySalesReportModal: React.FC<DailySalesReportModalProps> = ({
 
     const rowsHtml =
       dailyInvoices.length === 0
-        ? `<tr><td colspan="10" style="text-align: center; padding: 25px; color: #64748b; font-style: italic;">No sales recorded on this date.</td></tr>`
+        ? `<tr><td colspan="10" style="text-align: center; padding: 25px; color: #000000; font-weight: 700; font-style: italic;">No sales recorded on this date.</td></tr>`
         : dailyInvoices
             .map((inv, idx) => {
               const cost = getInvoiceCost(inv, catalogProducts);
@@ -141,32 +141,32 @@ export const DailySalesReportModal: React.FC<DailySalesReportModalProps> = ({
                 .join(", ");
 
               return `
-              <tr>
-                <td style="text-align: center; padding: 5px 6px; font-size: 10px; border-bottom: 1px solid #e2e8f0;">${idx + 1}</td>
-                <td style="text-align: center; padding: 5px 6px; font-size: 10px; border-bottom: 1px solid #e2e8f0; white-space: nowrap;">${formatTimeOnly(inv.created_at)}</td>
-                <td style="padding: 5px 6px; font-family: monospace; font-size: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0; color: #1e40af; white-space: nowrap;">${inv.receipt_number}</td>
-                <td style="padding: 5px 6px; font-size: 10px; border-bottom: 1px solid #e2e8f0;">
-                  <div style="font-weight: 600;">${inv.customer_name || "Walk-in"}</div>
-                  <div style="font-size: 9px; color: #64748b;">${inv.customer_phone || ""}</div>
+              <tr style="background: ${idx % 2 === 1 ? "#f8fafc" : "#ffffff"};">
+                <td style="text-align: center; padding: 6px 6px; font-size: 10px; font-weight: 800; border: 1px solid #94a3b8; color: #000000;">${idx + 1}</td>
+                <td style="text-align: center; padding: 6px 6px; font-size: 10px; font-weight: 700; border: 1px solid #94a3b8; color: #000000; white-space: nowrap;">${formatTimeOnly(inv.created_at)}</td>
+                <td style="padding: 6px 6px; font-family: monospace; font-size: 11px; font-weight: 900; border: 1px solid #94a3b8; color: #1e3a8a; white-space: nowrap;">${inv.receipt_number}</td>
+                <td style="padding: 6px 6px; font-size: 10px; border: 1px solid #94a3b8; color: #000000;">
+                  <div style="font-weight: 800; color: #000000;">${inv.customer_name || "Walk-in"}</div>
+                  <div style="font-size: 9.5px; color: #334155; font-weight: 600;">${inv.customer_phone || ""}</div>
                 </td>
-                <td style="padding: 5px 6px; font-size: 9.5px; border-bottom: 1px solid #e2e8f0; max-width: 220px; color: #334155;">
+                <td style="padding: 6px 6px; font-size: 10px; border: 1px solid #94a3b8; max-width: 220px; color: #000000; font-weight: 600;">
                   ${itemsList || "—"}
                 </td>
-                <td style="text-align: center; padding: 5px 6px; font-size: 9.5px; border-bottom: 1px solid #e2e8f0;">
+                <td style="text-align: center; padding: 6px 6px; font-size: 10px; border: 1px solid #94a3b8; font-weight: 700; color: #000000;">
                   ${getBranchName(inv.branch_id)}
                 </td>
-                <td style="text-align: right; padding: 5px 6px; font-size: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0; white-space: nowrap;">
+                <td style="text-align: right; padding: 6px 6px; font-size: 11px; font-weight: 900; border: 1px solid #94a3b8; color: #000000; white-space: nowrap;">
                   ৳${inv.total_amount.toFixed(2)}
                 </td>
-                <td style="text-align: right; padding: 5px 6px; font-size: 10px; color: #475569; border-bottom: 1px solid #e2e8f0; white-space: nowrap;">
+                <td style="text-align: right; padding: 6px 6px; font-size: 10.5px; font-weight: 700; color: #334155; border: 1px solid #94a3b8; white-space: nowrap;">
                   ৳${cost.toFixed(2)}
                 </td>
-                <td style="text-align: right; padding: 5px 6px; font-size: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0; color: ${netProfit >= 0 ? "#15803d" : "#b91c1c"}; white-space: nowrap;">
+                <td style="text-align: right; padding: 6px 6px; font-size: 11px; font-weight: 900; border: 1px solid #94a3b8; color: ${netProfit >= 0 ? "#047857" : "#b91c1c"}; white-space: nowrap;">
                   ${netProfit >= 0 ? "+" : ""}৳${netProfit.toFixed(2)}
-                  <span style="font-size: 8.5px; font-weight: normal; display: block; color: #64748b;">${marginPercent.toFixed(1)}%</span>
+                  <span style="font-size: 9px; font-weight: 800; display: block; color: #334155;">${marginPercent.toFixed(1)}%</span>
                 </td>
-                <td style="text-align: center; padding: 5px 6px; font-size: 9.5px; border-bottom: 1px solid #e2e8f0; white-space: nowrap;">
-                  <span style="padding: 2px 6px; border-radius: 4px; font-weight: 700; font-size: 9px; text-transform: uppercase; background: ${inv.status === "Paid" ? "#dcfce7; color: #15803d;" : "#fef3c7; color: #b45309;"}">
+                <td style="text-align: center; padding: 6px 6px; font-size: 10px; border: 1px solid #94a3b8; white-space: nowrap;">
+                  <span style="padding: 3px 8px; border-radius: 4px; font-weight: 900; font-size: 9px; text-transform: uppercase; border: 1.5px solid ${inv.status === "Paid" ? "#15803d" : "#b45309"}; background: ${inv.status === "Paid" ? "#dcfce7; color: #14532d;" : "#fef3c7; color: #78350f;"}">
                     ${inv.status}
                   </span>
                 </td>
@@ -184,21 +184,29 @@ export const DailySalesReportModal: React.FC<DailySalesReportModalProps> = ({
           <style>
             @page {
               size: A4 landscape;
-              margin: 8mm;
+              margin: 8mm 10mm;
             }
-            * { box-sizing: border-box; }
+            * {
+              box-sizing: border-box;
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+              color-adjust: exact !important;
+            }
             body {
-              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-              color: #0f172a;
+              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+              color: #000000;
               margin: 0;
-              padding: 10px;
+              padding: 6px;
               font-size: 11px;
+              line-height: 1.4;
+              -webkit-font-smoothing: antialiased;
+              text-rendering: optimizeLegibility;
             }
             .header-bar {
               display: flex;
               justify-content: space-between;
               align-items: flex-start;
-              border-bottom: 2px solid #0f172a;
+              border-bottom: 3px solid #000000;
               padding-bottom: 8px;
               margin-bottom: 12px;
             }
@@ -209,23 +217,24 @@ export const DailySalesReportModal: React.FC<DailySalesReportModalProps> = ({
               margin-bottom: 14px;
             }
             .kpi-card {
-              border: 1px solid #cbd5e1;
+              border: 1.5px solid #0f172a;
               border-radius: 6px;
               padding: 6px 8px;
               background: #f8fafc;
               text-align: center;
             }
             .kpi-title {
-              font-size: 8.5px;
+              font-size: 9px;
               text-transform: uppercase;
-              font-weight: 700;
-              color: #64748b;
-            }
-            .kpi-value {
-              font-size: 13px;
               font-weight: 800;
               color: #0f172a;
-              margin-top: 2px;
+              letter-spacing: 0.04em;
+            }
+            .kpi-value {
+              font-size: 14px;
+              font-weight: 900;
+              color: #000000;
+              margin-top: 3px;
             }
             table {
               width: 100%;
@@ -235,36 +244,39 @@ export const DailySalesReportModal: React.FC<DailySalesReportModalProps> = ({
             th {
               background: #0f172a;
               color: #ffffff;
-              font-size: 9px;
-              font-weight: 700;
+              font-size: 9.5px;
+              font-weight: 800;
               text-transform: uppercase;
-              padding: 6px 6px;
-              border: 1px solid #0f172a;
+              padding: 7px 6px;
+              border: 1.5px solid #0f172a;
+              letter-spacing: 0.03em;
             }
             td {
-              border: 1px solid #e2e8f0;
+              border: 1px solid #94a3b8;
             }
             .footer-total-row td {
-              background: #f1f5f9;
-              font-weight: 800;
-              font-size: 10.5px;
-              border-top: 2px solid #0f172a;
-              padding: 6px 6px;
+              background: #e2e8f0;
+              font-weight: 900;
+              font-size: 11px;
+              border-top: 2.5px solid #000000;
+              border-bottom: 2.5px solid #000000;
+              padding: 7px 6px;
+              color: #000000;
             }
             .signatures {
-              margin-top: 28px;
+              margin-top: 24px;
               display: flex;
               justify-content: space-between;
               padding: 0 30px;
             }
             .sign-box {
-              border-top: 1px solid #475569;
-              width: 180px;
+              border-top: 2px solid #000000;
+              width: 190px;
               text-align: center;
-              padding-top: 4px;
+              padding-top: 5px;
               font-size: 10px;
-              font-weight: 600;
-              color: #334155;
+              font-weight: 800;
+              color: #000000;
             }
             @media print {
               body { padding: 0; }
@@ -275,24 +287,24 @@ export const DailySalesReportModal: React.FC<DailySalesReportModalProps> = ({
         <body>
           <div class="header-bar">
             <div>
-              <h1 style="margin: 0; font-size: 18px; font-weight: 900; color: #0f172a; text-transform: uppercase;">
+              <h1 style="margin: 0; font-size: 20px; font-weight: 900; color: #000000; text-transform: uppercase; letter-spacing: -0.02em;">
                 ${companyProfile?.name || "MANOR FURNITURE & INTERIORS"}
               </h1>
-              <p style="margin: 2px 0 0 0; font-size: 10px; color: #475569;">
+              <p style="margin: 3px 0 0 0; font-size: 10.5px; color: #0f172a; font-weight: 600;">
                 ${companyProfile?.address || "Bozlur Mor, Kushtia Road, Bangladesh"} | Phone: ${companyProfile?.phone || "01700-000000"}
               </p>
-              <p style="margin: 2px 0 0 0; font-size: 9.5px; color: #64748b;">
+              <p style="margin: 2px 0 0 0; font-size: 10px; color: #0f172a; font-weight: 700;">
                 Warehouse Scope: <strong>${branchLabel}</strong>
               </p>
             </div>
             <div style="text-align: right;">
-              <h2 style="margin: 0; font-size: 15px; font-weight: 800; color: #1e40af; letter-spacing: 0.04em;">
+              <h2 style="margin: 0; font-size: 16px; font-weight: 900; color: #1e40af; letter-spacing: 0.04em;">
                 DAILY SALES DETAILS REPORT
               </h2>
-              <p style="margin: 3px 0 0 0; font-size: 11px; font-weight: 700; color: #0f172a;">
+              <p style="margin: 3px 0 0 0; font-size: 11px; font-weight: 800; color: #000000;">
                 📅 ${formatReportDate(selectedDate)}
               </p>
-              <p style="margin: 2px 0 0 0; font-size: 9px; color: #64748b;">
+              <p style="margin: 2px 0 0 0; font-size: 9.5px; color: #334155; font-weight: 600;">
                 Generated: ${formatDateTime(new Date().toISOString())}
               </p>
             </div>
@@ -310,18 +322,18 @@ export const DailySalesReportModal: React.FC<DailySalesReportModalProps> = ({
             </div>
             <div class="kpi-card">
               <div class="kpi-title">Total Cost (COGS)</div>
-              <div class="kpi-value" style="color: #475569;">৳${totalDailyCost.toFixed(2)}</div>
+              <div class="kpi-value" style="color: #0f172a;">৳${totalDailyCost.toFixed(2)}</div>
             </div>
             <div class="kpi-card">
               <div class="kpi-title">Daily Net Profit</div>
-              <div class="kpi-value" style="color: ${totalDailyProfit >= 0 ? "#15803d" : "#b91c1c"};">
+              <div class="kpi-value" style="color: ${totalDailyProfit >= 0 ? "#047857" : "#b91c1c"};">
                 ${totalDailyProfit >= 0 ? "+" : ""}৳${totalDailyProfit.toFixed(2)}
-                <span style="font-size: 9px; display: block; font-weight: 600;">${dailyProfitMargin.toFixed(1)}% margin</span>
+                <span style="font-size: 9.5px; display: block; font-weight: 800;">${dailyProfitMargin.toFixed(1)}% margin</span>
               </div>
             </div>
             <div class="kpi-card">
               <div class="kpi-title">Cash Settled / Paid</div>
-              <div class="kpi-value" style="color: #15803d;">৳${totalDailyPaid.toFixed(2)}</div>
+              <div class="kpi-value" style="color: #047857;">৳${totalDailyPaid.toFixed(2)}</div>
             </div>
             <div class="kpi-card">
               <div class="kpi-title">Receivables / Due</div>
@@ -354,11 +366,11 @@ export const DailySalesReportModal: React.FC<DailySalesReportModalProps> = ({
                   Daily Grand Totals (${totalInvoicesCount} Invoices):
                 </td>
                 <td style="text-align: right; white-space: nowrap;">৳${totalDailySales.toFixed(2)}</td>
-                <td style="text-align: right; white-space: nowrap; color: #475569;">৳${totalDailyCost.toFixed(2)}</td>
-                <td style="text-align: right; white-space: nowrap; color: ${totalDailyProfit >= 0 ? "#15803d" : "#b91c1c"};">
+                <td style="text-align: right; white-space: nowrap; color: #000000;">৳${totalDailyCost.toFixed(2)}</td>
+                <td style="text-align: right; white-space: nowrap; color: ${totalDailyProfit >= 0 ? "#047857" : "#b91c1c"};">
                   ${totalDailyProfit >= 0 ? "+" : ""}৳${totalDailyProfit.toFixed(2)}
                 </td>
-                <td style="text-align: center; font-size: 8.5px; color: #64748b;">
+                <td style="text-align: center; font-size: 9px; font-weight: 800; color: #0f172a;">
                   ${totalDailyDue > 0 ? "Due: ৳" + totalDailyDue.toFixed(0) : "All Cleared"}
                 </td>
               </tr>
@@ -369,19 +381,19 @@ export const DailySalesReportModal: React.FC<DailySalesReportModalProps> = ({
           <div class="signatures">
             <div class="sign-box">
               Prepared By (Cashier / Executive)
-              <div style="font-size: 8px; color: #94a3b8; margin-top: 2px;">Signature & Date</div>
+              <div style="font-size: 8.5px; color: #475569; margin-top: 2px; font-weight: 600;">Signature & Date</div>
             </div>
             <div class="sign-box">
               Checked & Verified By (Accounts)
-              <div style="font-size: 8px; color: #94a3b8; margin-top: 2px;">Signature & Date</div>
+              <div style="font-size: 8.5px; color: #475569; margin-top: 2px; font-weight: 600;">Signature & Date</div>
             </div>
             <div class="sign-box">
               Approved By (Branch / General Manager)
-              <div style="font-size: 8px; color: #94a3b8; margin-top: 2px;">Signature & Date</div>
+              <div style="font-size: 8.5px; color: #475569; margin-top: 2px; font-weight: 600;">Signature & Date</div>
             </div>
           </div>
 
-          <div style="text-align: center; margin-top: 24px; font-size: 9px; color: #94a3b8; border-top: 1px dashed #cbd5e1; padding-top: 6px;">
+          <div style="text-align: center; margin-top: 20px; font-size: 9.5px; color: #475569; font-weight: 600; border-top: 1px dashed #94a3b8; padding-top: 6px;">
             Daily Sales Reconciliation Report • Strictly Confidential & For Internal HQ Auditing
           </div>
 

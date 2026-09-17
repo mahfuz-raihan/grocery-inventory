@@ -43,17 +43,17 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
       dateObj.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
     const itemsHtml = (activeGRN.items || [])
-      .map((item: any) => {
+      .map((item: any, idx: number) => {
         const p = products.find((prod) => prod.id === item.product_id);
         const netCostVal = item.cost_price;
         return `
-        <tr style="border-bottom: 1px solid #e2e8f0;">
-          <td style="padding: 12px; text-align: left; font-size: 13px;">${p?.name || "Unknown Product"}</td>
-          <td style="padding: 12px; text-align: left; font-size: 13px; font-family: monospace;">${p?.sku || "—"}</td>
-          <td style="padding: 12px; text-align: center; font-size: 13px;">${item.ordered_quantity || item.quantity_received}</td>
-          <td style="padding: 12px; text-align: center; font-size: 13px; font-weight: bold; color: #16a34a;">${item.quantity_received}</td>
-          <td style="padding: 12px; text-align: right; font-size: 13px;">${formatPrice(netCostVal)}</td>
-          <td style="padding: 12px; text-align: right; font-size: 13px; font-weight: bold; color: #1e293b;">${formatPrice(item.quantity_received * netCostVal)}</td>
+        <tr style="background: ${idx % 2 === 1 ? "#f8fafc" : "#ffffff"};">
+          <td style="padding: 8px 10px; text-align: left; font-size: 12px; font-weight: 800; color: #000000; border: 1px solid #94a3b8;">${p?.name || "Unknown Product"}</td>
+          <td style="padding: 8px 10px; text-align: left; font-size: 11px; font-family: monospace; font-weight: 700; color: #1e40af; border: 1px solid #94a3b8;">${p?.sku || "—"}</td>
+          <td style="padding: 8px 10px; text-align: center; font-size: 12px; font-weight: 700; color: #000000; border: 1px solid #94a3b8;">${item.ordered_quantity || item.quantity_received}</td>
+          <td style="padding: 8px 10px; text-align: center; font-size: 12px; font-weight: 900; color: #047857; border: 1px solid #94a3b8;">${item.quantity_received}</td>
+          <td style="padding: 8px 10px; text-align: right; font-size: 12px; font-weight: 700; color: #000000; border: 1px solid #94a3b8;">${formatPrice(netCostVal)}</td>
+          <td style="padding: 8px 10px; text-align: right; font-size: 12px; font-weight: 900; color: #000000; border: 1px solid #94a3b8;">${formatPrice(item.quantity_received * netCostVal)}</td>
         </tr>
       `;
       })
@@ -66,31 +66,141 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
     const invoiceGrandTotal = activeGRN.total_amount || netTotal;
     const summaryRowsHtml = `
       <tr class="total-row">
-        <td colspan="4" style="padding: 16px 12px; text-align: right; font-size: 15px; font-weight: bold;">Grand Total (Net Amount):</td>
-        <td colspan="2" style="padding: 16px 12px; text-align: right; font-size: 18px; color: #1e3a8a; font-weight: bold;">${formatPrice(invoiceGrandTotal)}</td>
+        <td colspan="4" style="padding: 12px 10px; text-align: right; font-size: 14px; font-weight: 900; color: #000000; border: 1.5px solid #000000; background: #e2e8f0; text-transform: uppercase;">Grand Total (Net Amount):</td>
+        <td colspan="2" style="padding: 12px 10px; text-align: right; font-size: 16px; color: #000000; font-weight: 900; border: 1.5px solid #000000; background: #e2e8f0;">${formatPrice(invoiceGrandTotal)}</td>
       </tr>
     `;
 
     const html = `
+      <!DOCTYPE html>
       <html>
         <head>
-          <title>Invoice - ${activeGRN.invoice_reference}</title>
+          <meta charset="utf-8">
+          <title>Purchase Invoice - ${activeGRN.invoice_reference || "GRN"}</title>
           <style>
-            body { font-family: 'Inter', sans-serif; color: #1e293b; margin: 0; padding: 40px; }
-            .header { display: flex; justify-content: space-between; border-bottom: 2px solid #e2e8f0; padding-bottom: 20px; margin-bottom: 30px; }
-            .company-info h1 { margin: 0; font-size: 24px; color: #1e3a8a; }
-            .company-info p { margin: 4px 0 0 0; font-size: 14px; color: #64748b; }
-            .invoice-details { text-align: right; }
-            .invoice-details h2 { margin: 0; font-size: 20px; color: #334155; }
-            .invoice-details p { margin: 4px 0 0 0; font-size: 13px; color: #64748b; }
-            .bill-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 40px; }
-            .bill-box { background-color: #f8fafc; border: 1px solid #f1f5f9; padding: 16px; border-radius: 12px; }
-            .bill-box h3 { margin: 0 0 8px 0; font-size: 11px; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.05em; }
-            .bill-box p { margin: 4px 0; font-size: 14px; font-weight: 500; }
-            table { width: 100%; border-collapse: collapse; margin-bottom: 40px; }
-            th { background-color: #f1f5f9; color: #475569; font-weight: 600; font-size: 11px; text-transform: uppercase; padding: 12px; text-align: left; }
-            .total-row { border-top: 2px solid #cbd5e1; font-weight: bold; }
-            .footer { text-align: center; font-size: 12px; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 20px; margin-top: 60px; }
+            @page {
+              size: A4 portrait;
+              margin: 10mm 12mm;
+            }
+            * {
+              box-sizing: border-box;
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+              color-adjust: exact !important;
+            }
+            body {
+              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+              color: #000000;
+              margin: 0;
+              padding: 6px;
+              font-size: 12px;
+              line-height: 1.45;
+              -webkit-font-smoothing: antialiased;
+              text-rendering: optimizeLegibility;
+            }
+            .header {
+              display: flex;
+              justify-content: space-between;
+              align-items: flex-start;
+              border-bottom: 3px solid #000000;
+              padding-bottom: 12px;
+              margin-bottom: 18px;
+            }
+            .company-info h1 {
+              margin: 0;
+              font-size: 22px;
+              font-weight: 900;
+              color: #000000;
+              letter-spacing: -0.02em;
+              text-transform: uppercase;
+            }
+            .company-info p {
+              margin: 3px 0 0 0;
+              font-size: 11px;
+              color: #0f172a;
+              font-weight: 600;
+            }
+            .invoice-details {
+              text-align: right;
+            }
+            .invoice-details h2 {
+              margin: 0;
+              font-size: 18px;
+              font-weight: 900;
+              color: #1e40af;
+              letter-spacing: 0.04em;
+              text-transform: uppercase;
+            }
+            .invoice-details p {
+              margin: 3px 0 0 0;
+              font-size: 11.5px;
+              color: #000000;
+              font-weight: 700;
+            }
+            .bill-grid {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 16px;
+              margin-bottom: 20px;
+            }
+            .bill-box {
+              background-color: #f8fafc;
+              border: 1.5px solid #0f172a;
+              padding: 12px 14px;
+              border-radius: 6px;
+            }
+            .bill-box h3 {
+              margin: 0 0 6px 0;
+              font-size: 10px;
+              text-transform: uppercase;
+              color: #0f172a;
+              font-weight: 800;
+              letter-spacing: 0.05em;
+              border-bottom: 1px solid #cbd5e1;
+              padding-bottom: 4px;
+            }
+            .bill-box p {
+              margin: 3px 0;
+              font-size: 11.5px;
+              font-weight: 700;
+              color: #000000;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-bottom: 24px;
+            }
+            th {
+              background-color: #0f172a;
+              color: #ffffff;
+              font-weight: 800;
+              font-size: 10px;
+              text-transform: uppercase;
+              padding: 8px 10px;
+              text-align: left;
+              border: 1.5px solid #0f172a;
+              letter-spacing: 0.03em;
+            }
+            td {
+              border: 1px solid #94a3b8;
+            }
+            .total-row td {
+              border: 2px solid #000000;
+              font-weight: 900;
+            }
+            .footer {
+              text-align: center;
+              font-size: 10px;
+              font-weight: 700;
+              color: #475569;
+              border-top: 1px dashed #94a3b8;
+              padding-top: 10px;
+              margin-top: 30px;
+            }
+            @media print {
+              body { padding: 0; }
+              .no-print { display: none; }
+            }
           </style>
         </head>
         <body>
@@ -102,7 +212,7 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
             </div>
             <div class="invoice-details">
               <h2>PURCHASE INVOICE</h2>
-              <p><strong>Invoice Ref:</strong> ${activeGRN.invoice_reference || "—"}</p>
+              <p><strong>Invoice Ref:</strong> <span style="font-family: monospace; font-size: 12px; color: #1e40af;">${activeGRN.invoice_reference || "—"}</span></p>
               <p><strong>Date Received:</strong> ${dateStr}</p>
             </div>
           </div>
@@ -123,18 +233,18 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
             <div class="bill-box">
               <h3>Delivery Details</h3>
               <p><strong>Warehouse Destination:</strong> ${whName}</p>
-              <p><strong>Status:</strong> Completed / Received</p>
+              <p><strong>Status:</strong> <span style="color: #047857; font-weight: 900;">Completed / Received</span></p>
             </div>
           </div>
           <table>
             <thead>
               <tr>
                 <th style="text-align: left;">Product</th>
-                <th style="text-align: left;">SKU</th>
-                <th style="text-align: center;">Ordered</th>
-                <th style="text-align: center;">Received</th>
-                <th style="text-align: right;">Unit Price (DP)</th>
-                <th style="text-align: right;">Total Amount</th>
+                <th style="text-align: left; width: 100px;">SKU</th>
+                <th style="text-align: center; width: 75px;">Ordered</th>
+                <th style="text-align: center; width: 75px;">Received</th>
+                <th style="text-align: right; width: 110px;">Unit Price (DP)</th>
+                <th style="text-align: right; width: 120px;">Total Amount</th>
               </tr>
             </thead>
             <tbody>
@@ -142,11 +252,11 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
               ${summaryRowsHtml}
             </tbody>
           </table>
-          <div style="display: flex; justify-content: space-between; margin-top: 80px;">
-            <div style="text-align: center; width: 200px; border-top: 1px solid #cbd5e1; padding-top: 8px; font-size: 12px; color: #64748b;">
+          <div style="display: flex; justify-content: space-between; margin-top: 50px;">
+            <div style="text-align: center; width: 200px; border-top: 2px solid #000000; padding-top: 6px; font-size: 11px; font-weight: 800; color: #000000;">
               Authorized Signature
             </div>
-            <div style="text-align: center; width: 200px; border-top: 1px solid #cbd5e1; padding-top: 8px; font-size: 12px; color: #64748b;">
+            <div style="text-align: center; width: 200px; border-top: 2px solid #000000; padding-top: 6px; font-size: 11px; font-weight: 800; color: #000000;">
               Supplier Acknowledgment
             </div>
           </div>

@@ -12,6 +12,7 @@ import {
   getInvoiceCost,
   getInvoiceNetProfit,
 } from "../types";
+import { printSaleInvoice } from "./InvoiceModal";
 
 interface SoldInvoicesTabProps {
   invoices: SaleInvoice[];
@@ -162,84 +163,9 @@ export const SoldInvoicesTab: React.FC<SoldInvoicesTabProps> = ({
     .filter((inv) => inv.status === "Due")
     .reduce((sum, inv) => sum + inv.total_amount, 0);
 
-  // Trigger PDF print/download for a single invoice directly
+  // Trigger PDF print/download for a single invoice directly using the unified high-definition template
   const handleDownloadPdf = (inv: SaleInvoice) => {
-    const printWindow = window.open("", "_blank");
-    if (!printWindow) return;
-
-    const itemsHtml = inv.items
-      .map(
-        (item, idx) => `
-        <tr>
-          <td style="padding: 6px 8px; border-bottom: 1px solid #e2e8f0; font-size: 11px; text-align: center;">${idx + 1}</td>
-          <td style="padding: 6px 8px; border-bottom: 1px solid #e2e8f0; font-size: 11px; font-weight: 600;">
-            ${getProductName(item.product_id)}
-          </td>
-          <td style="padding: 6px 8px; border-bottom: 1px solid #e2e8f0; font-size: 11px; text-align: center; font-weight: bold;">${item.quantity}</td>
-          <td style="padding: 6px 8px; border-bottom: 1px solid #e2e8f0; font-size: 11px; text-align: right;">৳${item.unit_price.toFixed(2)}</td>
-          <td style="padding: 6px 8px; border-bottom: 1px solid #e2e8f0; font-size: 11px; text-align: right; font-weight: bold;">৳${(item.quantity * item.unit_price).toFixed(2)}</td>
-        </tr>
-      `
-      )
-      .join("");
-
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="utf-8">
-          <title>Invoice - ${inv.receipt_number}</title>
-          <style>
-            @page { size: A4 portrait; margin: 10mm; }
-            * { box-sizing: border-box; }
-            body { font-family: sans-serif; color: #1e293b; padding: 10px; font-size: 12px; }
-            table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
-            th { background: #0f172a; color: white; padding: 6px 8px; font-size: 10px; text-transform: uppercase; }
-            td { border: 1px solid #e2e8f0; }
-          </style>
-        </head>
-        <body>
-          <div style="display: flex; justify-content: space-between; border-bottom: 2px solid #0f172a; padding-bottom: 10px; margin-bottom: 15px;">
-            <div>
-              <h1 style="margin: 0; font-size: 18px; color: #0f172a;">${companyProfile?.name || "MANOR FURNITURE"}</h1>
-              <p style="margin: 2px 0; font-size: 11px; color: #64748b;">${companyProfile?.address || "Bozlur Mor, Kushtia"}</p>
-            </div>
-            <div style="text-align: right;">
-              <h2 style="margin: 0; font-size: 16px; color: #1e40af;">SALES INVOICE</h2>
-              <p style="margin: 2px 0; font-family: monospace; font-weight: bold;">${inv.receipt_number}</p>
-              <p style="margin: 2px 0; font-size: 10px; color: #64748b;">${formatDateTime(inv.created_at)}</p>
-            </div>
-          </div>
-          <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 8px; margin-bottom: 15px; border-radius: 6px;">
-            <strong>Customer:</strong> ${inv.customer_name} | Phone: ${inv.customer_phone} | Address: ${inv.customer_address}
-          </div>
-          <table>
-            <thead>
-              <tr>
-                <th style="width: 30px; text-align: center;">#</th>
-                <th style="text-align: left;">Product</th>
-                <th style="width: 50px; text-align: center;">Qty</th>
-                <th style="width: 80px; text-align: right;">Rate</th>
-                <th style="width: 90px; text-align: right;">Total</th>
-              </tr>
-            </thead>
-            <tbody>${itemsHtml}</tbody>
-          </table>
-          <div style="width: 250px; margin-left: auto; text-align: right; line-height: 1.6;">
-            <div>Subtotal: <strong>৳${(inv.total_amount + inv.discount).toFixed(2)}</strong></div>
-            <div>Discount: <strong style="color: #dc2626;">-৳${inv.discount.toFixed(2)}</strong></div>
-            <div style="border-top: 2px solid #0f172a; padding-top: 4px; font-size: 14px; font-weight: bold;">
-              Grand Total: ৳${inv.total_amount.toFixed(2)}
-            </div>
-            <div style="color: #16a34a; font-weight: bold; font-size: 11px;">Status: ${inv.status}</div>
-          </div>
-          <script>
-            window.onload = function() { window.print(); setTimeout(function() { window.close(); }, 750); };
-          </script>
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
+    printSaleInvoice(inv, catalogProducts, branches, companyProfile);
   };
 
   const handleDelete = async (inv: SaleInvoice) => {

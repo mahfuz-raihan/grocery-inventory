@@ -18,6 +18,319 @@ interface InvoiceModalProps {
   companyProfile: CompanyProfile | null;
 }
 
+// Exported High-Definition Print Function with Forced Color Adjustment and Bold Typography
+export const printSaleInvoice = (
+  invoice: SaleInvoice,
+  catalogProducts: CatalogProduct[],
+  branches: Branch[],
+  companyProfile: CompanyProfile | null
+) => {
+  const printWindow = window.open("", "_blank");
+  if (!printWindow) {
+    alert("Please allow popups to print invoices.");
+    return;
+  }
+
+  const branch = branches.find((b) => b.id === invoice.branch_id);
+  const warehouseName = branch ? branch.name : "Main Warehouse";
+
+  const getProductName = (productId: string) => {
+    const prod = catalogProducts.find((p) => p.id === productId);
+    return prod ? prod.name : `Product (${productId.slice(0, 8)})`;
+  };
+
+  const subtotal = invoice.items.reduce(
+    (sum, item) => sum + item.quantity * item.unit_price,
+    0
+  );
+
+  const itemsHtml = invoice.items
+    .map(
+      (item, idx) => `
+      <tr style="background: ${idx % 2 === 1 ? "#f8fafc" : "#ffffff"};">
+        <td style="padding: 7px 10px; border: 1px solid #94a3b8; font-size: 11px; text-align: center; font-weight: 700; color: #000000;">${idx + 1}</td>
+        <td style="padding: 7px 10px; border: 1px solid #94a3b8; font-size: 12px; font-weight: 800; color: #000000;">
+          ${getProductName(item.product_id)}
+        </td>
+        <td style="padding: 7px 10px; border: 1px solid #94a3b8; font-size: 12px; text-align: center; font-weight: 900; color: #000000; font-family: monospace, sans-serif;">${item.quantity}</td>
+        <td style="padding: 7px 10px; border: 1px solid #94a3b8; font-size: 12px; text-align: right; font-weight: 700; color: #000000;">৳${item.unit_price.toFixed(2)}</td>
+        <td style="padding: 7px 10px; border: 1px solid #94a3b8; font-size: 12px; text-align: right; font-weight: 900; color: #000000;">৳${(item.quantity * item.unit_price).toFixed(2)}</td>
+      </tr>
+    `
+    )
+    .join("");
+
+  printWindow.document.write(`
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Invoice - ${invoice.receipt_number}</title>
+        <style>
+          @page {
+            size: A4 portrait;
+            margin: 10mm 12mm;
+          }
+          * {
+            box-sizing: border-box;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            color-adjust: exact !important;
+          }
+          body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            color: #000000;
+            margin: 0;
+            padding: 6px;
+            font-size: 12px;
+            line-height: 1.45;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
+          }
+          .invoice-box {
+            max-width: 100%;
+            margin: 0 auto;
+          }
+          .header-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+            border-bottom: 3px solid #000000;
+            padding-bottom: 10px;
+          }
+          .header-table td { vertical-align: top; }
+          .company-name {
+            font-size: 22px;
+            font-weight: 900;
+            color: #000000;
+            margin: 0 0 3px 0;
+            letter-spacing: -0.02em;
+            text-transform: uppercase;
+          }
+          .company-info {
+            font-size: 11px;
+            color: #0f172a;
+            font-weight: 600;
+            margin: 2px 0;
+          }
+          .invoice-title {
+            font-size: 20px;
+            font-weight: 900;
+            color: #000000;
+            margin: 0 0 4px 0;
+            text-align: right;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+          }
+          .invoice-no {
+            font-family: monospace, monospace;
+            font-weight: 900;
+            color: #1e40af;
+            font-size: 13px;
+          }
+          .meta-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 16px;
+            background: #f8fafc;
+            border: 2px solid #0f172a;
+            border-radius: 6px;
+          }
+          .meta-table td {
+            padding: 9px 12px;
+            vertical-align: top;
+            font-size: 11.5px;
+            width: 50%;
+          }
+          .meta-label {
+            font-size: 9.5px;
+            font-weight: 900;
+            color: #334155;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-bottom: 3px;
+          }
+          .meta-value {
+            font-size: 13px;
+            font-weight: 800;
+            color: #000000;
+          }
+          .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 18px;
+          }
+          .items-table th {
+            background: #0f172a !important;
+            color: #ffffff !important;
+            font-size: 11px;
+            font-weight: 900;
+            text-transform: uppercase;
+            padding: 8px 10px;
+            border: 1.5px solid #0f172a;
+            letter-spacing: 0.04em;
+          }
+          .items-table td {
+            border: 1px solid #94a3b8;
+          }
+          .summary-table {
+            width: 48%;
+            margin-left: auto;
+            border-collapse: collapse;
+            margin-bottom: 22px;
+          }
+          .summary-table td {
+            padding: 5px 10px;
+            font-size: 12px;
+            color: #000000;
+          }
+          .summary-table .total-row td {
+            border-top: 3px solid #000000;
+            border-bottom: 3px solid #000000;
+            font-size: 15px;
+            font-weight: 900;
+            color: #000000;
+            padding-top: 8px;
+            padding-bottom: 8px;
+            background: #f1f5f9;
+          }
+          .status-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 10.5px;
+            font-weight: 900;
+            text-transform: uppercase;
+            border: 1.5px solid ${invoice.status === "Paid" ? "#16a34a" : "#dc2626"};
+            background: ${invoice.status === "Paid" ? "#dcfce7 !important; color: #14532d !important;" : "#fee2e2 !important; color: #7f1d1d !important;"};
+          }
+          .footer-signatures {
+            margin-top: 38px;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 10px;
+          }
+          .sign-line {
+            border-top: 1.5px solid #000000;
+            width: 160px;
+            text-align: center;
+            padding-top: 5px;
+            font-weight: 800;
+            color: #000000;
+            font-size: 11px;
+          }
+          .footer-note {
+            border-top: 1px dashed #64748b;
+            padding-top: 10px;
+            font-size: 10px;
+            font-weight: 600;
+            color: #334155;
+            text-align: center;
+            margin-top: 22px;
+          }
+          @media print {
+            body { padding: 0; }
+            .no-print { display: none; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="invoice-box">
+          <table class="header-table">
+            <tr>
+              <td>
+                <h1 class="company-name">${companyProfile?.name || "MANOR FURNITURE & INTERIORS"}</h1>
+                <p class="company-info">${companyProfile?.address || "Bozlur Mor, Kushtia Road, Bangladesh"}</p>
+                <p class="company-info">Phone: ${companyProfile?.phone || "01700-000000"}${companyProfile?.email ? ` | Email: ${companyProfile.email}` : ""}</p>
+              </td>
+              <td style="text-align: right;">
+                <h2 class="invoice-title">SALES INVOICE</h2>
+                <p class="company-info" style="margin-top: 4px;"><strong>Invoice No:</strong> <span class="invoice-no">${invoice.receipt_number}</span></p>
+                <p class="company-info"><strong>Date:</strong> ${formatDateTime(invoice.created_at)}</p>
+                <p class="company-info" style="margin-top: 4px;"><strong>Status:</strong> <span class="status-badge">${invoice.status}</span></p>
+              </td>
+            </tr>
+          </table>
+
+          <table class="meta-table">
+            <tr>
+              <td>
+                <div class="meta-label">Bill To (Customer Details)</div>
+                <div class="meta-value">${invoice.customer_name || "Walk-in Customer"}</div>
+                <div style="color: #0f172a; font-weight: 600; margin-top: 3px;">Phone: ${invoice.customer_phone || "—"}</div>
+                <div style="color: #0f172a; font-weight: 600; margin-top: 1px;">Address: ${invoice.customer_address || "—"}</div>
+              </td>
+              <td style="border-left: 2px solid #0f172a;">
+                <div class="meta-label">Dispatch / Point of Sale</div>
+                <div class="meta-value">Warehouse: ${warehouseName}</div>
+                <div style="color: #0f172a; font-weight: 600; margin-top: 3px;">Payment Method: Cash / Card Settlement</div>
+                <div style="color: #0f172a; font-weight: 600; margin-top: 1px;">Settlement Date: ${formatDateTime(invoice.created_at)}</div>
+              </td>
+            </tr>
+          </table>
+
+          <table class="items-table">
+            <thead>
+              <tr>
+                <th style="width: 38px; text-align: center;">#</th>
+                <th style="text-align: left;">Item Description</th>
+                <th style="width: 65px; text-align: center;">Qty</th>
+                <th style="width: 95px; text-align: right;">Rate (৳)</th>
+                <th style="width: 105px; text-align: right;">Amount (৳)</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${itemsHtml}
+            </tbody>
+          </table>
+
+          <table class="summary-table">
+            <tr>
+              <td style="font-weight: 700; color: #1e293b;">Subtotal:</td>
+              <td style="text-align: right; font-weight: 800; color: #000000;">৳${subtotal.toFixed(2)}</td>
+            </tr>
+            <tr>
+              <td style="font-weight: 700; color: #1e293b;">Discount:</td>
+              <td style="text-align: right; font-weight: 800; color: #dc2626;">-৳${invoice.discount.toFixed(2)}</td>
+            </tr>
+            <tr class="total-row">
+              <td>Grand Total:</td>
+              <td style="text-align: right;">৳${invoice.total_amount.toFixed(2)}</td>
+            </tr>
+            <tr>
+              <td style="font-weight: 800; color: #15803d; font-size: 11px;">Paid Amount:</td>
+              <td style="text-align: right; font-weight: 900; color: #15803d; font-size: 11.5px;">
+                ৳${invoice.status === "Paid" ? invoice.total_amount.toFixed(2) : "0.00"}
+              </td>
+            </tr>
+          </table>
+
+          <div class="footer-signatures">
+            <div class="sign-line">
+              Customer Signature
+            </div>
+            <div class="sign-line">
+              Authorized Officer
+            </div>
+          </div>
+
+          <div class="footer-note">
+            Thank you for your business! Goods once sold can only be exchanged per company warranty terms. This is a computer-generated invoice.
+          </div>
+        </div>
+        <script>
+          window.onload = function() {
+            window.print();
+            setTimeout(function() { window.close(); }, 750);
+          };
+        </script>
+      </body>
+    </html>
+  `);
+  printWindow.document.close();
+};
+
 export const InvoiceModal: React.FC<InvoiceModalProps> = ({
   invoice,
   onClose,
@@ -41,172 +354,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
   );
 
   const handlePrint = () => {
-    const printWindow = window.open("", "_blank");
-    if (!printWindow) return;
-
-    const itemsHtml = invoice.items
-      .map(
-        (item, idx) => `
-        <tr>
-          <td style="padding: 6px 8px; border-bottom: 1px solid #e2e8f0; font-size: 11px; text-align: center;">${idx + 1}</td>
-          <td style="padding: 6px 8px; border-bottom: 1px solid #e2e8f0; font-size: 11px; font-weight: 600;">
-            ${getProductName(item.product_id)}
-          </td>
-          <td style="padding: 6px 8px; border-bottom: 1px solid #e2e8f0; font-size: 11px; text-align: center; font-weight: bold;">${item.quantity}</td>
-          <td style="padding: 6px 8px; border-bottom: 1px solid #e2e8f0; font-size: 11px; text-align: right;">৳${item.unit_price.toFixed(2)}</td>
-          <td style="padding: 6px 8px; border-bottom: 1px solid #e2e8f0; font-size: 11px; text-align: right; font-weight: bold;">৳${(item.quantity * item.unit_price).toFixed(2)}</td>
-        </tr>
-      `
-      )
-      .join("");
-
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="utf-8">
-          <title>Invoice - ${invoice.receipt_number}</title>
-          <style>
-            @page {
-              size: A4 portrait;
-              margin: 10mm;
-            }
-            * { box-sizing: border-box; }
-            body {
-              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-              color: #1e293b;
-              margin: 0;
-              padding: 10px;
-              font-size: 12px;
-              line-height: 1.4;
-            }
-            .invoice-box {
-              max-width: 100%;
-              margin: 0 auto;
-            }
-            .header-table {
-              width: 100%;
-              border-collapse: collapse;
-              margin-bottom: 15px;
-              border-bottom: 2px solid #0f172a;
-              padding-bottom: 10px;
-            }
-            .header-table td { vertical-align: top; }
-            .company-name { font-size: 20px; font-weight: 800; color: #0f172a; margin: 0; }
-            .company-info { font-size: 11px; color: #475569; margin: 2px 0; }
-            .invoice-title { font-size: 18px; font-weight: 800; color: #1e40af; margin: 0; text-align: right; letter-spacing: 0.05em; }
-            .meta-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; }
-            .meta-table td { padding: 8px 12px; vertical-align: top; font-size: 11px; width: 50%; }
-            .meta-label { font-size: 9px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 2px; }
-            .meta-value { font-size: 11px; font-weight: 600; color: #0f172a; }
-            .items-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
-            .items-table th { background: #0f172a; color: #ffffff; font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 7px 8px; border: 1px solid #0f172a; }
-            .items-table td { border: 1px solid #e2e8f0; }
-            .summary-table { width: 45%; margin-left: auto; border-collapse: collapse; margin-bottom: 20px; }
-            .summary-table td { padding: 4px 8px; font-size: 11px; }
-            .summary-table .total-row td { border-top: 2px solid #0f172a; font-size: 13px; font-weight: 800; color: #0f172a; padding-top: 6px; }
-            .status-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; background: ${invoice.status === "Paid" ? "#dcfce7; color: #15803d;" : "#fee2e2; color: #b91c1c;"} }
-            .footer-note { border-top: 1px dashed #cbd5e1; padding-top: 12px; font-size: 10px; color: #64748b; text-align: center; margin-top: 20px; }
-            @media print {
-              body { padding: 0; }
-              .no-print { display: none; }
-            }
-          </style>
-        </head>
-        <body>
-          <div class="invoice-box">
-            <table class="header-table">
-              <tr>
-                <td>
-                  <h1 class="company-name">${companyProfile?.name || "MANOR FURNITURE & INTERIORS"}</h1>
-                  <p class="company-info">${companyProfile?.address || "Bozlur Mor, Kushtia Road, Bangladesh"}</p>
-                  <p class="company-info">Phone: ${companyProfile?.phone || "01700-000000"} | Email: ${companyProfile?.email || "accounts@manorfurniture.com"}</p>
-                </td>
-                <td style="text-align: right;">
-                  <h2 class="invoice-title">SALES INVOICE</h2>
-                  <p class="company-info" style="margin-top: 4px;"><strong>Invoice No:</strong> <span style="font-family: monospace; font-weight: 700; color: #1e40af;">${invoice.receipt_number}</span></p>
-                  <p class="company-info"><strong>Date:</strong> ${formatDateTime(invoice.created_at)}</p>
-                  <p class="company-info"><strong>Status:</strong> <span class="status-badge">${invoice.status}</span></p>
-                </td>
-              </tr>
-            </table>
-
-            <table class="meta-table">
-              <tr>
-                <td>
-                  <div class="meta-label">Bill To (Customer Details)</div>
-                  <div class="meta-value" style="font-size: 12px; font-weight: 700;">${invoice.customer_name || "Walk-in Customer"}</div>
-                  <div class="meta-value" style="color: #475569; font-weight: normal; margin-top: 2px;">Phone: ${invoice.customer_phone || "—"}</div>
-                  <div class="meta-value" style="color: #475569; font-weight: normal;">Address: ${invoice.customer_address || "—"}</div>
-                </td>
-                <td style="border-left: 1px solid #e2e8f0;">
-                  <div class="meta-label">Dispatch / Point of Sale</div>
-                  <div class="meta-value">Warehouse: ${warehouseName}</div>
-                  <div class="meta-value" style="color: #475569; font-weight: normal; margin-top: 2px;">Payment Method: Cash / Card Settlement</div>
-                  <div class="meta-value" style="color: #475569; font-weight: normal;">Settlement Date: ${formatDateTime(invoice.created_at)}</div>
-                </td>
-              </tr>
-            </table>
-
-            <table class="items-table">
-              <thead>
-                <tr>
-                  <th style="width: 35px; text-align: center;">#</th>
-                  <th style="text-align: left;">Item Description</th>
-                  <th style="width: 60px; text-align: center;">Qty</th>
-                  <th style="width: 90px; text-align: right;">Rate (৳)</th>
-                  <th style="width: 100px; text-align: right;">Amount (৳)</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${itemsHtml}
-              </tbody>
-            </table>
-
-            <table class="summary-table">
-              <tr>
-                <td style="color: #64748b;">Subtotal:</td>
-                <td style="text-align: right; font-weight: 600;">৳${subtotal.toFixed(2)}</td>
-              </tr>
-              <tr>
-                <td style="color: #64748b;">Discount:</td>
-                <td style="text-align: right; font-weight: 600; color: #dc2626;">-৳${invoice.discount.toFixed(2)}</td>
-              </tr>
-              <tr class="total-row">
-                <td>Grand Total:</td>
-                <td style="text-align: right;">৳${invoice.total_amount.toFixed(2)}</td>
-              </tr>
-              <tr>
-                <td style="color: #64748b; font-size: 10px;">Paid Amount:</td>
-                <td style="text-align: right; font-weight: 700; color: #15803d; font-size: 10px;">
-                  ৳${invoice.status === "Paid" ? invoice.total_amount.toFixed(2) : "0.00"}
-                </td>
-              </tr>
-            </table>
-
-            <div style="margin-top: 30px; display: flex; justify-content: space-between; font-size: 10px; color: #64748b;">
-              <div style="border-top: 1px solid #cbd5e1; width: 140px; text-align: center; padding-top: 4px;">
-                Customer Signature
-              </div>
-              <div style="border-top: 1px solid #cbd5e1; width: 140px; text-align: center; padding-top: 4px;">
-                Authorized Officer
-              </div>
-            </div>
-
-            <div class="footer-note">
-              Thank you for your business! Goods once sold can only be exchanged per company warranty terms. This is a computer-generated invoice.
-            </div>
-          </div>
-          <script>
-            window.onload = function() {
-              window.print();
-              setTimeout(function() { window.close(); }, 750);
-            }
-          </script>
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
+    printSaleInvoice(invoice, catalogProducts, branches, companyProfile);
   };
 
   return (
