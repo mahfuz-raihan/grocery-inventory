@@ -48,13 +48,13 @@ export const printSaleInvoice = (
     .map(
       (item, idx) => `
       <tr style="background: ${idx % 2 === 1 ? "#f8fafc" : "#ffffff"};">
-        <td style="padding: 7px 10px; border: 1px solid #94a3b8; font-size: 11px; text-align: center; font-weight: 700; color: #000000;">${idx + 1}</td>
-        <td style="padding: 7px 10px; border: 1px solid #94a3b8; font-size: 12px; font-weight: 800; color: #000000;">
+        <td style="padding: 7px 10px; border: 1px solid #94a3b8; font-size: 11px; text-align: center; font-weight: 600; color: #0f172a;">${idx + 1}</td>
+        <td style="padding: 7px 10px; border: 1px solid #94a3b8; font-size: 12px; font-weight: 600; color: #0f172a;">
           ${getProductName(item.product_id)}
         </td>
-        <td style="padding: 7px 10px; border: 1px solid #94a3b8; font-size: 12px; text-align: center; font-weight: 900; color: #000000; font-family: monospace, sans-serif;">${item.quantity}</td>
-        <td style="padding: 7px 10px; border: 1px solid #94a3b8; font-size: 12px; text-align: right; font-weight: 700; color: #000000;">৳${item.unit_price.toFixed(2)}</td>
-        <td style="padding: 7px 10px; border: 1px solid #94a3b8; font-size: 12px; text-align: right; font-weight: 900; color: #000000;">৳${(item.quantity * item.unit_price).toFixed(2)}</td>
+        <td style="padding: 7px 10px; border: 1px solid #94a3b8; font-size: 12px; text-align: center; font-weight: 700; color: #0f172a; font-variant-numeric: tabular-nums;">${item.quantity}</td>
+        <td style="padding: 7px 10px; border: 1px solid #94a3b8; font-size: 12px; text-align: right; font-weight: 600; color: #0f172a; font-variant-numeric: tabular-nums;">৳${item.unit_price.toFixed(2)}</td>
+        <td style="padding: 7px 10px; border: 1px solid #94a3b8; font-size: 12px; text-align: right; font-weight: 700; color: #0f172a; font-variant-numeric: tabular-nums;">৳${(item.quantity * item.unit_price).toFixed(2)}</td>
       </tr>
     `
     )
@@ -66,6 +66,9 @@ export const printSaleInvoice = (
       <head>
         <meta charset="utf-8">
         <title>Invoice - ${invoice.receipt_number}</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
         <style>
           @page {
             size: A4 portrait;
@@ -78,8 +81,10 @@ export const printSaleInvoice = (
             color-adjust: exact !important;
           }
           body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            color: #000000;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11', 'tnum';
+            font-variant-numeric: tabular-nums;
+            color: #0f172a;
             margin: 0;
             padding: 6px;
             font-size: 12px;
@@ -96,45 +101,46 @@ export const printSaleInvoice = (
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 15px;
-            border-bottom: 3px solid #000000;
+            border-bottom: 2.5px solid #0f172a;
             padding-bottom: 10px;
           }
           .header-table td { vertical-align: top; }
           .company-name {
-            font-size: 22px;
-            font-weight: 900;
-            color: #000000;
+            font-size: 20px;
+            font-weight: 800;
+            color: #0f172a;
             margin: 0 0 3px 0;
             letter-spacing: -0.02em;
             text-transform: uppercase;
           }
           .company-info {
             font-size: 11px;
-            color: #0f172a;
-            font-weight: 600;
+            color: #475569;
+            font-weight: 500;
             margin: 2px 0;
           }
           .invoice-title {
-            font-size: 20px;
-            font-weight: 900;
-            color: #000000;
+            font-size: 18px;
+            font-weight: 800;
+            color: #1e40af;
             margin: 0 0 4px 0;
             text-align: right;
-            letter-spacing: 0.05em;
+            letter-spacing: 0.04em;
             text-transform: uppercase;
           }
           .invoice-no {
-            font-family: monospace, monospace;
-            font-weight: 900;
+            font-weight: 700;
             color: #1e40af;
             font-size: 13px;
+            letter-spacing: 0.01em;
+            font-variant-numeric: tabular-nums;
           }
           .meta-table {
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 16px;
             background: #f8fafc;
-            border: 2px solid #0f172a;
+            border: 1.5px solid #0f172a;
             border-radius: 6px;
           }
           .meta-table td {
@@ -145,16 +151,16 @@ export const printSaleInvoice = (
           }
           .meta-label {
             font-size: 9.5px;
-            font-weight: 900;
-            color: #334155;
+            font-weight: 700;
+            color: #475569;
             text-transform: uppercase;
-            letter-spacing: 0.06em;
+            letter-spacing: 0.05em;
             margin-bottom: 3px;
           }
           .meta-value {
-            font-size: 13px;
-            font-weight: 800;
-            color: #000000;
+            font-size: 12.5px;
+            font-weight: 600;
+            color: #0f172a;
           }
           .items-table {
             width: 100%;
@@ -164,8 +170,8 @@ export const printSaleInvoice = (
           .items-table th {
             background: #0f172a !important;
             color: #ffffff !important;
-            font-size: 11px;
-            font-weight: 900;
+            font-size: 10.5px;
+            font-weight: 700;
             text-transform: uppercase;
             padding: 8px 10px;
             border: 1.5px solid #0f172a;
@@ -183,49 +189,52 @@ export const printSaleInvoice = (
           .summary-table td {
             padding: 5px 10px;
             font-size: 12px;
-            color: #000000;
+            color: #0f172a;
+            font-variant-numeric: tabular-nums;
           }
           .summary-table .total-row td {
-            border-top: 3px solid #000000;
-            border-bottom: 3px solid #000000;
-            font-size: 15px;
-            font-weight: 900;
-            color: #000000;
+            border-top: 2.5px solid #0f172a;
+            border-bottom: 2.5px solid #0f172a;
+            font-size: 14.5px;
+            font-weight: 800;
+            color: #0f172a;
             padding-top: 8px;
             padding-bottom: 8px;
             background: #f1f5f9;
+            font-variant-numeric: tabular-nums;
           }
           .status-badge {
             display: inline-block;
             padding: 3px 8px;
             border-radius: 4px;
             font-size: 10.5px;
-            font-weight: 900;
+            font-weight: 700;
             text-transform: uppercase;
-            border: 1.5px solid ${invoice.status === "Paid" ? "#16a34a" : "#dc2626"};
+            letter-spacing: 0.03em;
+            border: 1.5px solid ${invoice.status === "Paid" ? "#15803d" : "#dc2626"};
             background: ${invoice.status === "Paid" ? "#dcfce7 !important; color: #14532d !important;" : "#fee2e2 !important; color: #7f1d1d !important;"};
           }
           .footer-signatures {
-            margin-top: 38px;
+            margin-top: 36px;
             display: flex;
             justify-content: space-between;
             padding: 0 10px;
           }
           .sign-line {
-            border-top: 1.5px solid #000000;
+            border-top: 1.5px solid #0f172a;
             width: 160px;
             text-align: center;
             padding-top: 5px;
-            font-weight: 800;
-            color: #000000;
-            font-size: 11px;
+            font-weight: 700;
+            color: #0f172a;
+            font-size: 10.5px;
           }
           .footer-note {
-            border-top: 1px dashed #64748b;
+            border-top: 1px dashed #94a3b8;
             padding-top: 10px;
             font-size: 10px;
-            font-weight: 600;
-            color: #334155;
+            font-weight: 500;
+            color: #475569;
             text-align: center;
             margin-top: 22px;
           }
@@ -287,20 +296,20 @@ export const printSaleInvoice = (
 
           <table class="summary-table">
             <tr>
-              <td style="font-weight: 700; color: #1e293b;">Subtotal:</td>
-              <td style="text-align: right; font-weight: 800; color: #000000;">৳${subtotal.toFixed(2)}</td>
+              <td style="font-weight: 600; color: #475569;">Subtotal:</td>
+              <td style="text-align: right; font-weight: 700; color: #0f172a;">৳${subtotal.toFixed(2)}</td>
             </tr>
             <tr>
-              <td style="font-weight: 700; color: #1e293b;">Discount:</td>
-              <td style="text-align: right; font-weight: 800; color: #dc2626;">-৳${invoice.discount.toFixed(2)}</td>
+              <td style="font-weight: 600; color: #475569;">Discount:</td>
+              <td style="text-align: right; font-weight: 700; color: #dc2626;">-৳${invoice.discount.toFixed(2)}</td>
             </tr>
             <tr class="total-row">
-              <td>Grand Total:</td>
-              <td style="text-align: right;">৳${invoice.total_amount.toFixed(2)}</td>
+              <td style="font-weight: 800; color: #0f172a;">Grand Total:</td>
+              <td style="text-align: right; font-weight: 800; color: #0f172a;">৳${invoice.total_amount.toFixed(2)}</td>
             </tr>
             <tr>
-              <td style="font-weight: 800; color: #15803d; font-size: 11px;">Paid Amount:</td>
-              <td style="text-align: right; font-weight: 900; color: #15803d; font-size: 11.5px;">
+              <td style="font-weight: 700; color: #15803d; font-size: 11.5px;">Paid Amount:</td>
+              <td style="text-align: right; font-weight: 800; color: #15803d; font-size: 12px;">
                 ৳${invoice.status === "Paid" ? invoice.total_amount.toFixed(2) : "0.00"}
               </td>
             </tr>
@@ -363,23 +372,25 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
         {/* Modal Top Bar */}
         <div className="p-4 bg-slate-900 text-white flex justify-between items-center gap-3">
           <div className="flex items-center gap-2">
-            <span className="text-base font-bold">📄 Invoice Preview</span>
-            <span className="text-xs bg-blue-600 font-mono px-2 py-0.5 rounded font-bold">
+            <span className="text-sm font-semibold tracking-wide uppercase text-slate-300">Invoice Preview</span>
+            <span className="text-xs bg-blue-600/80 font-mono px-2 py-0.5 rounded font-medium text-white">
               {invoice.receipt_number}
             </span>
           </div>
           <div className="flex items-center gap-2">
             <button
               onClick={handlePrint}
-              className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg text-xs transition flex items-center gap-1 shadow-sm"
+              className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded-lg text-xs transition flex items-center gap-1.5 shadow-sm"
               title="Print or Save as PDF (A4 Layout)"
             >
-              <span>🖨️</span>
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+              </svg>
               <span>Print / Download PDF</span>
             </button>
             <button
               onClick={onClose}
-              className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-lg text-xs transition"
+              className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-medium rounded-lg text-xs transition"
             >
               Close
             </button>
