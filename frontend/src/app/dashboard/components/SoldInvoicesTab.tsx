@@ -192,9 +192,13 @@ export const SoldInvoicesTab: React.FC<SoldInvoicesTabProps> = ({
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
               Total Sales
             </span>
-            <span className="p-1.5 bg-blue-50 text-blue-600 rounded-xl text-xs">💰</span>
+            <span className="p-1.5 bg-blue-50 text-blue-600 rounded-xl">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </span>
           </div>
-          <p className="text-xl font-extrabold text-slate-900 mt-2">{formatPrice(totalAmount)}</p>
+          <p className="text-xl font-bold font-mono text-slate-900 mt-2">{formatPrice(totalAmount)}</p>
           <div className="mt-1 text-[10px] text-slate-400 font-medium truncate">
             Gross invoiced revenue
           </div>
@@ -206,9 +210,13 @@ export const SoldInvoicesTab: React.FC<SoldInvoicesTabProps> = ({
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
               Total Cost
             </span>
-            <span className="p-1.5 bg-slate-100 text-slate-600 rounded-xl text-xs">🏷️</span>
+            <span className="p-1.5 bg-slate-100 text-slate-600 rounded-xl">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+              </svg>
+            </span>
           </div>
-          <p className="text-xl font-extrabold text-slate-700 mt-2">{formatPrice(totalCost)}</p>
+          <p className="text-xl font-bold font-mono text-slate-700 mt-2">{formatPrice(totalCost)}</p>
           <div className="mt-1 text-[10px] text-slate-400 font-medium truncate">
             Cost of goods sold (COGS)
           </div>
@@ -220,17 +228,21 @@ export const SoldInvoicesTab: React.FC<SoldInvoicesTabProps> = ({
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
               Net Profit
             </span>
-            <span className="p-1.5 bg-emerald-50 text-emerald-600 rounded-xl text-xs">📈</span>
+            <span className="p-1.5 bg-emerald-50 text-emerald-600 rounded-xl">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+              </svg>
+            </span>
           </div>
           <p
-            className={`text-xl font-extrabold mt-2 ${
+            className={`text-xl font-bold font-mono mt-2 ${
               totalProfit >= 0 ? "text-emerald-600" : "text-red-600"
             }`}
           >
             {totalProfit >= 0 ? "+" : ""}
             {formatPrice(totalProfit)}
           </p>
-          <div className="mt-1 text-[10px] text-emerald-600 font-semibold truncate">
+          <div className="mt-1 text-[10px] text-emerald-600 font-semibold truncate font-mono">
             {overallMargin.toFixed(1)}% profit margin
           </div>
         </div>
@@ -241,9 +253,13 @@ export const SoldInvoicesTab: React.FC<SoldInvoicesTabProps> = ({
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
               Total Orders
             </span>
-            <span className="p-1.5 bg-indigo-50 text-indigo-600 rounded-xl text-xs">📦</span>
+            <span className="p-1.5 bg-indigo-50 text-indigo-600 rounded-xl">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+              </svg>
+            </span>
           </div>
-          <p className="text-xl font-extrabold text-slate-900 mt-2">{totalOrders}</p>
+          <p className="text-xl font-bold font-mono text-slate-900 mt-2">{totalOrders}</p>
           <div className="mt-1 text-[10px] text-slate-400 font-medium truncate">
             Total invoices generated
           </div>
@@ -255,9 +271,13 @@ export const SoldInvoicesTab: React.FC<SoldInvoicesTabProps> = ({
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
               Settled / Paid
             </span>
-            <span className="p-1.5 bg-emerald-50 text-emerald-600 rounded-xl text-xs">✓</span>
+            <span className="p-1.5 bg-emerald-50 text-emerald-600 rounded-xl">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </span>
           </div>
-          <p className="text-xl font-extrabold text-emerald-600 mt-2">{formatPrice(paidAmount)}</p>
+          <p className="text-xl font-bold font-mono text-emerald-600 mt-2">{formatPrice(paidAmount)}</p>
           <div className="mt-1 text-[10px] text-emerald-600 font-medium truncate">
             Cleared receipts
           </div>
@@ -269,9 +289,13 @@ export const SoldInvoicesTab: React.FC<SoldInvoicesTabProps> = ({
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
               Receivables
             </span>
-            <span className="p-1.5 bg-amber-50 text-amber-600 rounded-xl text-xs">⏳</span>
+            <span className="p-1.5 bg-amber-50 text-amber-600 rounded-xl">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </span>
           </div>
-          <p className="text-xl font-extrabold text-amber-600 mt-2">{formatPrice(dueAmount)}</p>
+          <p className="text-xl font-bold font-mono text-amber-600 mt-2">{formatPrice(dueAmount)}</p>
           <div className="mt-1 text-[10px] text-amber-600 font-medium truncate">
             Pending customer collections
           </div>
@@ -287,10 +311,12 @@ export const SoldInvoicesTab: React.FC<SoldInvoicesTabProps> = ({
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search by Invoice ID (INV-SOLD-...), Customer Name, or Phone..."
+              placeholder="Search by Invoice ID, Customer Name, or Phone..."
               className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-xs font-medium bg-slate-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-slate-900 transition"
             />
-            <span className="absolute left-3 top-2.5 text-slate-400 text-xs">🔍</span>
+            <svg className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
             {searchTerm && (
               <button
                 onClick={() => setSearchTerm("")}
@@ -307,7 +333,7 @@ export const SoldInvoicesTab: React.FC<SoldInvoicesTabProps> = ({
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 outline-none cursor-pointer hover:bg-slate-100 transition"
+              className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 outline-none cursor-pointer hover:bg-slate-100 transition"
             >
               <option value="all">All Statuses</option>
               <option value="paid">Paid</option>
@@ -318,7 +344,7 @@ export const SoldInvoicesTab: React.FC<SoldInvoicesTabProps> = ({
             <select
               value={branchFilter}
               onChange={(e) => setBranchFilter(e.target.value)}
-              className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 outline-none cursor-pointer hover:bg-slate-100 transition max-w-[160px]"
+              className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 outline-none cursor-pointer hover:bg-slate-100 transition max-w-[160px]"
             >
               <option value="all">All Warehouses</option>
               {branches.map((b) => (
@@ -332,16 +358,16 @@ export const SoldInvoicesTab: React.FC<SoldInvoicesTabProps> = ({
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as any)}
-              className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 outline-none cursor-pointer hover:bg-slate-100 transition"
+              className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 outline-none cursor-pointer hover:bg-slate-100 transition"
             >
-              <option value="date_desc">📅 Date: Newest First</option>
-              <option value="date_asc">📅 Date: Oldest First</option>
-              <option value="amount_desc">💰 Amount: Highest First</option>
-              <option value="amount_asc">💰 Amount: Lowest First</option>
-              <option value="profit_desc">📈 Profit: Highest First</option>
-              <option value="profit_asc">📉 Profit: Lowest First</option>
-              <option value="id_asc">🔢 Invoice ID: A-Z</option>
-              <option value="customer_asc">👤 Customer: A-Z</option>
+              <option value="date_desc">Date: Newest First</option>
+              <option value="date_asc">Date: Oldest First</option>
+              <option value="amount_desc">Amount: Highest First</option>
+              <option value="amount_asc">Amount: Lowest First</option>
+              <option value="profit_desc">Profit: Highest First</option>
+              <option value="profit_asc">Profit: Lowest First</option>
+              <option value="id_asc">Invoice ID: A-Z</option>
+              <option value="customer_asc">Customer: A-Z</option>
             </select>
 
             {/* Column Active/Deactive Dropdown */}
@@ -349,9 +375,12 @@ export const SoldInvoicesTab: React.FC<SoldInvoicesTabProps> = ({
               <button
                 type="button"
                 onClick={() => setShowColumnMenu(!showColumnMenu)}
-                className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold flex items-center gap-1.5 transition shadow-sm"
+                className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition shadow-sm"
               >
-                <span>Columns 👁️</span>
+                <svg className="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
+                </svg>
+                <span>Columns</span>
               </button>
 
               {showColumnMenu && (
@@ -390,10 +419,12 @@ export const SoldInvoicesTab: React.FC<SoldInvoicesTabProps> = ({
               <button
                 type="button"
                 onClick={onOpenDailyReport}
-                className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition shadow-sm"
+                className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-medium flex items-center gap-1.5 transition shadow-sm"
                 title="Print Daily Sales Details Report"
               >
-                <span>🖨️</span>
+                <svg className="w-3.5 h-3.5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                </svg>
                 <span>Daily Sales Report</span>
               </button>
             )}
@@ -405,8 +436,10 @@ export const SoldInvoicesTab: React.FC<SoldInvoicesTabProps> = ({
       <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
         {filteredInvoices.length === 0 ? (
           <div className="text-center py-16 text-slate-400">
-            <span className="text-4xl block mb-2">🧾</span>
-            <p className="font-bold text-slate-600 text-sm">No sold invoices found</p>
+            <svg className="w-10 h-10 mx-auto mb-2 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <p className="font-semibold text-slate-600 text-sm">No sold invoices found</p>
             <p className="text-xs mt-1">Try adjusting your search keywords or filter criteria.</p>
           </div>
         ) : (
@@ -444,44 +477,44 @@ export const SoldInvoicesTab: React.FC<SoldInvoicesTabProps> = ({
                       {/* Customer */}
                       {isVisible("customer") && (
                         <td className="p-3">
-                          <span className="font-bold text-slate-800 block">{inv.customer_name}</span>
-                          <span className="text-[11px] text-slate-400 block font-normal">
-                            📞 {inv.customer_phone}
+                          <span className="font-semibold text-slate-800 block">{inv.customer_name}</span>
+                          <span className="text-[11px] text-slate-400 block font-mono font-normal">
+                            {inv.customer_phone}
                           </span>
                         </td>
                       )}
 
                       {/* Date */}
                       {isVisible("date") && (
-                        <td className="p-3 text-slate-600 whitespace-nowrap font-medium">
+                        <td className="p-3 text-slate-600 whitespace-nowrap font-medium font-mono text-[11px]">
                           {formatDateOnly(inv.created_at)}
                         </td>
                       )}
 
                       {/* Created On */}
                       {isVisible("created_on") && (
-                        <td className="p-3 text-slate-500 whitespace-nowrap">
+                        <td className="p-3 text-slate-500 whitespace-nowrap font-mono text-[11px]">
                           {formatDateTime(inv.created_at)}
                         </td>
                       )}
 
                       {/* Amount */}
                       {isVisible("amount") && (
-                        <td className="p-3 text-right font-extrabold text-slate-900 whitespace-nowrap">
+                        <td className="p-3 text-right font-bold font-mono text-slate-900 whitespace-nowrap">
                           {formatPrice(inv.total_amount)}
                         </td>
                       )}
 
                       {/* Paid */}
                       {isVisible("paid") && (
-                        <td className="p-3 text-right font-bold text-emerald-600 whitespace-nowrap">
+                        <td className="p-3 text-right font-bold font-mono text-emerald-600 whitespace-nowrap">
                           {formatPrice(paidValue)}
                         </td>
                       )}
 
                       {/* Cost */}
                       {isVisible("cost") && (
-                        <td className="p-3 text-right font-medium text-slate-600 whitespace-nowrap">
+                        <td className="p-3 text-right font-medium font-mono text-slate-600 whitespace-nowrap">
                           {formatPrice(invoiceCost)}
                         </td>
                       )}
@@ -490,14 +523,14 @@ export const SoldInvoicesTab: React.FC<SoldInvoicesTabProps> = ({
                       {isVisible("profit") && (
                         <td className="p-3 text-right whitespace-nowrap">
                           <span
-                            className={`font-bold block ${
+                            className={`font-bold font-mono block ${
                               netProfit >= 0 ? "text-emerald-600" : "text-red-600"
                             }`}
                           >
                             {netProfit >= 0 ? "+" : ""}
                             {formatPrice(netProfit)}
                           </span>
-                          <span className="text-[10px] text-slate-400 font-medium block">
+                          <span className="text-[10px] text-slate-400 font-mono font-medium block">
                             {marginPercent.toFixed(1)}% margin
                           </span>
                         </td>
@@ -526,7 +559,7 @@ export const SoldInvoicesTab: React.FC<SoldInvoicesTabProps> = ({
                             onClick={() =>
                               setOpenMenuId(openMenuId === inv.id ? null : inv.id)
                             }
-                            className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-600 font-black text-sm transition"
+                            className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-600 font-bold text-sm transition"
                             title="Options"
                           >
                             ⋮
@@ -539,9 +572,12 @@ export const SoldInvoicesTab: React.FC<SoldInvoicesTabProps> = ({
                                   onViewInvoice(inv);
                                   setOpenMenuId(null);
                                 }}
-                                className="w-full px-3 py-2 text-left hover:bg-slate-50 flex items-center gap-2 text-slate-700 font-semibold"
+                                className="w-full px-3 py-2 text-left hover:bg-slate-50 flex items-center gap-2 text-slate-700 font-medium"
                               >
-                                <span>👁️</span>
+                                <svg className="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
                                 <span>View Invoice</span>
                               </button>
                               <button
@@ -549,17 +585,21 @@ export const SoldInvoicesTab: React.FC<SoldInvoicesTabProps> = ({
                                   handleDownloadPdf(inv);
                                   setOpenMenuId(null);
                                 }}
-                                className="w-full px-3 py-2 text-left hover:bg-slate-50 flex items-center gap-2 text-slate-700 font-semibold"
+                                className="w-full px-3 py-2 text-left hover:bg-slate-50 flex items-center gap-2 text-slate-700 font-medium"
                               >
-                                <span>📄</span>
+                                <svg className="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
                                 <span>Download PDF</span>
                               </button>
                               <div className="border-t border-slate-100 my-0.5"></div>
                               <button
                                 onClick={() => handleDelete(inv)}
-                                className="w-full px-3 py-2 text-left hover:bg-red-50 flex items-center gap-2 text-red-600 font-semibold"
+                                className="w-full px-3 py-2 text-left hover:bg-red-50 flex items-center gap-2 text-red-600 font-medium"
                               >
-                                <span>🗑️</span>
+                                <svg className="w-3.5 h-3.5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
                                 <span>Delete Invoice</span>
                               </button>
                             </div>
