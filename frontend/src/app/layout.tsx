@@ -61,10 +61,10 @@ export default function RootLayout({
           <meta name="viewport" content="width=device-width, initial-scale=1.0" />
           <link rel="preconnect" href="https://fonts.googleapis.com" />
           <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-          <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+          <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
           <script src="https://cdn.tailwindcss.com"></script>
         </head>
-        <body className="bg-slate-900 text-slate-300 flex items-center justify-center h-screen">
+        <body className="bg-slate-900 text-slate-300 flex items-center justify-center h-screen font-sans">
           <div className="text-lg font-semibold animate-pulse">Loading Grocery ERP...</div>
         </body>
       </html>
@@ -81,7 +81,7 @@ export default function RootLayout({
           <meta name="viewport" content="width=device-width, initial-scale=1.0" />
           <link rel="preconnect" href="https://fonts.googleapis.com" />
           <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-          <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+          <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
           <script src="https://cdn.tailwindcss.com"></script>
         </head>
         <body className="bg-slate-900 text-slate-300 antialiased font-sans">
@@ -99,7 +99,7 @@ export default function RootLayout({
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
         <script src="https://cdn.tailwindcss.com"></script>
         <script
           dangerouslySetInnerHTML={{
@@ -108,7 +108,8 @@ export default function RootLayout({
                 theme: {
                   extend: {
                     fontFamily: {
-                      sans: ['Inter', 'sans-serif'],
+                      sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+                      mono: ['JetBrains Mono', 'monospace'],
                     },
                     colors: {
                       brand: { 500: '#3b82f6', 600: '#2563eb' },
