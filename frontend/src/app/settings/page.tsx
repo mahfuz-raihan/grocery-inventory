@@ -266,7 +266,7 @@ export default function SettingsPage() {
         {activeTab === "rbac" && userRole === "owner" && rbacRules && (
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
             <div className="p-6 border-b bg-slate-50">
-              <h3 className="text-lg font-bold text-gray-855">Dynamic Access Control Matrix</h3>
+              <h3 className="text-lg font-bold text-gray-855">Access Control Matrix</h3>
               <p className="text-xs text-gray-500 mt-1">Configure visible tabs and action locks centrally across user roles</p>
             </div>
 
