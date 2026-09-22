@@ -48,12 +48,12 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
         const netCostVal = item.cost_price;
         return `
         <tr style="background: ${idx % 2 === 1 ? "#f8fafc" : "#ffffff"};">
-          <td style="padding: 8px 10px; text-align: left; font-size: 12px; font-weight: 800; color: #000000; border: 1px solid #94a3b8;">${p?.name || "Unknown Product"}</td>
-          <td style="padding: 8px 10px; text-align: left; font-size: 11px; font-family: monospace; font-weight: 700; color: #1e40af; border: 1px solid #94a3b8;">${p?.sku || "—"}</td>
-          <td style="padding: 8px 10px; text-align: center; font-size: 12px; font-weight: 700; color: #000000; border: 1px solid #94a3b8;">${item.ordered_quantity || item.quantity_received}</td>
-          <td style="padding: 8px 10px; text-align: center; font-size: 12px; font-weight: 900; color: #047857; border: 1px solid #94a3b8;">${item.quantity_received}</td>
-          <td style="padding: 8px 10px; text-align: right; font-size: 12px; font-weight: 700; color: #000000; border: 1px solid #94a3b8;">${formatPrice(netCostVal)}</td>
-          <td style="padding: 8px 10px; text-align: right; font-size: 12px; font-weight: 900; color: #000000; border: 1px solid #94a3b8;">${formatPrice(item.quantity_received * netCostVal)}</td>
+          <td style="padding: 8px 10px; text-align: left; font-size: 12px; font-weight: 600; color: #0f172a; border: 1px solid #94a3b8;">${p?.name || "Unknown Product"}</td>
+          <td style="padding: 8px 10px; text-align: left; font-size: 11px; font-weight: 600; color: #1e40af; border: 1px solid #94a3b8; font-variant-numeric: tabular-nums;">${p?.sku || "—"}</td>
+          <td style="padding: 8px 10px; text-align: center; font-size: 12px; font-weight: 600; color: #0f172a; border: 1px solid #94a3b8; font-variant-numeric: tabular-nums;">${item.ordered_quantity || item.quantity_received}</td>
+          <td style="padding: 8px 10px; text-align: center; font-size: 12px; font-weight: 700; color: #047857; border: 1px solid #94a3b8; font-variant-numeric: tabular-nums;">${item.quantity_received}</td>
+          <td style="padding: 8px 10px; text-align: right; font-size: 12px; font-weight: 500; color: #0f172a; border: 1px solid #94a3b8; font-variant-numeric: tabular-nums;">${formatPrice(netCostVal)}</td>
+          <td style="padding: 8px 10px; text-align: right; font-size: 12px; font-weight: 700; color: #0f172a; border: 1px solid #94a3b8; font-variant-numeric: tabular-nums;">${formatPrice(item.quantity_received * netCostVal)}</td>
         </tr>
       `;
       })
@@ -66,8 +66,8 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
     const invoiceGrandTotal = activeGRN.total_amount || netTotal;
     const summaryRowsHtml = `
       <tr class="total-row">
-        <td colspan="4" style="padding: 12px 10px; text-align: right; font-size: 14px; font-weight: 900; color: #000000; border: 1.5px solid #000000; background: #e2e8f0; text-transform: uppercase;">Grand Total (Net Amount):</td>
-        <td colspan="2" style="padding: 12px 10px; text-align: right; font-size: 16px; color: #000000; font-weight: 900; border: 1.5px solid #000000; background: #e2e8f0;">${formatPrice(invoiceGrandTotal)}</td>
+        <td colspan="4" style="padding: 10px 10px; text-align: right; font-size: 13.5px; font-weight: 700; color: #0f172a; border: 1.5px solid #0f172a; background: #e2e8f0; text-transform: uppercase;">Grand Total (Net Amount):</td>
+        <td colspan="2" style="padding: 10px 10px; text-align: right; font-size: 15px; color: #0f172a; font-weight: 800; border: 1.5px solid #0f172a; background: #e2e8f0; font-variant-numeric: tabular-nums;">${formatPrice(invoiceGrandTotal)}</td>
       </tr>
     `;
 
@@ -77,6 +77,9 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
         <head>
           <meta charset="utf-8">
           <title>Purchase Invoice - ${activeGRN.invoice_reference || "GRN"}</title>
+          <link rel="preconnect" href="https://fonts.googleapis.com">
+          <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+          <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
           <style>
             @page {
               size: A4 portrait;
@@ -89,8 +92,10 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
               color-adjust: exact !important;
             }
             body {
-              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-              color: #000000;
+              font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+              font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11', 'tnum';
+              font-variant-numeric: tabular-nums;
+              color: #0f172a;
               margin: 0;
               padding: 6px;
               font-size: 12px;
@@ -102,23 +107,23 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
               display: flex;
               justify-content: space-between;
               align-items: flex-start;
-              border-bottom: 3px solid #000000;
+              border-bottom: 2.5px solid #0f172a;
               padding-bottom: 12px;
               margin-bottom: 18px;
             }
             .company-info h1 {
               margin: 0;
-              font-size: 22px;
-              font-weight: 900;
-              color: #000000;
+              font-size: 20px;
+              font-weight: 800;
+              color: #0f172a;
               letter-spacing: -0.02em;
               text-transform: uppercase;
             }
             .company-info p {
               margin: 3px 0 0 0;
               font-size: 11px;
-              color: #0f172a;
-              font-weight: 600;
+              color: #475569;
+              font-weight: 500;
             }
             .invoice-details {
               text-align: right;
@@ -126,7 +131,7 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
             .invoice-details h2 {
               margin: 0;
               font-size: 18px;
-              font-weight: 900;
+              font-weight: 800;
               color: #1e40af;
               letter-spacing: 0.04em;
               text-transform: uppercase;
@@ -134,8 +139,8 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
             .invoice-details p {
               margin: 3px 0 0 0;
               font-size: 11.5px;
-              color: #000000;
-              font-weight: 700;
+              color: #0f172a;
+              font-weight: 600;
             }
             .bill-grid {
               display: grid;
@@ -151,10 +156,10 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
             }
             .bill-box h3 {
               margin: 0 0 6px 0;
-              font-size: 10px;
+              font-size: 9.5px;
               text-transform: uppercase;
-              color: #0f172a;
-              font-weight: 800;
+              color: #475569;
+              font-weight: 700;
               letter-spacing: 0.05em;
               border-bottom: 1px solid #cbd5e1;
               padding-bottom: 4px;
@@ -162,8 +167,8 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
             .bill-box p {
               margin: 3px 0;
               font-size: 11.5px;
-              font-weight: 700;
-              color: #000000;
+              font-weight: 600;
+              color: #0f172a;
             }
             table {
               width: 100%;
@@ -173,7 +178,7 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
             th {
               background-color: #0f172a;
               color: #ffffff;
-              font-weight: 800;
+              font-weight: 700;
               font-size: 10px;
               text-transform: uppercase;
               padding: 8px 10px;
@@ -185,14 +190,14 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
               border: 1px solid #94a3b8;
             }
             .total-row td {
-              border: 2px solid #000000;
-              font-weight: 900;
+              border: 2px solid #0f172a;
+              font-weight: 800;
             }
             .footer {
               text-align: center;
               font-size: 10px;
-              font-weight: 700;
-              color: #475569;
+              font-weight: 500;
+              color: #64748b;
               border-top: 1px dashed #94a3b8;
               padding-top: 10px;
               margin-top: 30px;
@@ -212,7 +217,7 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
             </div>
             <div class="invoice-details">
               <h2>PURCHASE INVOICE</h2>
-              <p><strong>Invoice Ref:</strong> <span style="font-family: monospace; font-size: 12px; color: #1e40af;">${activeGRN.invoice_reference || "—"}</span></p>
+              <p><strong>Invoice Ref:</strong> <span style="font-size: 12px; font-weight: 700; color: #1e40af; font-variant-numeric: tabular-nums;">${activeGRN.invoice_reference || "—"}</span></p>
               <p><strong>Date Received:</strong> ${dateStr}</p>
             </div>
           </div>
