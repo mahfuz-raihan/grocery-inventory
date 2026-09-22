@@ -14,8 +14,16 @@
 body {
 background-color: rgb(var(--bg-page));
 color: rgb(var(--text-main));
-font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11', 'tnum';
 -webkit-font-smoothing: antialiased;
+-moz-osx-font-smoothing: grayscale;
+text-rendering: optimizeLegibility;
+}
+
+code, kbd, samp, pre, .font-mono {
+  font-family: 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
 }
 
 /* 4. Component Library: Reusable styles for your ERP interface */
