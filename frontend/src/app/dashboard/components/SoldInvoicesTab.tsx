@@ -13,6 +13,7 @@ import {
   getInvoiceNetProfit,
 } from "../types";
 import { printSaleInvoice } from "./InvoiceModal";
+import { ProfitBreakdownModal } from "./ProfitBreakdownModal";
 
 interface SoldInvoicesTabProps {
   invoices: SaleInvoice[];
@@ -56,6 +57,9 @@ export const SoldInvoicesTab: React.FC<SoldInvoicesTabProps> = ({
 
   // Three-dot open menu track
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+
+  // Profit Calculation modal state
+  const [profitModalInvoice, setProfitModalInvoice] = useState<SaleInvoice | null>(null);
 
   // Column Visibility State
   const [showColumnMenu, setShowColumnMenu] = useState(false);
@@ -566,43 +570,61 @@ export const SoldInvoicesTab: React.FC<SoldInvoicesTabProps> = ({
                           </button>
 
                           {openMenuId === inv.id && (
-                            <div className="absolute right-3 top-10 w-44 bg-white border border-slate-200 rounded-xl shadow-2xl z-20 py-1 text-left text-xs animate-fadeIn">
-                              <button
-                                onClick={() => {
-                                  onViewInvoice(inv);
-                                  setOpenMenuId(null);
-                                }}
-                                className="w-full px-3 py-2 text-left hover:bg-slate-50 flex items-center gap-2 text-slate-700 font-medium"
-                              >
-                                <svg className="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                </svg>
-                                <span>View Invoice</span>
-                              </button>
-                              <button
-                                onClick={() => {
-                                  handleDownloadPdf(inv);
-                                  setOpenMenuId(null);
-                                }}
-                                className="w-full px-3 py-2 text-left hover:bg-slate-50 flex items-center gap-2 text-slate-700 font-medium"
-                              >
-                                <svg className="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                </svg>
-                                <span>Download PDF</span>
-                              </button>
-                              <div className="border-t border-slate-100 my-0.5"></div>
-                              <button
-                                onClick={() => handleDelete(inv)}
-                                className="w-full px-3 py-2 text-left hover:bg-red-50 flex items-center gap-2 text-red-600 font-medium"
-                              >
-                                <svg className="w-3.5 h-3.5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                                <span>Delete Invoice</span>
-                              </button>
-                            </div>
+                            <>
+                              <div
+                                className="fixed inset-0 z-10 cursor-default"
+                                onClick={() => setOpenMenuId(null)}
+                              />
+                              <div className="absolute right-3 top-10 w-48 bg-white border border-slate-200 rounded-xl shadow-2xl z-20 py-1 text-left text-xs animate-fadeIn">
+                                <button
+                                  onClick={() => {
+                                    onViewInvoice(inv);
+                                    setOpenMenuId(null);
+                                  }}
+                                  className="w-full px-3 py-2 text-left hover:bg-slate-50 flex items-center gap-2 text-slate-700 font-medium"
+                                >
+                                  <svg className="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                  </svg>
+                                  <span>View Invoice</span>
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    handleDownloadPdf(inv);
+                                    setOpenMenuId(null);
+                                  }}
+                                  className="w-full px-3 py-2 text-left hover:bg-slate-50 flex items-center gap-2 text-slate-700 font-medium"
+                                >
+                                  <svg className="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                  </svg>
+                                  <span>Download PDF</span>
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setProfitModalInvoice(inv);
+                                    setOpenMenuId(null);
+                                  }}
+                                  className="w-full px-3 py-2 text-left hover:bg-emerald-50 flex items-center gap-2 text-emerald-700 font-semibold"
+                                >
+                                  <svg className="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                  </svg>
+                                  <span>Profit Calculation</span>
+                                </button>
+                                <div className="border-t border-slate-100 my-0.5"></div>
+                                <button
+                                  onClick={() => handleDelete(inv)}
+                                  className="w-full px-3 py-2 text-left hover:bg-red-50 flex items-center gap-2 text-red-600 font-medium"
+                                >
+                                  <svg className="w-3.5 h-3.5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                  </svg>
+                                  <span>Delete Invoice</span>
+                                </button>
+                              </div>
+                            </>
                           )}
                         </td>
                       )}
@@ -614,6 +636,17 @@ export const SoldInvoicesTab: React.FC<SoldInvoicesTabProps> = ({
           </div>
         )}
       </div>
+
+      {/* Profit Margin Calculation Breakdown Modal */}
+      {profitModalInvoice && (
+        <ProfitBreakdownModal
+          invoice={profitModalInvoice}
+          catalogProducts={catalogProducts}
+          branches={branches}
+          onClose={() => setProfitModalInvoice(null)}
+          onViewInvoice={(inv) => onViewInvoice(inv)}
+        />
+      )}
     </div>
   );
 };
