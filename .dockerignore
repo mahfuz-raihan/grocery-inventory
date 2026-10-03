@@ -1,0 +1,40 @@
+# Git
+.git
+.github
+
+# Environment & Config
+.env
+.env.*
+!.env.example
+
+# Node / Frontend
+frontend/node_modules
+frontend/.next
+frontend/out
+frontend/build
+frontend/npm-debug.log*
+
+# Python
+**/__pycache__
+**/*.py[cod]
+**/*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+build/
+dist/
+*.egg-info/
+
+# Logs and Caches
+.pytest_cache/
+*.log
+*.sqlite3
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+.vscode
+.idea
