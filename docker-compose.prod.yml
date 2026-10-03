@@ -1,0 +1,145 @@
+networks:
+  erp_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+
+services:
+  # --- API GATEWAY ---
+  traefik:
+    image: traefik:v2.11
+    container_name: erp-gateway
+    environment:
+      - DOCKER_API_VERSION=1.41
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - "80:80"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    networks:
+      - erp_network
+    restart: always
+
+  # --- INFRASTRUCTURE ---
+  postgres:
+    image: postgres:16-alpine
+    container_name: erp-db
+    restart: always
+    env_file:
+      - .env
+    ports:
+      # Bound to localhost for security; services communicate internally via erp_network
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - erp_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # --- MESSAGE BROKER ---
+  nats:
+    image: nats:alpine
+    container_name: erp-nats
+    command: ["-js"]
+    networks:
+      - erp_network
+    restart: always
+
+  # --- CACHE ---
+  redis:
+    image: redis:alpine
+    container_name: erp-redis
+    networks:
+      - erp_network
+    restart: always
+
+  # --- MICROSERVICES ---
+  auth-service:
+    image: ghcr.io/${IMAGE_OWNER:-mahfuz-raihan}/grocery-inventory-auth:latest
+    build:
+      context: .
+      dockerfile: ./services/auth/Dockerfile
+    container_name: erp-auth
+    restart: always
+    env_file:
+      - .env
+    networks:
+      - erp_network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.auth.rule=PathPrefix(`/api/v1/auth`)"
+      - "traefik.http.routers.auth.entrypoints=web"
+      - "traefik.http.services.auth.loadbalancer.server.port=8000"
+      - "traefik.docker.network=erp_network"
+
+  inventory-service:
+    image: ghcr.io/${IMAGE_OWNER:-mahfuz-raihan}/grocery-inventory-inventory:latest
+    build:
+      context: .
+      dockerfile: ./services/inventory/Dockerfile
+    container_name: erp-inventory
+    restart: always
+    env_file:
+      - .env
+    networks:
+      - erp_network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_started
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.inventory.rule=PathPrefix(`/api/v1/inventory`)"
+      - "traefik.http.routers.inventory.entrypoints=web"
+      - "traefik.http.services.inventory.loadbalancer.server.port=8000"
+      - "traefik.docker.network=erp_network"
+
+  sales-service:
+    image: ghcr.io/${IMAGE_OWNER:-mahfuz-raihan}/grocery-inventory-sales:latest
+    build:
+      context: .
+      dockerfile: ./services/sales/Dockerfile
+    container_name: erp-sales
+    restart: always
+    env_file:
+      - .env
+    networks:
+      - erp_network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_started
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.sales.rule=PathPrefix(`/api/v1/sales`)"
+      - "traefik.http.routers.sales.entrypoints=web"
+      - "traefik.http.services.sales.loadbalancer.server.port=8000"
+      - "traefik.docker.network=erp_network"
+
+  # --- FRONTEND SERVICE ---
+  frontend-service:
+    image: ghcr.io/${IMAGE_OWNER:-mahfuz-raihan}/grocery-inventory-frontend:latest
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: erp-frontend
+    restart: always
+    networks:
+      - erp_network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=PathPrefix(`/`)"
+      - "traefik.http.services.frontend.loadbalancer.server.port=3000"
