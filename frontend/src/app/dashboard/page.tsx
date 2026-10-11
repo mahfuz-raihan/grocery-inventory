@@ -325,7 +325,7 @@ export default function Dashboard() {
     <div className="min-h-screen bg-surface-canvas text-slate-900 pb-12 font-sans">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header Block */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 erp-card p-5 border-border shadow-xs rounded-xl">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 erp-card p-5 border-border shadow-xs rounded-md">
           <div>
             <h1 className="text-xl font-bold text-slate-900 tracking-tight">HQ Dashboard</h1>
             <p className="text-slate-500 mt-0.5 text-xs font-normal">
@@ -340,7 +340,7 @@ export default function Dashboard() {
               <select
                 value={dateFilter}
                 onChange={(e) => setDateFilter(e.target.value)}
-                className="w-full bg-white border border-border rounded-lg px-3 py-2 text-xs font-semibold text-slate-800 shadow-xs focus:outline-none focus:ring-1 focus:ring-brand focus:border-brand transition cursor-pointer"
+                className="w-full bg-white border border-border rounded-md px-3 py-2 text-xs font-semibold text-slate-800 shadow-xs focus:outline-none focus:ring-1 focus:ring-brand focus:border-brand transition cursor-pointer"
               >
                 {FILTER_OPTIONS.map((opt) => (
                   <option key={opt.id} value={opt.id}>
@@ -354,14 +354,14 @@ export default function Dashboard() {
 
         {/* Custom Date Pickers */}
         {showCustomRange && (
-          <div className="erp-card p-4 border-border rounded-xl shadow-xs flex flex-wrap items-end gap-3 animate-fadeIn">
+          <div className="erp-card p-4 border-border rounded-md shadow-xs flex flex-wrap items-end gap-3 animate-fadeIn">
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">Start Date</label>
               <input
                 type="date"
                 value={customStartDate}
                 onChange={(e) => setCustomStartDate(e.target.value)}
-                className="p-2 border border-border rounded-lg text-xs bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-brand focus:border-brand transition"
+                className="p-2 border border-border rounded-md text-xs bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-brand focus:border-brand transition"
               />
             </div>
             <div className="flex flex-col gap-1.5">
@@ -370,7 +370,7 @@ export default function Dashboard() {
                 type="date"
                 value={customEndDate}
                 onChange={(e) => setCustomEndDate(e.target.value)}
-                className="p-2 border border-border rounded-lg text-xs bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-brand focus:border-brand transition"
+                className="p-2 border border-border rounded-md text-xs bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-brand focus:border-brand transition"
               />
             </div>
             <button
