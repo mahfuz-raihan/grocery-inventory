@@ -86,10 +86,10 @@ export default function LoginPage() {
       {/* Subtle brand ambient glow */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="w-full max-w-sm bg-white border border-border p-8 rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.04)] relative z-10">
+      <div className="w-full max-w-sm bg-white border border-border p-8 rounded-lg shadow-[0_4px_24px_rgba(0,0,0,0.04)] relative z-10">
         <div className="flex flex-col items-center mb-6">
           {/* Logo Icon */}
-          <div className="w-12 h-12 bg-brand rounded-xl flex items-center justify-center shadow-sm mb-3">
+          <div className="w-12 h-12 bg-brand rounded-md flex items-center justify-center shadow-sm mb-3">
             <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
             </svg>
@@ -99,7 +99,7 @@ export default function LoginPage() {
         </div>
 
         {error && (
-          <div className="mb-5 p-3.5 bg-rose-50 border border-rose-200 text-rose-800 rounded-lg text-xs font-medium flex items-start gap-2.5">
+          <div className="mb-5 p-3.5 bg-rose-50 border border-rose-200 text-rose-800 rounded-md text-xs font-medium flex items-start gap-2.5">
             <svg className="w-4 h-4 flex-shrink-0 mt-0.5 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
@@ -112,7 +112,7 @@ export default function LoginPage() {
             <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Email Address</label>
             <input
               type="email"
-              className="w-full px-3.5 py-2.5 bg-white border border-border rounded-lg text-slate-900 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition text-xs font-mono placeholder:text-slate-400 placeholder:font-sans"
+              className="w-full px-3.5 py-2.5 bg-white border border-border rounded-md text-slate-900 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition text-xs font-mono placeholder:text-slate-400 placeholder:font-sans"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="e.g. admin@company.com"
@@ -124,7 +124,7 @@ export default function LoginPage() {
             <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Password</label>
             <input
               type="password"
-              className="w-full px-3.5 py-2.5 bg-white border border-border rounded-lg text-slate-900 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition text-xs placeholder:text-slate-400"
+              className="w-full px-3.5 py-2.5 bg-white border border-border rounded-md text-slate-900 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition text-xs placeholder:text-slate-400"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
