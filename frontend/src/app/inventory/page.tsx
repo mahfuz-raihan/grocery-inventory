@@ -43,10 +43,6 @@ const InvoicePreviewModal = dynamic(
   () => import("./components/modals/InvoicePreviewModal").then((mod) => mod.InvoicePreviewModal),
   { ssr: false }
 );
-const CompanyProfileModal = dynamic(
-  () => import("./components/modals/CompanyProfileModal").then((mod) => mod.CompanyProfileModal || mod.default),
-  { ssr: false }
-);
 const ManageAttributesModals = dynamic(
   () => import("./components/modals/ManageAttributesModals"),
   { ssr: false }
@@ -94,7 +90,6 @@ export default function InventoryControlPage() {
   const [showGRNModal, setShowGRNModal] = useState(false);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [activeGRN, setActiveGRN] = useState<any>(null);
-  const [showCompanyModal, setShowCompanyModal] = useState(false);
   const [showProductTypesModal, setShowProductTypesModal] = useState(false);
   const [showCategoriesModal, setShowCategoriesModal] = useState(false);
   const [showMaterialTypesModal, setShowMaterialTypesModal] = useState(false);
@@ -413,18 +408,8 @@ export default function InventoryControlPage() {
           ))}
         </div>
 
-        {/* Notification Bell & Profile Controls */}
+        {/* Notification Bell */}
         <div className="flex items-center gap-2 ml-4 flex-shrink-0 relative">
-          {(rbacRules ? rbacRules.company_profile_edit?.includes(userRole) : userRole === "owner") && (
-            <button
-              onClick={() => setShowCompanyModal(true)}
-              className="btn-secondary px-3 py-2 rounded-md transition flex items-center gap-1.5 text-xs font-semibold shadow-xs"
-              title="Update Company Profile"
-            >
-              🏢 Company Profile
-            </button>
-          )}
-
           <button
             onClick={() => {
               setShowNotifications(!showNotifications);
@@ -656,16 +641,6 @@ export default function InventoryControlPage() {
           branches={branches}
           currency={currency}
           companyProfile={companyProfile}
-        />
-      )}
-
-      {showCompanyModal && (
-        <CompanyProfileModal
-          isOpen={showCompanyModal}
-          onClose={() => setShowCompanyModal(false)}
-          companyProfile={companyProfile}
-          onProfileUpdated={(updated) => setCompanyProfile(updated)}
-          rbacRules={rbacRules}
         />
       )}
 
