@@ -300,32 +300,32 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 backdrop-blur-sm p-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl border shadow-2xl w-full max-w-3xl max-h-[95vh] overflow-y-auto my-4 animate-scaleUp">
-        <div className="p-5 border-b flex items-center justify-between bg-blue-900 sticky top-0 z-10">
-          <div className="text-white">
-            <h3 className="text-lg font-bold">Purchase Invoice Preview</h3>
-            <p className="text-xs text-blue-200 mt-1">Reference: {activeGRN.invoice_reference || "—"}</p>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 overflow-y-auto">
+      <div className="bg-white rounded-xl border border-border shadow-2xl w-full max-w-3xl max-h-[95vh] overflow-y-auto my-4 animate-scaleUp">
+        <div className="p-5 border-b border-border flex items-center justify-between bg-slate-50/80 backdrop-blur sticky top-0 z-10">
+          <div>
+            <h3 className="text-base font-bold text-slate-900">Purchase Invoice Preview</h3>
+            <p className="text-xs text-slate-500 mt-0.5 font-mono">Reference: {activeGRN.invoice_reference || "—"}</p>
           </div>
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={handlePrintInvoice}
-              className="px-3.5 py-2 text-xs font-bold text-blue-900 bg-white hover:bg-blue-50 rounded-xl transition-all shadow-sm"
+              className="px-3 py-1.5 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-border rounded-lg transition-all shadow-sm flex items-center gap-1.5"
             >
               🖨 Print / Save PDF
             </button>
             <button
               type="button"
               onClick={handleEmailInvoice}
-              className="px-3.5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-all shadow-sm"
+              className="btn-primary text-xs flex items-center gap-1.5"
             >
               ✉️ Email Supplier
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="text-white hover:text-gray-200 text-2xl font-bold ml-2 transition-colors"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors text-xl font-bold leading-none ml-1"
             >
               &times;
             </button>
@@ -333,68 +333,70 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
         </div>
 
         {/* Standard Invoice Template */}
-        <div className="p-8 space-y-6">
-          <div className="flex justify-between items-start border-b pb-6">
+        <div className="p-6 md:p-8 space-y-6">
+          <div className="flex justify-between items-start border-b border-border pb-6">
             <div>
-              <h1 className="text-2xl font-extrabold text-blue-900">{companyName}</h1>
-              <p className="text-xs text-gray-500 mt-1">{companyAddress}</p>
-              <p className="text-xs text-gray-500">
+              <h1 className="text-xl font-bold text-slate-900 tracking-tight">{companyName}</h1>
+              <p className="text-xs text-slate-500 mt-1">{companyAddress}</p>
+              <p className="text-xs text-slate-500">
                 Contact: {companyContact ? `${companyContact} (${companyEmail || companyPhone})` : companyEmail}
               </p>
             </div>
             <div className="text-right">
-              <h2 className="text-lg font-black text-gray-800 tracking-wider">PURCHASE INVOICE</h2>
-              <div className="text-xs text-gray-500 mt-1.5">
+              <h2 className="text-sm font-bold text-slate-700 tracking-wider uppercase">PURCHASE INVOICE</h2>
+              <div className="text-xs text-slate-500 mt-1 space-y-0.5">
                 <p>
-                  <strong>Ref:</strong> {activeGRN.invoice_reference || "—"}
+                  <strong className="text-slate-700">Ref:</strong> <span className="font-mono font-medium text-slate-900">{activeGRN.invoice_reference || "—"}</span>
                 </p>
                 <p>
-                  <strong>Date Received:</strong>{" "}
-                  {(() => {
-                    const dateObj = new Date(activeGRN.created_at || activeGRN.receiving_date);
-                    return (
-                      dateObj.toLocaleDateString() +
-                      " " +
-                      dateObj.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-                    );
-                  })()}
+                  <strong className="text-slate-700">Date Received:</strong>{" "}
+                  <span className="font-mono">
+                    {(() => {
+                      const dateObj = new Date(activeGRN.created_at || activeGRN.receiving_date);
+                      return (
+                        dateObj.toLocaleDateString() +
+                        " " +
+                        dateObj.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+                      );
+                    })()}
+                  </span>
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-6 bg-gray-50 p-4 rounded-xl border">
+          <div className="grid grid-cols-2 gap-4 bg-slate-50/60 p-4 rounded-xl border border-border">
             <div>
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
                 Supplier Profile
               </span>
-              <span className="font-bold text-gray-800 text-sm block">{activeGRN.supplier_name}</span>
+              <span className="font-bold text-slate-900 text-xs block">{activeGRN.supplier_name}</span>
               {activeGRN.supplier_contact && (
-                <span className="text-xs text-gray-600 block mt-1">Contact: {activeGRN.supplier_contact}</span>
+                <span className="text-xs text-slate-600 block mt-1">Contact: {activeGRN.supplier_contact}</span>
               )}
               {(activeGRN.supplier_phone || activeGRN.supplier_email) && (
-                <span className="text-xs text-gray-500 block">
+                <span className="text-xs text-slate-500 block font-mono">
                   {activeGRN.supplier_phone || ""} {activeGRN.supplier_email ? `| ${activeGRN.supplier_email}` : ""}
                 </span>
               )}
               {activeGRN.supplier_address && (
-                <span className="text-xs text-gray-500 block italic">{activeGRN.supplier_address}</span>
+                <span className="text-xs text-slate-500 block italic">{activeGRN.supplier_address}</span>
               )}
             </div>
             <div>
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
                 Delivery Destination
               </span>
-              <span className="font-bold text-gray-800 text-sm">
+              <span className="font-bold text-slate-900 text-xs">
                 {branches.find((b) => b.id === activeGRN.branch_id)?.name || "Warehouse"}
               </span>
             </div>
           </div>
 
-          <div className="border rounded-xl overflow-hidden">
-            <table className="w-full text-sm border-collapse">
+          <div className="border border-border rounded-xl overflow-hidden bg-white">
+            <table className="w-full text-xs border-collapse">
               <thead>
-                <tr className="bg-gray-100 font-bold border-b text-gray-700">
+                <tr className="bg-slate-50 font-bold border-b border-border text-slate-500 uppercase tracking-wider text-[11px]">
                   <th className="p-3 text-left">Product</th>
                   <th className="p-3 text-left">SKU</th>
                   <th className="p-3 text-center">Ordered</th>
@@ -403,19 +405,19 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
                   <th className="p-3 text-right">Total Amount</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-border">
                 {(activeGRN.items || []).map((item: any) => {
                   const p = products.find((prod) => prod.id === item.product_id);
                   return (
-                    <tr key={item.id || item.product_id} className="hover:bg-gray-55">
-                      <td className="p-3 font-semibold text-gray-800">{p?.name || "Unknown Product"}</td>
-                      <td className="p-3 font-mono text-xs text-gray-500">{p?.sku || "—"}</td>
-                      <td className="p-3 text-center font-medium">
+                    <tr key={item.id || item.product_id} className="hover:bg-slate-50/60 transition-colors">
+                      <td className="p-3 font-medium text-slate-900">{p?.name || "Unknown Product"}</td>
+                      <td className="p-3 font-mono text-[11px] text-slate-500">{p?.sku || "—"}</td>
+                      <td className="p-3 text-center font-mono font-medium text-slate-700">
                         {item.ordered_quantity || item.quantity_received}
                       </td>
-                      <td className="p-3 text-center font-bold text-green-700">{item.quantity_received}</td>
-                      <td className="p-3 text-right font-semibold text-gray-700">{formatPrice(item.cost_price)}</td>
-                      <td className="p-3 text-right font-bold text-gray-800">
+                      <td className="p-3 text-center font-mono font-bold text-emerald-800">{item.quantity_received}</td>
+                      <td className="p-3 text-right font-mono font-medium text-slate-700 tabular-nums">{formatPrice(item.cost_price)}</td>
+                      <td className="p-3 text-right font-mono font-bold text-slate-900 tabular-nums">
                         {formatPrice(item.quantity_received * item.cost_price)}
                       </td>
                     </tr>
@@ -428,11 +430,11 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
                   );
                   const invoiceGrandTotal = activeGRN.total_amount || netTotal;
                   return (
-                    <tr className="bg-blue-50 font-bold text-gray-900 border-t">
-                      <td colSpan={5} className="p-4 text-right text-sm uppercase tracking-wider">
+                    <tr className="bg-emerald-50/60 font-bold text-emerald-950 border-t border-emerald-200/80">
+                      <td colSpan={5} className="p-3.5 text-right text-xs uppercase tracking-wider">
                         Grand Total (Net Amount):
                       </td>
-                      <td colSpan={1} className="p-4 text-right text-lg text-blue-900 font-black">
+                      <td colSpan={1} className="p-3.5 text-right font-mono text-sm text-emerald-900 font-bold tabular-nums">
                         {formatPrice(invoiceGrandTotal)}
                       </td>
                     </tr>
@@ -447,7 +449,7 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
               style={{
                 textAlign: "center",
                 width: "180px",
-                borderTop: "1px solid #cbd5e1",
+                borderTop: "1px solid #e2e8f0",
                 paddingTop: "8px",
                 fontSize: "11px",
                 color: "#64748b",
@@ -459,7 +461,7 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
               style={{
                 textAlign: "center",
                 width: "180px",
-                borderTop: "1px solid #cbd5e1",
+                borderTop: "1px solid #e2e8f0",
                 paddingTop: "8px",
                 fontSize: "11px",
                 color: "#64748b",
@@ -469,7 +471,7 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
             </div>
           </div>
         </div>
-        <div className="p-4 border-t bg-gray-50 text-center text-xs text-gray-400">
+        <div className="p-3.5 border-t border-border bg-slate-50/80 text-center text-xs text-slate-400">
           System generated invoice &bull; Manor Furniture ERP
         </div>
       </div>
