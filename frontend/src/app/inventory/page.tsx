@@ -362,7 +362,7 @@ export default function InventoryControlPage() {
     <div className="min-h-screen bg-surface-canvas text-slate-900 font-sans">
       {/* Low Stock Notification Banner */}
       {lowStock.length > 0 && !notificationsDismissed && (
-        <div className="mb-4 p-3 bg-rose-50 border border-rose-200 rounded-xl flex items-center justify-between gap-4 animate-pulse-once">
+        <div className="mb-4 p-3 bg-rose-50 border border-rose-200 rounded-md flex items-center justify-between gap-4 animate-pulse-once">
           <div className="flex items-center gap-3">
             <span className="text-rose-600 text-lg">🚨</span>
             <div>
@@ -381,7 +381,7 @@ export default function InventoryControlPage() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setActiveTab("reports")}
-              className="px-3 py-1 bg-rose-600 text-white text-xs font-bold rounded-lg hover:bg-rose-700 transition whitespace-nowrap"
+              className="px-3 py-1 bg-rose-600 text-white text-xs font-bold rounded-md hover:bg-rose-700 transition whitespace-nowrap"
             >
               View Alerts
             </button>
@@ -418,7 +418,7 @@ export default function InventoryControlPage() {
           {(rbacRules ? rbacRules.company_profile_edit?.includes(userRole) : userRole === "owner") && (
             <button
               onClick={() => setShowCompanyModal(true)}
-              className="btn-secondary px-3 py-2 rounded-lg transition flex items-center gap-1.5 text-xs font-semibold shadow-xs"
+              className="btn-secondary px-3 py-2 rounded-md transition flex items-center gap-1.5 text-xs font-semibold shadow-xs"
               title="Update Company Profile"
             >
               🏢 Company Profile
@@ -430,7 +430,7 @@ export default function InventoryControlPage() {
               setShowNotifications(!showNotifications);
               setNotificationsDismissed(true);
             }}
-            className={`relative p-2.5 rounded-lg border transition ${
+            className={`relative p-2.5 rounded-md border transition ${
               lowStock.length > 0
                 ? "bg-rose-50 hover:bg-rose-100 text-rose-700 border-rose-200"
                 : "bg-white hover:bg-slate-50 text-slate-600 border-border"
@@ -453,10 +453,10 @@ export default function InventoryControlPage() {
 
           {/* Notification Dropdown */}
           {showNotifications && (
-            <div className="absolute right-0 top-12 w-80 bg-white border border-border rounded-xl shadow-2xl z-50 overflow-hidden animate-fadeIn">
+            <div className="absolute right-0 top-12 w-80 bg-white border border-border rounded-md shadow-lg z-50 overflow-hidden animate-fadeIn">
               <div className="p-4 border-b border-border bg-slate-50/80 backdrop-blur flex items-center justify-between">
                 <span className="font-bold text-slate-800 text-sm">Low Stock Alerts</span>
-                <span className="bg-rose-50 text-rose-700 border border-rose-200 text-xs font-bold px-2 py-0.5 rounded-full font-mono">
+                <span className="bg-rose-50 text-rose-700 border border-rose-200 text-xs font-bold px-2 py-0.5 rounded font-mono">
                   {lowStock.length} items
                 </span>
               </div>
