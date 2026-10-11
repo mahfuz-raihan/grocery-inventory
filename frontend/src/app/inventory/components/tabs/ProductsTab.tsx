@@ -167,47 +167,47 @@ export const ProductsTab: React.FC<ProductsTabProps> = ({
   return (
     <div className="space-y-6">
       {/* Header Row with CRUD Controls */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border shadow-sm">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 erp-card p-6 border-slate-200">
         <div>
-          <h2 className="text-xl font-bold text-gray-800">Product Management Catalog</h2>
-          <p className="text-xs text-gray-500 mt-1">Configure your templates, categories, and wood types</p>
+          <h2 className="text-xl font-bold text-slate-900">Product Management Catalog</h2>
+          <p className="text-xs text-slate-500 mt-1">Configure your templates, categories, and wood types</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
             onClick={onOpenProductTypes}
-            className="px-3.5 py-2 text-xs font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-xl transition-all"
+            className="px-3.5 py-2 text-xs font-semibold text-purple-800 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-lg transition-all"
           >
             ⚙️ Manage Types
           </button>
           <button
             type="button"
             onClick={onOpenCategories}
-            className="px-3.5 py-2 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl transition-all"
+            className="px-3.5 py-2 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg transition-all shadow-sm"
           >
             ⚙️ Manage Categories
           </button>
           <button
             type="button"
             onClick={onOpenMaterialTypes}
-            className="px-3.5 py-2 text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl transition-all"
+            className="px-3.5 py-2 text-xs font-semibold text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-lg transition-all"
           >
             ⚙️ Manage Material Types
           </button>
           <button
             type="button"
             onClick={onOpenWoodTypes}
-            className="px-3.5 py-2 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-xl transition-all"
+            className="px-3.5 py-2 text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition-all"
           >
             ⚙️ Manage Wood Types
           </button>
           <button
             type="button"
             onClick={() => setCatalogSubTab("price_panel")}
-            className={`px-3.5 py-2 text-xs font-bold rounded-xl transition-all shadow-sm flex items-center gap-1.5 ${
+            className={`px-3.5 py-2 text-xs font-semibold rounded-lg transition-all shadow-sm flex items-center gap-1.5 ${
               catalogSubTab === "price_panel"
-                ? "bg-emerald-600 text-white hover:bg-emerald-700"
-                : "bg-emerald-50 text-emerald-700 border border-emerald-300 hover:bg-emerald-100"
+                ? "bg-brand text-white hover:bg-brand-hover"
+                : "bg-emerald-50 text-brand border border-emerald-200 hover:bg-emerald-100"
             }`}
           >
             💲 Central Price Panel
@@ -215,51 +215,51 @@ export const ProductsTab: React.FC<ProductsTabProps> = ({
           <button
             type="button"
             onClick={onOpenAddProduct}
-            className="px-4 py-2 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-all shadow-sm flex items-center gap-1.5"
+            className="btn-primary px-4 py-2 text-xs font-semibold rounded-lg transition-all shadow-sm flex items-center gap-1.5"
           >
-            <span className="text-lg">+</span> Add New Product
+            <span className="text-sm">+</span> Add New Product
           </button>
         </div>
       </div>
 
       {/* Sub-tabs Navigation */}
-      <div className="flex space-x-1 border-b pb-px bg-white p-1 rounded-xl border max-w-fit shadow-sm">
+      <div className="flex space-x-1 border border-slate-200 bg-white p-1 rounded-xl max-w-fit shadow-sm">
         <button
           onClick={() => setCatalogSubTab("catalog")}
-          className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all ${
+          className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all ${
             catalogSubTab === "catalog"
-              ? "bg-blue-600 text-white shadow-sm"
-              : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+              ? "bg-brand text-white shadow-sm font-bold"
+              : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
           }`}
         >
           📦 Current Catalog
         </button>
         <button
           onClick={() => setCatalogSubTab("price_panel")}
-          className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all ${
+          className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all ${
             catalogSubTab === "price_panel"
-              ? "bg-emerald-600 text-white shadow-sm font-bold"
-              : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+              ? "bg-brand text-white shadow-sm font-bold"
+              : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
           }`}
         >
           💲 Central Price Panel
         </button>
         <button
           onClick={() => setCatalogSubTab("by_product_type")}
-          className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all ${
+          className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all ${
             catalogSubTab === "by_product_type"
-              ? "bg-blue-600 text-white shadow-sm"
-              : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+              ? "bg-brand text-white shadow-sm font-bold"
+              : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
           }`}
         >
           🏷 By Product Type
         </button>
         <button
           onClick={() => setCatalogSubTab("by_category")}
-          className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all ${
+          className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all ${
             catalogSubTab === "by_category"
-              ? "bg-blue-600 text-white shadow-sm"
-              : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+              ? "bg-brand text-white shadow-sm font-bold"
+              : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
           }`}
         >
           📁 By Category
@@ -268,13 +268,13 @@ export const ProductsTab: React.FC<ProductsTabProps> = ({
 
       {/* Central Price Set Panel View */}
       {catalogSubTab === "price_panel" && (
-        <div className="bg-white rounded-xl border shadow-sm overflow-hidden space-y-4 p-5">
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b pb-4">
+        <div className="erp-card p-5 border-slate-200 overflow-hidden space-y-4">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-slate-200 pb-4">
             <div>
-              <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+              <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
                 <span>🏷️</span> Central Product Price Setting Panel
               </h3>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-slate-500 mt-1">
                 Set standard Selling Price &amp; Minimum Selling Price floor for every product. Updates reflect instantly
                 across POS, Stock, and Quotations.
               </p>
@@ -285,13 +285,13 @@ export const ProductsTab: React.FC<ProductsTabProps> = ({
                 value={pricePanelSearch}
                 onChange={(e) => setPricePanelSearch(e.target.value)}
                 placeholder="Search products..."
-                className="p-2 border rounded-lg text-xs w-56 outline-none focus:ring-2 focus:ring-emerald-500 bg-white font-medium"
+                className="p-2 border border-slate-200 rounded-lg text-xs w-56 outline-none focus:ring-1 focus:ring-brand focus:border-brand bg-white font-medium"
               />
               <button
                 type="button"
                 onClick={handleSaveAllPrices}
                 disabled={isSavingPrices || pendingCount === 0 || !canEditPrice}
-                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-300 text-white font-bold rounded-xl text-xs transition shadow-sm flex items-center gap-1.5"
+                className="btn-primary px-4 py-2 disabled:opacity-50 text-white font-semibold rounded-lg text-xs transition shadow-sm flex items-center gap-1.5"
               >
                 {isSavingPrices ? "Saving All..." : `💾 Save All Changes (${pendingCount})`}
               </button>
@@ -305,9 +305,9 @@ export const ProductsTab: React.FC<ProductsTabProps> = ({
             </div>
           )}
 
-          <div className="overflow-x-auto border rounded-xl">
+          <div className="overflow-x-auto border border-slate-200 rounded-xl">
             <table className="w-full text-left text-xs border-collapse">
-              <thead className="bg-gray-100 font-bold text-gray-700 uppercase border-b">
+              <thead className="bg-slate-50/80 font-bold text-slate-600 uppercase border-b border-slate-200">
                 <tr>
                   <th className="p-3">Product Name &amp; SKU</th>
                   <th className="p-3 text-center">Current Stock</th>
@@ -319,7 +319,7 @@ export const ProductsTab: React.FC<ProductsTabProps> = ({
                   <th className="p-3 text-center">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-slate-100">
                 {products
                   .filter((p) => {
                     const query = pricePanelSearch.toLowerCase();
@@ -357,21 +357,21 @@ export const ProductsTab: React.FC<ProductsTabProps> = ({
                     const isBelowAvg = minNum > 0 && avgFloor > 0 && minNum < avgFloor;
 
                     return (
-                      <tr key={prod.id} className={`hover:bg-gray-50/60 ${isModified ? "bg-amber-50/40" : ""}`}>
+                      <tr key={prod.id} className={`hover:bg-slate-50/70 transition ${isModified ? "bg-amber-50/40" : ""}`}>
                         <td className="p-3">
-                          <span className="font-bold text-gray-800 block">{prod.name}</span>
-                          <span className="text-[11px] font-mono text-gray-400">
+                          <span className="font-bold text-slate-900 block">{prod.name}</span>
+                          <span className="text-[11px] font-mono text-slate-400">
                             SKU: {prod.sku} {prod.barcode ? `| Barcode: ${prod.barcode}` : ""}
                           </span>
                         </td>
-                        <td className="p-3 text-center font-bold text-gray-700">
+                        <td className="p-3 text-center font-bold font-mono text-slate-800">
                           {prod.current_stock}{" "}
-                          <span className="text-[10px] text-gray-400 font-normal">{prod.unit || "pcs"}</span>
+                          <span className="text-[10px] text-slate-400 font-normal">{prod.unit || "pcs"}</span>
                         </td>
-                        <td className="p-3 text-right text-gray-600 font-medium">
+                        <td className="p-3 text-right text-slate-600 font-mono font-medium">
                           {formatPrice(prod.purchase_cost || 0)}
                         </td>
-                        <td className="p-3 text-right text-gray-600 font-medium">
+                        <td className="p-3 text-right text-slate-600 font-mono font-medium">
                           {formatPrice(prod.average_cost || 0)}
                         </td>
                         <td className="p-3 text-right">
@@ -382,12 +382,12 @@ export const ProductsTab: React.FC<ProductsTabProps> = ({
                             disabled={!canEditPrice}
                             value={currentMin}
                             onChange={(e) => handlePriceChange(prod.id, "min_selling_price", e.target.value)}
-                            className={`w-32 p-1.5 border rounded-lg text-right font-bold text-xs outline-none focus:ring-2 focus:ring-sky-400 ${
+                            className={`w-32 p-1.5 border rounded-lg text-right font-bold font-mono text-xs outline-none focus:ring-1 focus:ring-brand focus:border-brand ${
                               isBelowAvg
-                                ? "border-amber-500 bg-amber-50 text-amber-800"
+                                ? "border-amber-400 bg-amber-50 text-amber-800"
                                 : !canEditPrice
-                                ? "bg-gray-100 cursor-not-allowed text-gray-400"
-                                : "bg-white text-sky-900 border-sky-200"
+                                ? "bg-slate-100 cursor-not-allowed text-slate-400"
+                                : "bg-white text-slate-900 border-slate-200"
                             }`}
                             placeholder="0.00"
                           />
@@ -405,22 +405,22 @@ export const ProductsTab: React.FC<ProductsTabProps> = ({
                             disabled={!canEditPrice}
                             value={currentSelling}
                             onChange={(e) => handlePriceChange(prod.id, "selling_price", e.target.value)}
-                            className={`w-32 p-1.5 border rounded-lg text-right font-bold text-xs outline-none focus:ring-2 focus:ring-emerald-400 ${
+                            className={`w-32 p-1.5 border rounded-lg text-right font-bold font-mono text-xs outline-none focus:ring-1 focus:ring-brand focus:border-brand ${
                               isBelowMin
-                                ? "border-red-500 bg-red-50 text-red-700"
+                                ? "border-rose-400 bg-rose-50 text-rose-700"
                                 : !canEditPrice
-                                ? "bg-gray-100 cursor-not-allowed text-gray-400"
-                                : "bg-white text-emerald-900 border-emerald-200"
+                                ? "bg-slate-100 cursor-not-allowed text-slate-400"
+                                : "bg-white text-slate-900 border-slate-200"
                             }`}
                             placeholder="0.00"
                           />
                           {isBelowMin && (
-                            <span className="text-[9px] font-bold text-red-600 block text-right mt-0.5">
+                            <span className="text-[9px] font-bold text-rose-600 block text-right mt-0.5">
                               ⚠️ Below Min Price
                             </span>
                           )}
                         </td>
-                        <td className="p-3 text-center font-bold text-xs text-gray-600">
+                        <td className="p-3 text-center font-mono font-bold text-xs text-slate-600">
                           {markup !== "—" ? `${markup}%` : "—"}
                         </td>
                         <td className="p-3 text-center">
@@ -429,12 +429,12 @@ export const ProductsTab: React.FC<ProductsTabProps> = ({
                               type="button"
                               onClick={() => handleSaveSinglePrice(prod)}
                               disabled={!canEditPrice}
-                              className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition shadow-sm"
+                              className="btn-primary px-2.5 py-1 text-white rounded-lg text-xs font-semibold transition shadow-sm"
                             >
                               Save
                             </button>
                           ) : (
-                            <span className="text-[10px] text-gray-400">Up to date</span>
+                            <span className="text-[10px] text-slate-400">Up to date</span>
                           )}
                         </td>
                       </tr>
@@ -462,19 +462,19 @@ export const ProductsTab: React.FC<ProductsTabProps> = ({
         });
 
         return (
-          <div className="bg-white rounded-xl border shadow-sm overflow-hidden">
+          <div className="erp-card border-slate-200 overflow-hidden shadow-sm">
             {/* Search & Filters */}
-            <div className="p-4 border-b bg-gray-50/50 flex flex-wrap items-center justify-between gap-4">
+            <div className="p-4 border-b border-slate-200 bg-slate-50/50 flex flex-wrap items-center justify-between gap-4">
               <div className="flex flex-wrap items-center gap-3">
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search by product name/code..."
-                  className="p-2.5 border rounded-lg text-sm w-64 focus:ring-2 focus:ring-blue-500 outline-none bg-white font-medium"
+                  className="p-2 border border-slate-200 rounded-lg text-xs w-64 focus:ring-1 focus:ring-brand focus:border-brand outline-none bg-white font-medium"
                 />
                 <select
-                  className="p-2.5 border rounded-lg bg-white text-sm focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-gray-700"
+                  className="p-2 border border-slate-200 rounded-lg bg-white text-xs focus:ring-1 focus:ring-brand focus:border-brand outline-none font-semibold text-slate-700"
                   value={filterCatalogSupplier}
                   onChange={(e) => setFilterCatalogSupplier(e.target.value)}
                 >
@@ -486,7 +486,7 @@ export const ProductsTab: React.FC<ProductsTabProps> = ({
                   ))}
                 </select>
                 <select
-                  className="p-2.5 border rounded-lg bg-white text-sm focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-gray-700"
+                  className="p-2 border border-slate-200 rounded-lg bg-white text-xs focus:ring-1 focus:ring-brand focus:border-brand outline-none font-semibold text-slate-700"
                   value={filterType}
                   onChange={(e) => setFilterType(e.target.value)}
                 >
@@ -499,13 +499,13 @@ export const ProductsTab: React.FC<ProductsTabProps> = ({
                 </select>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-500 font-bold">Currency:</span>
-                <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-lg border">
+                <span className="text-xs text-slate-500 font-bold">Currency:</span>
+                <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg border border-slate-200">
                   <button
                     type="button"
                     onClick={() => setCurrency("BDT")}
                     className={`px-2 py-1 text-xs font-bold rounded ${
-                      currency === "BDT" ? "bg-white text-blue-750 shadow-sm" : "text-gray-500"
+                      currency === "BDT" ? "bg-white text-brand shadow-sm" : "text-slate-500"
                     }`}
                   >
                     BDT
@@ -514,7 +514,7 @@ export const ProductsTab: React.FC<ProductsTabProps> = ({
                     type="button"
                     onClick={() => setCurrency("USD")}
                     className={`px-2 py-1 text-xs font-bold rounded ${
-                      currency === "USD" ? "bg-white text-blue-750 shadow-sm" : "text-gray-500"
+                      currency === "USD" ? "bg-white text-brand shadow-sm" : "text-slate-500"
                     }`}
                   >
                     USD
@@ -525,36 +525,36 @@ export const ProductsTab: React.FC<ProductsTabProps> = ({
 
             {/* Table */}
             <div className="overflow-x-auto">
-              <table className="min-w-full text-sm">
-                <thead className="bg-gray-50 border-b">
+              <table className="min-w-full text-xs">
+                <thead className="bg-slate-50/80 border-b border-slate-200">
                   <tr>
-                    <th className="px-4 py-3.5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                    <th className="px-4 py-3.5 text-left text-[10px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">
                       Product Name
                     </th>
-                    <th className="px-4 py-3.5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                    <th className="px-4 py-3.5 text-left text-[10px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">
                       Supplier
                     </th>
-                    <th className="px-4 py-3.5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                    <th className="px-4 py-3.5 text-left text-[10px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">
                       Product Code (SKU)
                     </th>
-                    <th className="px-4 py-3.5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                    <th className="px-4 py-3.5 text-left text-[10px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">
                       Product Type
                     </th>
-                    <th className="px-4 py-3.5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                    <th className="px-4 py-3.5 text-left text-[10px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">
                       Category
                     </th>
-                    <th className="px-4 py-3.5 text-center text-[10px] font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                    <th className="px-4 py-3.5 text-center text-[10px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">
                       Status
                     </th>
-                    <th className="px-4 py-3.5 text-center text-[10px] font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                    <th className="px-4 py-3.5 text-center text-[10px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-slate-100">
                   {filteredCatalog.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="py-16 text-center text-gray-400">
+                      <td colSpan={7} className="py-16 text-center text-slate-400">
                         No products found matching filters.
                       </td>
                     </tr>
@@ -564,16 +564,16 @@ export const ProductsTab: React.FC<ProductsTabProps> = ({
                       const min = p.min_stock_level ?? 0;
                       const max = p.max_stock_level ?? Infinity;
 
-                      let badgeColor = "bg-emerald-100 text-emerald-800 border-emerald-200";
+                      let badgeColor = "bg-emerald-50 text-emerald-800 border-emerald-200";
                       let statusText = "Available";
                       if (stock <= 0) {
-                        badgeColor = "bg-red-100 text-red-800 border-red-200";
+                        badgeColor = "bg-rose-50 text-rose-800 border-rose-200";
                         statusText = "Out of Stock";
                       } else if (stock <= min) {
-                        badgeColor = "bg-amber-100 text-amber-800 border-amber-200";
+                        badgeColor = "bg-amber-50 text-amber-800 border-amber-200";
                         statusText = "Low Stock";
                       } else if (max !== Infinity && stock > max) {
-                        badgeColor = "bg-blue-100 text-blue-800 border-blue-200";
+                        badgeColor = "bg-purple-50 text-purple-800 border-purple-200";
                         statusText = "Overstock";
                       }
 
@@ -584,20 +584,20 @@ export const ProductsTab: React.FC<ProductsTabProps> = ({
                       return (
                         <tr
                           key={p.id}
-                          className="hover:bg-blue-50/20 transition cursor-pointer"
+                          className="hover:bg-slate-50/70 transition cursor-pointer"
                           onClick={() => onOpenProductDetail(p)}
                         >
-                          <td className="px-4 py-3.5 font-semibold text-gray-900">{p.name}</td>
-                          <td className="px-4 py-3.5 text-xs text-gray-500 whitespace-nowrap">{supplierNameStr}</td>
-                          <td className="px-4 py-3.5 font-mono text-xs font-bold text-blue-750 whitespace-nowrap">
+                          <td className="px-4 py-3.5 font-semibold text-slate-900">{p.name}</td>
+                          <td className="px-4 py-3.5 text-xs text-slate-500 whitespace-nowrap">{supplierNameStr}</td>
+                          <td className="px-4 py-3.5 font-mono text-xs font-bold text-brand whitespace-nowrap">
                             {p.sku}
                           </td>
-                          <td className="px-4 py-3.5 text-xs text-gray-500 whitespace-nowrap">{typeLabel}</td>
-                          <td className="px-4 py-3.5 text-xs text-gray-500 whitespace-nowrap">
+                          <td className="px-4 py-3.5 text-xs text-slate-500 whitespace-nowrap">{typeLabel}</td>
+                          <td className="px-4 py-3.5 text-xs text-slate-500 whitespace-nowrap">
                             {categories.find((c) => c.id === p.category_id)?.name || "—"}
                           </td>
                           <td className="px-4 py-3.5 text-center">
-                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${badgeColor}`}>
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${badgeColor}`}>
                               {statusText}
                             </span>
                           </td>
@@ -609,14 +609,14 @@ export const ProductsTab: React.FC<ProductsTabProps> = ({
                               <button
                                 type="button"
                                 onClick={() => onOpenProductDetail(p)}
-                                className="px-2 py-1 bg-blue-50 text-blue-600 hover:bg-blue-100 font-semibold rounded-md text-xs transition"
+                                className="px-2.5 py-1 bg-emerald-50 text-brand hover:bg-emerald-100 font-semibold rounded-lg text-xs transition border border-emerald-200"
                               >
                                 Details
                               </button>
                               <button
                                 type="button"
                                 onClick={() => onOpenEditProduct(p)}
-                                className="px-2 py-1 bg-gray-100 text-gray-700 hover:bg-gray-200 font-semibold rounded-md text-xs transition"
+                                className="px-2.5 py-1 bg-white text-slate-700 hover:bg-slate-50 font-semibold rounded-lg text-xs transition border border-slate-200 shadow-sm"
                               >
                                 Edit
                               </button>
@@ -652,27 +652,27 @@ export const ProductsTab: React.FC<ProductsTabProps> = ({
         });
 
         return (
-          <div className="bg-white rounded-xl border shadow-sm overflow-hidden">
-            <div className="p-4 border-b bg-gray-50/50 flex justify-between items-center">
-              <h3 className="font-bold text-gray-800">Summary By Product Type</h3>
-              <span className="text-xs text-gray-500">Totals calculated from active catalog records</span>
+          <div className="erp-card border-slate-200 overflow-hidden shadow-sm">
+            <div className="p-4 border-b border-slate-200 bg-slate-50/50 flex justify-between items-center">
+              <h3 className="font-bold text-slate-900 text-sm">Summary By Product Type</h3>
+              <span className="text-xs text-slate-500">Totals calculated from active catalog records</span>
             </div>
-            <table className="min-w-full text-sm">
-              <thead className="bg-gray-50 border-b">
+            <table className="min-w-full text-xs">
+              <thead className="bg-slate-50/80 border-b border-slate-200">
                 <tr>
-                  <th className="px-6 py-3.5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3.5 text-left text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                     Product Type
                   </th>
-                  <th className="px-6 py-3.5 text-center text-[10px] font-bold text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3.5 text-center text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                     Unique Products
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-slate-100">
                 {productTypeStats.map((stat) => (
-                  <tr key={stat.key} className="hover:bg-gray-55/50 transition">
-                    <td className="px-6 py-4 font-semibold text-gray-800">{stat.label}</td>
-                    <td className="px-6 py-4 text-center font-semibold text-blue-600">{stat.count}</td>
+                  <tr key={stat.key} className="hover:bg-slate-50/70 transition">
+                    <td className="px-6 py-4 font-semibold text-slate-800">{stat.label}</td>
+                    <td className="px-6 py-4 text-center font-bold font-mono text-brand">{stat.count}</td>
                   </tr>
                 ))}
               </tbody>
@@ -715,27 +715,27 @@ export const ProductsTab: React.FC<ProductsTabProps> = ({
         ];
 
         return (
-          <div className="bg-white rounded-xl border shadow-sm overflow-hidden">
-            <div className="p-4 border-b bg-gray-50/50 flex justify-between items-center">
-              <h3 className="font-bold text-gray-800">Summary By Category</h3>
-              <span className="text-xs text-gray-500">Totals calculated from active catalog records</span>
+          <div className="erp-card border-slate-200 overflow-hidden shadow-sm">
+            <div className="p-4 border-b border-slate-200 bg-slate-50/50 flex justify-between items-center">
+              <h3 className="font-bold text-slate-900 text-sm">Summary By Category</h3>
+              <span className="text-xs text-slate-500">Totals calculated from active catalog records</span>
             </div>
-            <table className="min-w-full text-sm">
-              <thead className="bg-gray-50 border-b">
+            <table className="min-w-full text-xs">
+              <thead className="bg-slate-50/80 border-b border-slate-200">
                 <tr>
-                  <th className="px-6 py-3.5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3.5 text-left text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                     Category
                   </th>
-                  <th className="px-6 py-3.5 text-center text-[10px] font-bold text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3.5 text-center text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                     Unique Products
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-slate-100">
                 {categoryStats.map((stat, idx) => (
-                  <tr key={idx} className="hover:bg-gray-50/50 transition">
-                    <td className="px-6 py-4 font-semibold text-gray-800">{stat.name}</td>
-                    <td className="px-6 py-4 text-center font-semibold text-blue-600">{stat.count}</td>
+                  <tr key={idx} className="hover:bg-slate-50/70 transition">
+                    <td className="px-6 py-4 font-semibold text-slate-800">{stat.name}</td>
+                    <td className="px-6 py-4 text-center font-bold font-mono text-brand">{stat.count}</td>
                   </tr>
                 ))}
               </tbody>
