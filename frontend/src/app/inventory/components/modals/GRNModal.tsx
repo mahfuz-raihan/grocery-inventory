@@ -252,40 +252,40 @@ export const GRNModal: React.FC<GRNModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl border shadow-2xl w-full max-w-6xl max-h-[92vh] overflow-y-auto my-4 animate-scaleUp">
-        <div className="p-6 border-b flex items-center justify-between bg-blue-50 sticky top-0 z-10">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 overflow-y-auto">
+      <div className="bg-white rounded-xl border border-border shadow-2xl w-full max-w-6xl max-h-[92vh] overflow-y-auto my-4 animate-scaleUp">
+        <div className="p-5 border-b border-border flex items-center justify-between bg-slate-50/80 backdrop-blur sticky top-0 z-10">
           <div>
-            <h3 className="text-lg font-bold text-blue-900">Receive Supplier Delivery (GRN)</h3>
-            <p className="text-xs text-blue-600 mt-1">Logs a physical stock delivery and adjusts costs/selling prices</p>
+            <h3 className="text-base font-bold text-slate-900">Receive Supplier Delivery (GRN)</h3>
+            <p className="text-xs text-slate-500 mt-0.5">Logs a physical stock delivery and adjusts costs/selling prices</p>
           </div>
           <button
             type="button"
             onClick={handleClose}
-            className="text-gray-400 hover:text-gray-700 text-2xl font-bold transition-colors"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors text-xl font-bold leading-none"
           >
             &times;
           </button>
         </div>
 
         {branches.length === 0 && (
-          <div className="m-6 p-4 bg-yellow-50 text-yellow-750 border border-yellow-200 rounded-xl text-xs font-medium">
+          <div className="m-5 p-3.5 bg-amber-50 text-amber-800 border border-amber-200 rounded-lg text-xs font-medium">
             ⚠️ No warehouse locations registered yet. Please configure a warehouse first.
           </div>
         )}
         {products.length === 0 && (
-          <div className="m-6 p-4 bg-yellow-50 text-yellow-750 border border-yellow-200 rounded-xl text-xs font-medium">
+          <div className="m-5 p-3.5 bg-amber-50 text-amber-800 border border-amber-200 rounded-lg text-xs font-medium">
             ⚠️ No products registered in catalog. Please add catalog products first.
           </div>
         )}
 
-        <form onSubmit={handleGRNSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleGRNSubmit} className="p-5 space-y-4">
           {/* Destination Warehouse */}
           <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Destination Warehouse *</label>
+            <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Destination Warehouse *</label>
             <select
-              className={`w-full p-2.5 border rounded-lg bg-white focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium ${
-                userRole !== "owner" ? "bg-gray-100 cursor-not-allowed text-gray-500" : ""
+              className={`w-full p-2.5 border border-border rounded-lg bg-white text-xs font-medium text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition ${
+                userRole !== "owner" ? "bg-slate-100 cursor-not-allowed text-slate-400" : ""
               }`}
               value={selectedBranchId}
               onChange={(e) => setSelectedBranchId(e.target.value)}
@@ -306,13 +306,13 @@ export const GRNModal: React.FC<GRNModalProps> = ({
           </div>
 
           {/* Supplier Selector */}
-          <div className="space-y-3 bg-gray-50 p-3 rounded-xl border border-gray-200">
+          <div className="space-y-3 bg-slate-50/60 p-4 rounded-xl border border-border">
             <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
+              <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">
                 Registered Supplier Profile
               </label>
               <select
-                className="w-full p-2 border rounded-lg bg-white focus:ring-2 focus:ring-blue-500 outline-none text-xs"
+                className="w-full p-2.5 border border-border rounded-lg bg-white text-xs font-medium text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
                 value={grnSupplierId}
                 onChange={(e) => {
                   const val = e.target.value;
@@ -350,10 +350,10 @@ export const GRNModal: React.FC<GRNModalProps> = ({
 
             {grnSupplierId === "custom" && (
               <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Supplier Name *</label>
+                <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Supplier Name *</label>
                 <input
                   type="text"
-                  className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm bg-white font-semibold text-gray-700"
+                  className="w-full p-2.5 border border-border rounded-lg focus:ring-1 focus:ring-brand focus:border-brand outline-none text-xs bg-white font-medium text-slate-800 transition"
                   value={grnSupplierName}
                   onChange={(e) => setGrnSupplierName(e.target.value)}
                   placeholder="e.g. Timberwood Ltd"
@@ -363,49 +363,49 @@ export const GRNModal: React.FC<GRNModalProps> = ({
             )}
 
             {grnSupplierName ? (
-              <div className="bg-white border border-blue-100 rounded-xl p-3.5 shadow-sm space-y-2 mt-2">
-                <div className="text-[10px] font-bold text-blue-500 uppercase tracking-wider mb-2 flex items-center gap-1">
+              <div className="bg-white border border-border rounded-xl p-4 shadow-sm space-y-3 mt-2">
+                <div className="text-[10px] font-bold text-brand uppercase tracking-wider mb-1 flex items-center gap-1.5">
                   <span>📋</span> Supplier Details
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-                  <div className="flex items-center gap-2 bg-slate-50 p-2 rounded-lg">
+                  <div className="flex items-center gap-2.5 bg-slate-50 border border-border/60 p-2.5 rounded-lg">
                     <span className="text-base">🏢</span>
                     <div>
-                      <div className="text-[9px] font-bold text-gray-400 uppercase">Company Name</div>
-                      <div className="font-semibold text-gray-800">{grnSupplierName}</div>
+                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Company Name</div>
+                      <div className="font-semibold text-slate-800 text-xs">{grnSupplierName}</div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 bg-slate-50 p-2 rounded-lg">
+                  <div className="flex items-center gap-2.5 bg-slate-50 border border-border/60 p-2.5 rounded-lg">
                     <span className="text-base">👤</span>
                     <div>
-                      <div className="text-[9px] font-bold text-gray-400 uppercase">Contact Person</div>
-                      <div className="font-semibold text-gray-800">{grnSupplierContact || "—"}</div>
+                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Contact Person</div>
+                      <div className="font-semibold text-slate-800 text-xs">{grnSupplierContact || "—"}</div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 bg-slate-50 p-2 rounded-lg">
+                  <div className="flex items-center gap-2.5 bg-slate-50 border border-border/60 p-2.5 rounded-lg">
                     <span className="text-base">📞</span>
                     <div>
-                      <div className="text-[9px] font-bold text-gray-400 uppercase">Phone Number</div>
-                      <div className="font-semibold text-gray-800">{grnSupplierPhone || "—"}</div>
+                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Phone Number</div>
+                      <div className="font-semibold text-slate-800 text-xs font-mono">{grnSupplierPhone || "—"}</div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 bg-slate-50 p-2 rounded-lg">
+                  <div className="flex items-center gap-2.5 bg-slate-50 border border-border/60 p-2.5 rounded-lg">
                     <span className="text-base">✉️</span>
                     <div>
-                      <div className="text-[9px] font-bold text-gray-400 uppercase">Email Address</div>
+                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Email Address</div>
                       <div
-                        className="font-semibold text-gray-800 truncate max-w-[180px]"
+                        className="font-semibold text-slate-800 truncate max-w-[180px] text-xs font-mono"
                         title={grnSupplierEmail}
                       >
                         {grnSupplierEmail || "—"}
                       </div>
                     </div>
                   </div>
-                  <div className="col-span-1 md:col-span-2 flex items-start gap-2 bg-slate-50 p-2.5 rounded-lg">
+                  <div className="col-span-1 md:col-span-2 flex items-start gap-2.5 bg-slate-50 border border-border/60 p-2.5 rounded-lg">
                     <span className="text-base mt-0.5">📍</span>
                     <div>
-                      <div className="text-[9px] font-bold text-gray-400 uppercase">Office Address</div>
-                      <div className="font-semibold text-gray-800 text-[11px] leading-relaxed">
+                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Office Address</div>
+                      <div className="font-semibold text-slate-800 text-xs leading-relaxed">
                         {grnSupplierAddress || "—"}
                       </div>
                     </div>
@@ -413,7 +413,7 @@ export const GRNModal: React.FC<GRNModalProps> = ({
                 </div>
               </div>
             ) : (
-              <div className="text-center p-4 bg-white border border-dashed rounded-xl text-xs text-gray-400">
+              <div className="text-center p-4 bg-white border border-dashed border-border rounded-xl text-xs text-slate-400">
                 💡 Choose a supplier profile above to display contact information.
               </div>
             )}
@@ -422,10 +422,10 @@ export const GRNModal: React.FC<GRNModalProps> = ({
           {/* Invoice Reference & Date */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Invoice Reference *</label>
+              <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Invoice Reference *</label>
               <input
                 type="text"
-                className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm font-semibold text-gray-700 bg-white"
+                className="w-full p-2.5 border border-border rounded-lg focus:ring-1 focus:ring-brand focus:border-brand outline-none text-xs font-mono font-medium text-slate-800 bg-white transition"
                 value={invoiceRef}
                 onChange={(e) => setInvoiceRef(e.target.value)}
                 placeholder="INV-GRN-XXXX"
@@ -433,10 +433,10 @@ export const GRNModal: React.FC<GRNModalProps> = ({
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Receiving Date *</label>
+              <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Receiving Date *</label>
               <input
                 type="date"
-                className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm bg-white font-medium"
+                className="w-full p-2.5 border border-border rounded-lg focus:ring-1 focus:ring-brand focus:border-brand outline-none text-xs bg-white font-mono font-medium text-slate-800 transition"
                 value={grnReceivingDate}
                 onChange={(e) => setGrnReceivingDate(e.target.value)}
                 required
@@ -445,9 +445,9 @@ export const GRNModal: React.FC<GRNModalProps> = ({
           </div>
 
           {/* Products receiving table */}
-          <div className="border border-gray-200 rounded-xl overflow-hidden mt-4">
-            <div className="p-4 bg-gray-50 border-b flex justify-between items-center">
-              <h4 className="font-bold text-gray-800 text-sm">📦 Received Product Items</h4>
+          <div className="border border-border rounded-xl overflow-hidden mt-4 bg-white">
+            <div className="p-3.5 bg-slate-50/80 border-b border-border flex justify-between items-center">
+              <h4 className="font-bold text-slate-800 text-xs uppercase tracking-wider flex items-center gap-1.5"><span>📦</span> Received Product Items</h4>
               <button
                 type="button"
                 onClick={() => {
@@ -464,7 +464,7 @@ export const GRNModal: React.FC<GRNModalProps> = ({
                     },
                   ]);
                 }}
-                className="px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 rounded-lg text-xs font-bold transition flex items-center gap-1"
+                className="px-3 py-1.5 bg-brand-light text-brand hover:bg-emerald-100/70 border border-emerald-200 rounded-lg text-xs font-bold transition flex items-center gap-1"
               >
                 ➕ Add Product Item
               </button>
@@ -472,7 +472,7 @@ export const GRNModal: React.FC<GRNModalProps> = ({
 
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
-                <thead className="bg-gray-100/80 font-bold text-gray-700 uppercase border-b">
+                <thead className="bg-slate-50 font-bold text-slate-500 uppercase tracking-wider text-[11px] border-b border-border">
                   <tr>
                     <th className="p-2.5 w-60">Catalog Product *</th>
                     <th className="p-2.5 w-24 text-right">Received Qty *</th>
@@ -485,7 +485,7 @@ export const GRNModal: React.FC<GRNModalProps> = ({
                     <th className="p-2.5 text-center">Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-border">
                   {grnItemsList.map((item, idx) => {
                     const rawCost = parseFloat(item.cost_price || "0");
                     const commPct = parseFloat(item.commission || "0");
@@ -514,10 +514,10 @@ export const GRNModal: React.FC<GRNModalProps> = ({
                     };
 
                     return (
-                      <tr key={idx} className="hover:bg-gray-55">
+                      <tr key={idx} className="hover:bg-slate-50/60 transition-colors">
                         <td className="p-2">
                           <select
-                            className="w-full p-1.5 border rounded-lg bg-white outline-none focus:ring-1 focus:ring-blue-500 font-medium"
+                            className="w-full p-2 border border-border rounded-lg bg-white outline-none focus:ring-1 focus:ring-brand focus:border-brand text-xs font-medium text-slate-800 transition"
                             value={item.product_id}
                             onChange={(e) => handleItemChange("product_id", e.target.value)}
                             required
@@ -538,7 +538,7 @@ export const GRNModal: React.FC<GRNModalProps> = ({
                             type="number"
                             step="any"
                             min="0"
-                            className="w-full p-1.5 border rounded-lg text-right font-semibold outline-none focus:ring-1 focus:ring-blue-500"
+                            className="w-full p-2 border border-border rounded-lg text-right font-mono font-semibold text-xs text-slate-800 outline-none focus:ring-1 focus:ring-brand focus:border-brand"
                             value={item.quantity_received}
                             onChange={(e) => handleItemChange("quantity_received", e.target.value)}
                             placeholder="0"
@@ -551,7 +551,7 @@ export const GRNModal: React.FC<GRNModalProps> = ({
                             type="number"
                             step="any"
                             min="0"
-                            className="w-full p-1.5 border rounded-lg text-right font-semibold outline-none focus:ring-1 focus:ring-blue-500"
+                            className="w-full p-2 border border-border rounded-lg text-right font-mono font-semibold text-xs text-slate-800 outline-none focus:ring-1 focus:ring-brand focus:border-brand"
                             value={item.cost_price}
                             onChange={(e) => handleItemChange("cost_price", e.target.value)}
                             placeholder="0"
@@ -565,14 +565,14 @@ export const GRNModal: React.FC<GRNModalProps> = ({
                             step="any"
                             min="0"
                             max="100"
-                            className="w-full p-1.5 border rounded-lg text-center outline-none focus:ring-1 focus:ring-orange-400 font-medium"
+                            className="w-full p-2 border border-border rounded-lg text-center font-mono font-medium text-xs text-slate-800 outline-none focus:ring-1 focus:ring-amber-500 focus:border-amber-500"
                             value={item.commission}
                             onChange={(e) => handleItemChange("commission", e.target.value)}
                             placeholder="0"
                           />
                         </td>
 
-                        <td className="p-2 text-right font-bold text-emerald-700 pr-3">
+                        <td className="p-2 text-right font-mono font-bold text-slate-900 pr-3 tabular-nums">
                           {item.cost_price ? formatPrice(netPrice) : "—"}
                         </td>
 
@@ -581,7 +581,7 @@ export const GRNModal: React.FC<GRNModalProps> = ({
                             type="number"
                             step="any"
                             min="0"
-                            className="w-full p-1.5 border rounded-lg text-right outline-none focus:ring-1 focus:ring-blue-500 font-medium"
+                            className="w-full p-2 border border-border rounded-lg text-right font-mono font-medium text-xs text-slate-800 outline-none focus:ring-1 focus:ring-brand focus:border-brand"
                             value={item.ordered_quantity}
                             onChange={(e) => handleItemChange("ordered_quantity", e.target.value)}
                             placeholder="Auto"
@@ -593,7 +593,7 @@ export const GRNModal: React.FC<GRNModalProps> = ({
                             type="number"
                             step="any"
                             min="0"
-                            className="w-full p-1.5 border rounded-lg text-right outline-none focus:ring-1 focus:ring-red-400 font-medium"
+                            className="w-full p-2 border border-border rounded-lg text-right font-mono font-medium text-xs text-rose-700 outline-none focus:ring-1 focus:ring-rose-400 focus:border-rose-400"
                             value={item.damaged_quantity}
                             onChange={(e) => handleItemChange("damaged_quantity", e.target.value)}
                             placeholder="0"
@@ -603,7 +603,7 @@ export const GRNModal: React.FC<GRNModalProps> = ({
                         <td className="p-2">
                           <input
                             type="text"
-                            className="w-full p-1.5 border rounded-lg outline-none focus:ring-1 focus:ring-blue-500 font-semibold text-gray-700"
+                            className="w-full p-2 border border-border rounded-lg outline-none focus:ring-1 focus:ring-brand focus:border-brand font-mono text-xs text-slate-700"
                             value={item.batch_number}
                             onChange={(e) => handleItemChange("batch_number", e.target.value)}
                             placeholder="Batch"
@@ -620,7 +620,7 @@ export const GRNModal: React.FC<GRNModalProps> = ({
                               }
                               setGrnItemsList((prev) => prev.filter((_, i) => i !== idx));
                             }}
-                            className="text-red-500 hover:text-red-700 font-black text-lg px-2 py-0.5 hover:bg-red-50 rounded transition"
+                            className="text-slate-400 hover:text-rose-600 font-bold text-base px-2 py-0.5 hover:bg-rose-50 rounded transition"
                             title="Remove item"
                           >
                             &times;
@@ -634,7 +634,7 @@ export const GRNModal: React.FC<GRNModalProps> = ({
             </div>
 
             {/* Additional Cost */}
-            <div className="p-3.5 bg-amber-50/70 border-t border-amber-200 flex flex-wrap items-center justify-between gap-4">
+            <div className="p-3.5 bg-amber-50/60 border-t border-amber-200/80 flex flex-wrap items-center justify-between gap-4">
               <div className="flex flex-wrap items-center gap-3">
                 <span className="text-amber-900 font-bold text-xs flex items-center gap-1.5">
                   🚚 Additional Cost (Customs / Freight / Transport):
@@ -645,7 +645,7 @@ export const GRNModal: React.FC<GRNModalProps> = ({
                     step="any"
                     min="0"
                     placeholder="0.00"
-                    className="p-1.5 border border-amber-300 rounded-lg text-right font-bold text-amber-900 bg-white text-xs w-36 outline-none focus:ring-2 focus:ring-amber-500 shadow-sm"
+                    className="p-1.5 border border-amber-300 rounded-lg text-right font-mono font-bold text-amber-950 bg-white text-xs w-36 outline-none focus:ring-1 focus:ring-amber-500 shadow-sm"
                     value={grnAdditionalCost}
                     onChange={(e) => setGrnAdditionalCost(e.target.value)}
                   />
@@ -659,7 +659,7 @@ export const GRNModal: React.FC<GRNModalProps> = ({
                 if (addCostNum > 0) {
                   return (
                     <div className="text-xs font-semibold text-amber-900">
-                      Total Added: <span className="font-black text-amber-950 text-sm">+{formatPrice(addCostNum)}</span>
+                      Total Added: <span className="font-mono font-bold text-amber-950 text-xs tabular-nums">+{formatPrice(addCostNum)}</span>
                     </div>
                   );
                 }
@@ -689,23 +689,23 @@ export const GRNModal: React.FC<GRNModalProps> = ({
 
               if (grossTotal > 0 || addCostNum > 0) {
                 return (
-                  <div className="p-4 bg-blue-50 border-t border-blue-200 flex flex-wrap justify-between items-center gap-4 text-xs font-semibold text-blue-900">
+                  <div className="p-4 bg-emerald-50/60 border-t border-emerald-200/80 flex flex-wrap justify-between items-center gap-4 text-xs font-medium text-emerald-950">
                     <div>
-                      Received items total qty: <span className="font-bold text-gray-850">{totalItems}</span>
+                      Received items total qty: <span className="font-mono font-bold text-slate-900 tabular-nums">{totalItems}</span>
                     </div>
                     <div className="flex flex-wrap items-center gap-4">
                       <div>
-                        Gross Subtotal: <span className="font-bold text-gray-850">{formatPrice(grossTotal)}</span>
+                        Gross Subtotal: <span className="font-mono font-bold text-slate-900 tabular-nums">{formatPrice(grossTotal)}</span>
                       </div>
                       {addCostNum > 0 && (
                         <div>
                           Additional Cost:{" "}
-                          <span className="font-bold text-amber-800">+{formatPrice(addCostNum)}</span>
+                          <span className="font-mono font-bold text-amber-900 tabular-nums">+{formatPrice(addCostNum)}</span>
                         </div>
                       )}
                       <div>
                         Total Landed Cost (Net):{" "}
-                        <span className="font-black text-emerald-800 text-sm">{formatPrice(grandTotalWithAdd)}</span>
+                        <span className="font-mono font-bold text-emerald-900 text-sm tabular-nums">{formatPrice(grandTotalWithAdd)}</span>
                       </div>
                     </div>
                   </div>
@@ -715,18 +715,18 @@ export const GRNModal: React.FC<GRNModalProps> = ({
             })()}
           </div>
 
-          <div className="flex justify-end gap-3 pt-6 border-t">
+          <div className="flex justify-end gap-3 pt-5 border-t border-border">
             <button
               type="button"
               onClick={handleClose}
-              className="px-5 py-2.5 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors text-sm font-semibold"
+              className="btn-secondary text-xs"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmittingGRN || products.length === 0 || branches.length === 0}
-              className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-xl font-bold transition-all text-sm shadow-sm"
+              className="btn-primary text-xs"
             >
               {isSubmittingGRN ? "Confirming..." : "Confirm & Update Stock"}
             </button>
