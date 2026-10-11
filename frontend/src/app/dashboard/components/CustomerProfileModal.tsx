@@ -96,7 +96,7 @@ export const CustomerProfileModal: React.FC<CustomerProfileModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto animate-fadeIn">
-      <div className="bg-white rounded-xl border border-border max-w-2xl w-full shadow-2xl overflow-hidden flex flex-col my-8">
+      <div className="bg-white rounded-lg border border-border max-w-2xl w-full shadow-2xl overflow-hidden flex flex-col my-8">
         {/* Header */}
         <div className="p-4 sm:p-5 bg-slate-50/80 backdrop-blur border-b border-border flex justify-between items-center">
           <div className="flex items-center gap-3">
@@ -112,14 +112,14 @@ export const CustomerProfileModal: React.FC<CustomerProfileModalProps> = ({
             {!isEditing && (
               <button
                 onClick={() => setIsEditing(true)}
-                className="btn-secondary px-3 py-1.5 font-medium rounded-lg text-xs transition"
+                className="btn-secondary px-3 py-1.5 font-medium rounded-md text-xs transition"
               >
                 ✏️ Edit Info
               </button>
             )}
             <button
               onClick={onClose}
-              className="btn-secondary px-3 py-1.5 font-medium rounded-lg text-xs transition"
+              className="btn-secondary px-3 py-1.5 font-medium rounded-md text-xs transition"
             >
               Close
             </button>
@@ -130,12 +130,12 @@ export const CustomerProfileModal: React.FC<CustomerProfileModalProps> = ({
         <div className="p-6 space-y-6 overflow-y-auto max-h-[75vh] bg-slate-50/30">
           {/* Edit Form or View Info */}
           {isEditing ? (
-            <div className="bg-emerald-50/40 p-4 rounded-xl border border-emerald-200 space-y-3">
+            <div className="bg-emerald-50/40 p-4 rounded-md border border-emerald-200 space-y-3">
               <span className="text-xs font-bold text-emerald-950 uppercase tracking-wider block">
                 Edit Customer Details
               </span>
               {errorMessage && (
-                <div className="p-2.5 bg-rose-50 text-rose-700 border border-rose-200 text-xs font-bold rounded-lg">
+                <div className="p-2.5 bg-rose-50 text-rose-700 border border-rose-200 text-xs font-bold rounded-md">
                   {errorMessage}
                 </div>
               )}
@@ -146,7 +146,7 @@ export const CustomerProfileModal: React.FC<CustomerProfileModalProps> = ({
                     type="text"
                     value={editName}
                     onChange={(e) => setEditName(e.target.value)}
-                    className="w-full p-2 border border-border rounded-lg bg-white outline-none focus:ring-1 focus:ring-brand focus:border-brand font-semibold text-slate-900"
+                    className="w-full p-2 border border-border rounded-md bg-white outline-none focus:ring-1 focus:ring-brand focus:border-brand font-semibold text-slate-900"
                     placeholder="Full Name"
                   />
                 </div>
@@ -156,7 +156,7 @@ export const CustomerProfileModal: React.FC<CustomerProfileModalProps> = ({
                     type="text"
                     value={editPhone}
                     onChange={(e) => setEditPhone(e.target.value)}
-                    className="w-full p-2 border border-border rounded-lg bg-white outline-none focus:ring-1 focus:ring-brand focus:border-brand font-semibold text-slate-900 font-mono"
+                    className="w-full p-2 border border-border rounded-md bg-white outline-none focus:ring-1 focus:ring-brand focus:border-brand font-semibold text-slate-900 font-mono"
                     placeholder="e.g. 01700-000000"
                   />
                 </div>
@@ -167,7 +167,7 @@ export const CustomerProfileModal: React.FC<CustomerProfileModalProps> = ({
                   type="text"
                   value={editAddress}
                   onChange={(e) => setEditAddress(e.target.value)}
-                  className="w-full p-2 border border-border rounded-lg bg-white outline-none focus:ring-1 focus:ring-brand focus:border-brand font-semibold text-slate-900"
+                  className="w-full p-2 border border-border rounded-md bg-white outline-none focus:ring-1 focus:ring-brand focus:border-brand font-semibold text-slate-900"
                   placeholder="Address"
                 />
               </div>
@@ -177,21 +177,21 @@ export const CustomerProfileModal: React.FC<CustomerProfileModalProps> = ({
                     setIsEditing(false);
                     setErrorMessage("");
                   }}
-                  className="btn-secondary px-3 py-1.5 font-semibold rounded-lg text-xs transition"
+                  className="btn-secondary px-3 py-1.5 font-semibold rounded-md text-xs transition"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSave}
                   disabled={isSaving}
-                  className="btn-primary px-4 py-1.5 text-white font-medium rounded-lg text-xs transition shadow-xs"
+                  className="btn-primary px-4 py-1.5 text-white font-medium rounded-md text-xs transition shadow-xs"
                 >
                   {isSaving ? "Saving..." : "Save Changes"}
                 </button>
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-white p-4 rounded-xl border border-border text-xs shadow-xs">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-white p-4 rounded-md border border-border text-xs shadow-xs">
               <div>
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">
                   Phone Number
@@ -209,25 +209,25 @@ export const CustomerProfileModal: React.FC<CustomerProfileModalProps> = ({
 
           {/* CRM Analytics KPI Grid */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-            <div className="p-3 bg-white rounded-xl border border-border shadow-xs">
+            <div className="p-3 bg-white rounded-md border border-border shadow-xs">
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
                 Total Orders
               </span>
               <span className="text-xl font-extrabold font-mono text-slate-900">{customer.total_invoices}</span>
             </div>
-            <div className="p-3 bg-white rounded-xl border border-border shadow-xs">
+            <div className="p-3 bg-white rounded-md border border-border shadow-xs">
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
                 Total Lifetime Spend
               </span>
               <span className="text-xl font-extrabold font-mono text-emerald-800">{formatPrice(customer.total_spent)}</span>
             </div>
-            <div className="p-3 bg-white rounded-xl border border-border shadow-xs">
+            <div className="p-3 bg-white rounded-md border border-border shadow-xs">
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
                 Avg Order Value
               </span>
               <span className="text-xl font-extrabold font-mono text-slate-900">{formatPrice(avgOrderValue)}</span>
             </div>
-            <div className="p-3 bg-white rounded-xl border border-border shadow-xs">
+            <div className="p-3 bg-white rounded-md border border-border shadow-xs">
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
                 Member Since
               </span>
@@ -238,7 +238,7 @@ export const CustomerProfileModal: React.FC<CustomerProfileModalProps> = ({
           </div>
 
           {/* Top Purchased Items */}
-          <div className="bg-white border border-border rounded-xl p-4 shadow-xs text-xs">
+          <div className="bg-white border border-border rounded-md p-4 shadow-xs text-xs">
             <span className="font-bold text-slate-800 uppercase tracking-wider text-[11px] block mb-3">
               🏆 Top Purchased Items
             </span>
@@ -247,7 +247,7 @@ export const CustomerProfileModal: React.FC<CustomerProfileModalProps> = ({
             ) : (
               <div className="space-y-2">
                 {topProducts.map((p, idx) => (
-                  <div key={idx} className="flex justify-between items-center p-2 bg-slate-50/80 rounded-lg border border-border/50">
+                  <div key={idx} className="flex justify-between items-center p-2 bg-slate-50/80 rounded-md border border-border/50">
                     <span className="font-semibold text-slate-800">{p.name}</span>
                     <span className="font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 font-mono px-2 py-0.5 rounded text-[11px]">
                       {p.qty} units
