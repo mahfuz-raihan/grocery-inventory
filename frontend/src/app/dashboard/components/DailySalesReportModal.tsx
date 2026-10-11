@@ -421,7 +421,7 @@ export const DailySalesReportModal: React.FC<DailySalesReportModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto animate-fadeIn">
-      <div className="bg-white rounded-xl border border-border max-w-5xl w-full shadow-2xl overflow-hidden flex flex-col my-6 max-h-[90vh]">
+      <div className="bg-white rounded-lg border border-border max-w-5xl w-full shadow-2xl overflow-hidden flex flex-col my-6 max-h-[90vh]">
         {/* Top Control Header */}
         <div className="p-4 sm:p-5 bg-slate-50/80 backdrop-blur border-b border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
@@ -439,7 +439,7 @@ export const DailySalesReportModal: React.FC<DailySalesReportModalProps> = ({
           <div className="flex items-center gap-2">
             <button
               onClick={handlePrint}
-              className="btn-primary px-4 py-2 text-white font-medium rounded-lg text-xs transition flex items-center gap-1.5 shadow-xs"
+              className="btn-primary px-4 py-2 text-white font-medium rounded-md text-xs transition flex items-center gap-1.5 shadow-xs"
               title="Print standard A4 landscape report"
             >
               <span>🖨️</span>
@@ -447,7 +447,7 @@ export const DailySalesReportModal: React.FC<DailySalesReportModalProps> = ({
             </button>
             <button
               onClick={onClose}
-              className="btn-secondary px-3 py-2 font-medium rounded-lg text-xs transition"
+              className="btn-secondary px-3 py-2 font-medium rounded-md text-xs transition"
             >
               ✕ Close
             </button>
@@ -458,7 +458,7 @@ export const DailySalesReportModal: React.FC<DailySalesReportModalProps> = ({
         <div className="bg-slate-50/60 border-b border-border p-4 flex flex-wrap items-center justify-between gap-3 text-xs">
           <div className="flex flex-wrap items-center gap-2.5">
             {/* Target Date Picker */}
-            <div className="flex items-center gap-1.5 bg-white border border-border px-3 py-1.5 rounded-lg shadow-xs">
+            <div className="flex items-center gap-1.5 bg-white border border-border px-3 py-1.5 rounded-md shadow-xs">
               <span className="font-bold text-slate-500">📅 Date:</span>
               <input
                 type="date"
@@ -472,7 +472,7 @@ export const DailySalesReportModal: React.FC<DailySalesReportModalProps> = ({
             <button
               type="button"
               onClick={() => setSelectedDate(getTodayStr())}
-              className={`px-3 py-1.5 rounded-lg font-semibold border transition ${
+              className={`px-3 py-1.5 rounded-md font-semibold border transition ${
                 selectedDate === getTodayStr()
                   ? "bg-brand text-white border-brand shadow-xs"
                   : "bg-white text-slate-700 border-border hover:bg-slate-50"
@@ -483,7 +483,7 @@ export const DailySalesReportModal: React.FC<DailySalesReportModalProps> = ({
             <button
               type="button"
               onClick={() => setSelectedDate(getYesterdayStr())}
-              className={`px-3 py-1.5 rounded-lg font-semibold border transition ${
+              className={`px-3 py-1.5 rounded-md font-semibold border transition ${
                 selectedDate === getYesterdayStr()
                   ? "bg-brand text-white border-brand shadow-xs"
                   : "bg-white text-slate-700 border-border hover:bg-slate-50"
@@ -493,7 +493,7 @@ export const DailySalesReportModal: React.FC<DailySalesReportModalProps> = ({
             </button>
 
             {/* Warehouse Filter */}
-            <div className="flex items-center gap-1.5 bg-white border border-border px-3 py-1.5 rounded-lg shadow-xs">
+            <div className="flex items-center gap-1.5 bg-white border border-border px-3 py-1.5 rounded-md shadow-xs">
               <span className="font-bold text-slate-500">🏢 Warehouse:</span>
               <select
                 value={selectedBranch}
