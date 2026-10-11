@@ -78,7 +78,7 @@ export const TransfersTab: React.FC<TransfersTabProps> = ({
       <div className="erp-card p-6 h-fit">
         <h3 className="text-base font-bold text-slate-900 mb-4">Stock Transfer</h3>
         {products.length === 0 && (
-          <div className="mb-4 text-xs bg-amber-50 text-amber-800 p-3 rounded-lg border border-amber-200">
+          <div className="mb-4 text-xs bg-amber-50 text-amber-800 p-3 rounded-md border border-amber-200">
             ⚠️ Register products before transfers.
           </div>
         )}
@@ -86,7 +86,7 @@ export const TransfersTab: React.FC<TransfersTabProps> = ({
           <div>
             <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Select Product</label>
             <select
-              className="w-full p-2.5 border border-border rounded-lg bg-white text-xs text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
+              className="w-full p-2.5 border border-border rounded-md bg-white text-xs text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
               value={txProduct}
               onChange={(e) => setTxProduct(e.target.value)}
             >
@@ -101,7 +101,7 @@ export const TransfersTab: React.FC<TransfersTabProps> = ({
             <div>
               <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Origin</label>
               <select
-                className="w-full p-2.5 border border-border rounded-lg bg-white text-xs text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
+                className="w-full p-2.5 border border-border rounded-md bg-white text-xs text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
                 value={txFrom}
                 onChange={(e) => setTxFrom(e.target.value)}
               >
@@ -115,7 +115,7 @@ export const TransfersTab: React.FC<TransfersTabProps> = ({
             <div>
               <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Destination</label>
               <select
-                className="w-full p-2.5 border border-border rounded-lg bg-white text-xs text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
+                className="w-full p-2.5 border border-border rounded-md bg-white text-xs text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
                 value={txTo}
                 onChange={(e) => setTxTo(e.target.value)}
               >
@@ -133,7 +133,7 @@ export const TransfersTab: React.FC<TransfersTabProps> = ({
               <input
                 type="number"
                 step="0.01"
-                className="w-full p-2.5 border border-border rounded-lg text-xs font-mono text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
+                className="w-full p-2.5 border border-border rounded-md text-xs font-mono text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
                 value={txQty}
                 onChange={(e) => setTxQty(e.target.value)}
                 placeholder="10.00"
@@ -144,7 +144,7 @@ export const TransfersTab: React.FC<TransfersTabProps> = ({
               <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Reference</label>
               <input
                 type="text"
-                className="w-full p-2.5 border border-border rounded-lg text-xs font-mono text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
+                className="w-full p-2.5 border border-border rounded-md text-xs font-mono text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
                 value={txRef}
                 onChange={(e) => setTxRef(e.target.value)}
                 placeholder="e.g. TR-204"
@@ -164,9 +164,9 @@ export const TransfersTab: React.FC<TransfersTabProps> = ({
       <div className="erp-card p-6 lg:col-span-2">
         <h3 className="text-base font-bold text-slate-900 mb-4">Stock Transfers Log</h3>
         {transfers.length === 0 ? (
-          <p className="text-xs text-slate-500 italic py-8 text-center bg-slate-50/50 rounded-xl border border-border">No transfers executed yet.</p>
+          <p className="text-xs text-slate-500 italic py-8 text-center bg-slate-50/50 rounded-md border border-border">No transfers executed yet.</p>
         ) : (
-          <div className="overflow-x-auto border border-border rounded-xl">
+          <div className="overflow-x-auto border border-border rounded-md">
             <table className="w-full text-left text-xs">
               <thead className="text-[11px] text-slate-500 bg-slate-50 uppercase font-semibold border-b border-border">
                 <tr>
