@@ -368,7 +368,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto animate-fadeIn">
-      <div className="bg-white rounded-xl border border-border max-w-2xl w-full shadow-2xl overflow-hidden flex flex-col my-8">
+      <div className="bg-white rounded-lg border border-border max-w-2xl w-full shadow-2xl overflow-hidden flex flex-col my-8">
         {/* Modal Top Bar */}
         <div className="p-4 sm:p-5 bg-slate-50/80 backdrop-blur border-b border-border flex justify-between items-center gap-3">
           <div className="flex items-center gap-2">
@@ -380,7 +380,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
           <div className="flex items-center gap-2">
             <button
               onClick={handlePrint}
-              className="btn-primary px-3 py-1.5 text-white font-medium rounded-lg text-xs transition flex items-center gap-1.5 shadow-xs"
+              className="btn-primary px-3 py-1.5 text-white font-medium rounded-md text-xs transition flex items-center gap-1.5 shadow-xs"
               title="Print or Save as PDF (A4 Layout)"
             >
               <svg className="w-3.5 h-3.5 text-emerald-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -390,7 +390,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
             </button>
             <button
               onClick={onClose}
-              className="btn-secondary px-3 py-1.5 font-medium rounded-lg text-xs transition"
+              className="btn-secondary px-3 py-1.5 font-medium rounded-md text-xs transition"
             >
               Close
             </button>
@@ -399,7 +399,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
 
         {/* Compact A4 Preview Card */}
         <div className="p-6 bg-slate-50/60 overflow-y-auto max-h-[78vh]">
-          <div className="bg-white p-6 rounded-xl border border-border shadow-xs text-xs text-slate-800 space-y-4">
+          <div className="bg-white p-6 rounded-md border border-border shadow-xs text-xs text-slate-800 space-y-4">
             {/* Header */}
             <div className="flex justify-between items-start border-b-2 border-slate-900 pb-3">
               <div>
@@ -427,7 +427,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
             </div>
 
             {/* Customer & Warehouse Details */}
-            <div className="grid grid-cols-2 gap-4 bg-slate-50 p-3 rounded-lg border border-border">
+            <div className="grid grid-cols-2 gap-4 bg-slate-50 p-3 rounded-md border border-border">
               <div>
                 <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
                   Customer Information
@@ -456,7 +456,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
             </div>
 
             {/* Items Table */}
-            <div className="border border-border rounded-lg overflow-hidden">
+            <div className="border border-border rounded-md overflow-hidden">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="bg-slate-50 text-slate-600 font-bold text-[10px] uppercase border-b border-border">
