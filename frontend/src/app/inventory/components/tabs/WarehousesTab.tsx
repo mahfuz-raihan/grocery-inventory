@@ -47,7 +47,7 @@ export const WarehousesTab: React.FC<WarehousesTabProps> = ({ branches, onWareho
             <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Warehouse Name</label>
             <input
               type="text"
-              className="w-full p-2.5 border border-border rounded-lg text-xs bg-white text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
+              className="w-full p-2.5 border border-border rounded-md text-xs bg-white text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
               value={warehouseName}
               onChange={(e) => setWarehouseName(e.target.value)}
               placeholder="e.g. Raw Material Storage A"
@@ -57,7 +57,7 @@ export const WarehousesTab: React.FC<WarehousesTabProps> = ({ branches, onWareho
           <div>
             <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Location Address</label>
             <textarea
-              className="w-full p-2.5 border border-border rounded-lg text-xs bg-white text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none h-24 transition"
+              className="w-full p-2.5 border border-border rounded-md text-xs bg-white text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none h-24 transition"
               value={warehouseAddress}
               onChange={(e) => setWarehouseAddress(e.target.value)}
               placeholder="Factory Zone A, Block C..."
@@ -76,19 +76,19 @@ export const WarehousesTab: React.FC<WarehousesTabProps> = ({ branches, onWareho
       <div className="erp-card p-6 lg:col-span-2">
         <h3 className="text-base font-bold text-slate-900 mb-4">Active Warehouses ({activeWarehouses.length})</h3>
         {activeWarehouses.length === 0 ? (
-          <p className="text-xs text-slate-500 italic py-8 text-center bg-slate-50/50 rounded-xl border border-border">No factory warehouses registered yet.</p>
+          <p className="text-xs text-slate-500 italic py-8 text-center bg-slate-50/50 rounded-md border border-border">No factory warehouses registered yet.</p>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {activeWarehouses.map((b) => (
               <div
                 key={b.id}
-                className="p-4 bg-slate-50/60 border border-border rounded-xl flex flex-col justify-between hover:border-slate-300 transition"
+                className="p-4 bg-slate-50/60 border border-border rounded-md flex flex-col justify-between hover:border-slate-300 transition"
               >
                 <div>
                   <h4 className="font-semibold text-slate-900 text-sm">{b.name}</h4>
                   <p className="text-xs text-slate-500 mt-1">{b.address || "No address listed"}</p>
                 </div>
-                <span className="mt-3 text-[10px] bg-brand-50 text-brand border border-emerald-200 font-semibold px-2 py-0.5 rounded-full w-fit uppercase tracking-wider">
+                <span className="mt-3 text-[10px] bg-brand-50 text-brand border border-emerald-200 font-semibold px-2 py-0.5 rounded w-fit uppercase tracking-wider">
                   {b.branch_type}
                 </span>
               </div>
