@@ -359,17 +359,17 @@ export default function InventoryControlPage() {
   });
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-800">
+    <div className="min-h-screen bg-surface-canvas text-slate-900 font-sans">
       {/* Low Stock Notification Banner */}
       {lowStock.length > 0 && !notificationsDismissed && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl flex items-center justify-between gap-4 animate-pulse-once">
+        <div className="mb-4 p-3 bg-rose-50 border border-rose-200 rounded-xl flex items-center justify-between gap-4 animate-pulse-once">
           <div className="flex items-center gap-3">
-            <span className="text-red-600 text-lg">🚨</span>
+            <span className="text-rose-600 text-lg">🚨</span>
             <div>
-              <span className="font-bold text-red-800 text-sm">
+              <span className="font-bold text-rose-900 text-sm">
                 {lowStock.length} product{lowStock.length > 1 ? "s" : ""} below minimum stock level!
               </span>
-              <span className="ml-2 text-red-600 text-xs">
+              <span className="ml-2 text-rose-700 text-xs">
                 {lowStock
                   .slice(0, 3)
                   .map((l) => l.name)
@@ -381,13 +381,13 @@ export default function InventoryControlPage() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setActiveTab("reports")}
-              className="px-3 py-1 bg-red-600 text-white text-xs font-bold rounded-lg hover:bg-red-700 transition whitespace-nowrap"
+              className="px-3 py-1 bg-rose-600 text-white text-xs font-bold rounded-lg hover:bg-rose-700 transition whitespace-nowrap"
             >
               View Alerts
             </button>
             <button
               onClick={() => setNotificationsDismissed(true)}
-              className="text-red-400 hover:text-red-700 text-lg font-bold"
+              className="text-rose-400 hover:text-rose-700 text-lg font-bold"
             >
               ×
             </button>
@@ -396,7 +396,7 @@ export default function InventoryControlPage() {
       )}
 
       {/* Tabs + Notification Bell */}
-      <div className="flex items-center justify-between mb-8 border-b pb-px">
+      <div className="flex items-center justify-between mb-8 border-b border-slate-200 pb-px">
         <div className="flex space-x-1 overflow-x-auto">
           {visibleTabs.map((tab) => (
             <button
@@ -404,8 +404,8 @@ export default function InventoryControlPage() {
               onClick={() => setActiveTab(tab.id)}
               className={`px-4 py-3 font-semibold border-b-2 transition-all whitespace-nowrap text-sm ${
                 activeTab === tab.id
-                  ? "border-blue-600 text-blue-600 font-bold"
-                  : "border-transparent text-gray-500 hover:text-gray-700"
+                  ? "border-brand text-brand font-bold"
+                  : "border-transparent text-slate-500 hover:text-slate-800"
               }`}
             >
               {tab.label}
@@ -418,7 +418,7 @@ export default function InventoryControlPage() {
           {(rbacRules ? rbacRules.company_profile_edit?.includes(userRole) : userRole === "owner") && (
             <button
               onClick={() => setShowCompanyModal(true)}
-              className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl transition flex items-center gap-1.5 text-xs font-bold border border-gray-200 shadow-sm"
+              className="px-3 py-2 bg-white hover:bg-slate-50 text-slate-700 rounded-lg transition flex items-center gap-1.5 text-xs font-semibold border border-slate-200 shadow-sm"
               title="Update Company Profile"
             >
               🏢 Company Profile
@@ -430,10 +430,10 @@ export default function InventoryControlPage() {
               setShowNotifications(!showNotifications);
               setNotificationsDismissed(true);
             }}
-            className={`relative p-2.5 rounded-xl transition ${
+            className={`relative p-2.5 rounded-lg border transition ${
               lowStock.length > 0
-                ? "bg-red-50 hover:bg-red-100 text-red-600"
-                : "bg-gray-100 hover:bg-gray-200 text-gray-500"
+                ? "bg-rose-50 hover:bg-rose-100 text-rose-700 border-rose-200"
+                : "bg-white hover:bg-slate-50 text-slate-600 border-slate-200"
             }`}
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -445,7 +445,7 @@ export default function InventoryControlPage() {
               />
             </svg>
             {lowStock.length > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+              <span className="absolute -top-1 -right-1 bg-rose-600 text-white text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
                 {lowStock.length > 9 ? "9+" : lowStock.length}
               </span>
             )}
@@ -453,38 +453,38 @@ export default function InventoryControlPage() {
 
           {/* Notification Dropdown */}
           {showNotifications && (
-            <div className="absolute right-0 top-12 w-80 bg-white border border-gray-200 rounded-2xl shadow-2xl z-50 overflow-hidden">
-              <div className="p-4 border-b bg-gray-50 flex items-center justify-between">
-                <span className="font-bold text-gray-800 text-sm">Low Stock Alerts</span>
-                <span className="bg-red-100 text-red-700 text-xs font-bold px-2 py-0.5 rounded-full">
+            <div className="absolute right-0 top-12 w-80 bg-white border border-slate-200 rounded-xl shadow-2xl z-50 overflow-hidden animate-fadeIn">
+              <div className="p-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+                <span className="font-bold text-slate-800 text-sm">Low Stock Alerts</span>
+                <span className="bg-rose-50 text-rose-700 border border-rose-200 text-xs font-bold px-2 py-0.5 rounded-full font-mono">
                   {lowStock.length} items
                 </span>
               </div>
               {lowStock.length === 0 ? (
-                <div className="p-6 text-center text-gray-400 text-sm">✓ All items above safety thresholds</div>
+                <div className="p-6 text-center text-slate-400 text-sm">✓ All items above safety thresholds</div>
               ) : (
-                <div className="max-h-64 overflow-y-auto divide-y">
+                <div className="max-h-64 overflow-y-auto divide-y divide-slate-100">
                   {lowStock.map((l) => (
-                    <div key={l.product_id} className="p-3 hover:bg-red-50 transition">
-                      <div className="font-semibold text-gray-800 text-xs">{l.name}</div>
-                      <div className="flex justify-between mt-1 text-[10px] text-gray-500">
-                        <span>SKU: {l.sku}</span>
-                        <span className="text-red-600 font-bold">
+                    <div key={l.product_id} className="p-3 hover:bg-rose-50/50 transition">
+                      <div className="font-semibold text-slate-800 text-xs">{l.name}</div>
+                      <div className="flex justify-between mt-1 text-[10px] text-slate-500">
+                        <span className="font-mono">SKU: {l.sku}</span>
+                        <span className="text-rose-700 font-bold font-mono">
                           Stock: {l.current_stock} (Min: {l.min_stock_level})
                         </span>
                       </div>
-                      <div className="mt-1 text-[10px] text-blue-600">Reorder: {l.reorder_quantity} units needed</div>
+                      <div className="mt-1 text-[10px] text-brand font-medium">Reorder: {l.reorder_quantity} units needed</div>
                     </div>
                   ))}
                 </div>
               )}
-              <div className="p-3 border-t bg-gray-50">
+              <div className="p-3 border-t border-slate-200 bg-slate-50">
                 <button
                   onClick={() => {
                     setActiveTab("reports");
                     setShowNotifications(false);
                   }}
-                  className="w-full text-xs text-blue-600 font-bold hover:underline"
+                  className="w-full text-xs text-brand font-bold hover:underline"
                 >
                   View Full Low Stock Report →
                 </button>
