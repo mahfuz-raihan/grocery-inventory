@@ -74,19 +74,19 @@ export const TransfersTab: React.FC<TransfersTabProps> = ({
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      <div className="bg-white p-6 rounded-xl border h-fit shadow-sm">
-        <h3 className="text-lg font-bold text-gray-800 mb-4">Stock Transfer</h3>
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="erp-card p-6 h-fit">
+        <h3 className="text-base font-bold text-slate-900 mb-4">Stock Transfer</h3>
         {products.length === 0 && (
-          <div className="mb-4 text-xs bg-yellow-50 text-yellow-700 p-3 rounded border">
+          <div className="mb-4 text-xs bg-amber-50 text-amber-800 p-3 rounded-lg border border-amber-200">
             ⚠️ Register products before transfers.
           </div>
         )}
         <form onSubmit={handleTransfer} className="space-y-4">
           <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Select Product</label>
+            <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Select Product</label>
             <select
-              className="w-full p-2.5 border rounded-lg bg-white focus:ring-2 focus:ring-blue-500 outline-none"
+              className="w-full p-2.5 border border-border rounded-lg bg-white text-xs text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
               value={txProduct}
               onChange={(e) => setTxProduct(e.target.value)}
             >
@@ -97,11 +97,11 @@ export const TransfersTab: React.FC<TransfersTabProps> = ({
               ))}
             </select>
           </div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Origin</label>
+              <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Origin</label>
               <select
-                className="w-full p-2.5 border rounded-lg bg-white focus:ring-2 focus:ring-blue-500 outline-none"
+                className="w-full p-2.5 border border-border rounded-lg bg-white text-xs text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
                 value={txFrom}
                 onChange={(e) => setTxFrom(e.target.value)}
               >
@@ -113,9 +113,9 @@ export const TransfersTab: React.FC<TransfersTabProps> = ({
               </select>
             </div>
             <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Destination</label>
+              <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Destination</label>
               <select
-                className="w-full p-2.5 border rounded-lg bg-white focus:ring-2 focus:ring-blue-500 outline-none"
+                className="w-full p-2.5 border border-border rounded-lg bg-white text-xs text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
                 value={txTo}
                 onChange={(e) => setTxTo(e.target.value)}
               >
@@ -127,13 +127,13 @@ export const TransfersTab: React.FC<TransfersTabProps> = ({
               </select>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Transfer Qty</label>
+              <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Transfer Qty</label>
               <input
                 type="number"
                 step="0.01"
-                className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                className="w-full p-2.5 border border-border rounded-lg text-xs font-mono text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
                 value={txQty}
                 onChange={(e) => setTxQty(e.target.value)}
                 placeholder="10.00"
@@ -141,10 +141,10 @@ export const TransfersTab: React.FC<TransfersTabProps> = ({
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Reference</label>
+              <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Reference</label>
               <input
                 type="text"
-                className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                className="w-full p-2.5 border border-border rounded-lg text-xs font-mono text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
                 value={txRef}
                 onChange={(e) => setTxRef(e.target.value)}
                 placeholder="e.g. TR-204"
@@ -154,21 +154,21 @@ export const TransfersTab: React.FC<TransfersTabProps> = ({
           <button
             type="submit"
             disabled={isSubmitting || products.length === 0}
-            className="w-full py-2.5 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition disabled:bg-gray-400"
+            className="btn-primary w-full py-2.5 text-xs font-semibold justify-center disabled:opacity-50"
           >
             {isSubmitting ? "Executing..." : "Execute Transfer"}
           </button>
         </form>
       </div>
 
-      <div className="bg-white p-6 rounded-xl border lg:col-span-2 shadow-sm">
-        <h3 className="text-lg font-bold text-gray-800 mb-4">Stock Transfers Log</h3>
+      <div className="erp-card p-6 lg:col-span-2">
+        <h3 className="text-base font-bold text-slate-900 mb-4">Stock Transfers Log</h3>
         {transfers.length === 0 ? (
-          <p className="text-sm text-gray-500">No transfers executed yet.</p>
+          <p className="text-xs text-slate-500 italic py-8 text-center bg-slate-50/50 rounded-xl border border-border">No transfers executed yet.</p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-gray-500">
-              <thead className="text-xs text-gray-700 bg-gray-100 uppercase font-bold">
+          <div className="overflow-x-auto border border-border rounded-xl">
+            <table className="w-full text-left text-xs">
+              <thead className="text-[11px] text-slate-500 bg-slate-50 uppercase font-semibold border-b border-border">
                 <tr>
                   <th className="p-3">Product SKU</th>
                   <th className="p-3">From</th>
@@ -178,19 +178,19 @@ export const TransfersTab: React.FC<TransfersTabProps> = ({
                   <th className="p-3">Date</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-border/60">
                 {transfers.map((t) => {
                   const pName = products.find((p) => p.id === t.product_id)?.sku || "Unknown";
                   const fBranch = branches.find((b) => b.id === t.from_branch_id)?.name || "Unknown";
                   const tBranch = branches.find((b) => b.id === t.to_branch_id)?.name || "Unknown";
                   return (
-                    <tr key={t.id} className="border-b hover:bg-gray-55">
-                      <td className="p-3 font-semibold text-gray-900">{pName}</td>
-                      <td className="p-3">{fBranch}</td>
-                      <td className="p-3">{tBranch}</td>
-                      <td className="p-3 font-bold text-blue-600">{t.quantity}</td>
-                      <td className="p-3">{t.reference || "-"}</td>
-                      <td className="p-3 text-xs text-gray-400">{new Date(t.created_at).toLocaleString()}</td>
+                    <tr key={t.id} className="hover:bg-slate-50/70 transition">
+                      <td className="p-3 font-mono font-semibold text-slate-900">{pName}</td>
+                      <td className="p-3 text-slate-700 font-medium">{fBranch}</td>
+                      <td className="p-3 text-slate-700 font-medium">{tBranch}</td>
+                      <td className="p-3 font-mono font-bold tabular-nums text-brand">{t.quantity}</td>
+                      <td className="p-3 font-mono text-slate-600">{t.reference || "-"}</td>
+                      <td className="p-3 text-xs text-slate-400 font-mono tabular-nums">{new Date(t.created_at).toLocaleString()}</td>
                     </tr>
                   );
                 })}
