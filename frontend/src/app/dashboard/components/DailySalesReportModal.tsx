@@ -144,7 +144,7 @@ export const DailySalesReportModal: React.FC<DailySalesReportModalProps> = ({
               <tr style="background: ${idx % 2 === 1 ? "#f8fafc" : "#ffffff"};">
                 <td style="text-align: center; padding: 6px 6px; font-size: 10px; font-weight: 600; border: 1px solid #94a3b8; color: #0f172a;">${idx + 1}</td>
                 <td style="text-align: center; padding: 6px 6px; font-size: 10px; font-weight: 600; border: 1px solid #94a3b8; color: #0f172a; font-variant-numeric: tabular-nums; white-space: nowrap;">${formatTimeOnly(inv.created_at)}</td>
-                <td style="padding: 6px 6px; font-size: 10.5px; font-weight: 700; border: 1px solid #94a3b8; color: #1e40af; font-variant-numeric: tabular-nums; white-space: nowrap;">${inv.receipt_number}</td>
+                <td style="padding: 6px 6px; font-size: 10.5px; font-weight: 700; border: 1px solid #94a3b8; color: #065f46; font-variant-numeric: tabular-nums; white-space: nowrap;">${inv.receipt_number}</td>
                 <td style="padding: 6px 6px; font-size: 10px; border: 1px solid #94a3b8; color: #0f172a;">
                   <div style="font-weight: 700; color: #0f172a;">${inv.customer_name || "Walk-in"}</div>
                   <div style="font-size: 9.5px; color: #475569; font-weight: 500;">${inv.customer_phone || ""}</div>
@@ -326,7 +326,7 @@ export const DailySalesReportModal: React.FC<DailySalesReportModalProps> = ({
             </div>
             <div class="kpi-card">
               <div class="kpi-title">Total Sales (Revenue)</div>
-              <div class="kpi-value" style="color: #1e40af;">৳${totalDailySales.toFixed(2)}</div>
+              <div class="kpi-value" style="color: #065f46;">৳${totalDailySales.toFixed(2)}</div>
             </div>
             <div class="kpi-card">
               <div class="kpi-title">Total Cost (COGS)</div>
@@ -421,17 +421,17 @@ export const DailySalesReportModal: React.FC<DailySalesReportModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto animate-fadeIn">
-      <div className="bg-white rounded-2xl border border-slate-200 max-w-5xl w-full shadow-2xl overflow-hidden flex flex-col my-6 max-h-[90vh]">
+      <div className="bg-white rounded-xl border border-border max-w-5xl w-full shadow-2xl overflow-hidden flex flex-col my-6 max-h-[90vh]">
         {/* Top Control Header */}
-        <div className="p-4 bg-slate-900 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="p-4 sm:p-5 bg-slate-50/80 backdrop-blur border-b border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-base font-bold">🖨️ Daily Sales Details Report</span>
-              <span className="text-xs bg-blue-600 px-2 py-0.5 rounded font-mono font-bold">
+              <span className="text-base font-bold text-slate-900">🖨️ Daily Sales Details Report</span>
+              <span className="text-xs bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded font-mono font-medium">
                 {selectedDate}
               </span>
             </div>
-            <p className="text-[11px] text-slate-300 mt-0.5">
+            <p className="text-[11px] text-slate-500 mt-0.5">
               Print-ready daily sales breakdown with per-invoice cost, net profit, and reconciliation signatures.
             </p>
           </div>
@@ -439,7 +439,7 @@ export const DailySalesReportModal: React.FC<DailySalesReportModalProps> = ({
           <div className="flex items-center gap-2">
             <button
               onClick={handlePrint}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs transition flex items-center gap-1.5 shadow-md"
+              className="btn-primary px-4 py-2 text-white font-medium rounded-lg text-xs transition flex items-center gap-1.5 shadow-xs"
               title="Print standard A4 landscape report"
             >
               <span>🖨️</span>
@@ -447,7 +447,7 @@ export const DailySalesReportModal: React.FC<DailySalesReportModalProps> = ({
             </button>
             <button
               onClick={onClose}
-              className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl text-xs transition"
+              className="btn-secondary px-3 py-2 font-medium rounded-lg text-xs transition"
             >
               ✕ Close
             </button>
@@ -455,16 +455,16 @@ export const DailySalesReportModal: React.FC<DailySalesReportModalProps> = ({
         </div>
 
         {/* Filters Toolbar */}
-        <div className="bg-slate-50 border-b border-slate-200 p-4 flex flex-wrap items-center justify-between gap-3 text-xs">
+        <div className="bg-slate-50/60 border-b border-border p-4 flex flex-wrap items-center justify-between gap-3 text-xs">
           <div className="flex flex-wrap items-center gap-2.5">
             {/* Target Date Picker */}
-            <div className="flex items-center gap-1.5 bg-white border border-slate-200 px-3 py-1.5 rounded-xl shadow-sm">
+            <div className="flex items-center gap-1.5 bg-white border border-border px-3 py-1.5 rounded-lg shadow-xs">
               <span className="font-bold text-slate-500">📅 Date:</span>
               <input
                 type="date"
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
-                className="text-xs font-bold text-slate-800 focus:outline-none cursor-pointer bg-transparent"
+                className="text-xs font-semibold text-slate-800 focus:outline-none cursor-pointer bg-transparent"
               />
             </div>
 
@@ -472,10 +472,10 @@ export const DailySalesReportModal: React.FC<DailySalesReportModalProps> = ({
             <button
               type="button"
               onClick={() => setSelectedDate(getTodayStr())}
-              className={`px-3 py-1.5 rounded-xl font-bold border transition ${
+              className={`px-3 py-1.5 rounded-lg font-semibold border transition ${
                 selectedDate === getTodayStr()
-                  ? "bg-blue-600 text-white border-blue-600 shadow-sm"
-                  : "bg-white text-slate-600 border-slate-200 hover:bg-slate-100"
+                  ? "bg-brand text-white border-brand shadow-xs"
+                  : "bg-white text-slate-700 border-border hover:bg-slate-50"
               }`}
             >
               Today
@@ -483,22 +483,22 @@ export const DailySalesReportModal: React.FC<DailySalesReportModalProps> = ({
             <button
               type="button"
               onClick={() => setSelectedDate(getYesterdayStr())}
-              className={`px-3 py-1.5 rounded-xl font-bold border transition ${
+              className={`px-3 py-1.5 rounded-lg font-semibold border transition ${
                 selectedDate === getYesterdayStr()
-                  ? "bg-blue-600 text-white border-blue-600 shadow-sm"
-                  : "bg-white text-slate-600 border-slate-200 hover:bg-slate-100"
+                  ? "bg-brand text-white border-brand shadow-xs"
+                  : "bg-white text-slate-700 border-border hover:bg-slate-50"
               }`}
             >
               Yesterday
             </button>
 
             {/* Warehouse Filter */}
-            <div className="flex items-center gap-1.5 bg-white border border-slate-200 px-3 py-1.5 rounded-xl shadow-sm">
+            <div className="flex items-center gap-1.5 bg-white border border-border px-3 py-1.5 rounded-lg shadow-xs">
               <span className="font-bold text-slate-500">🏢 Warehouse:</span>
               <select
                 value={selectedBranch}
                 onChange={(e) => setSelectedBranch(e.target.value)}
-                className="text-xs font-bold text-slate-800 focus:outline-none bg-transparent cursor-pointer"
+                className="text-xs font-semibold text-slate-800 focus:outline-none bg-transparent cursor-pointer"
               >
                 <option value="all">All Warehouses</option>
                 {branches.map((b) => (
@@ -516,73 +516,73 @@ export const DailySalesReportModal: React.FC<DailySalesReportModalProps> = ({
         </div>
 
         {/* Scrollable Report Body */}
-        <div className="p-5 overflow-y-auto space-y-5 bg-slate-100/70">
+        <div className="p-5 overflow-y-auto space-y-5 bg-slate-50/30">
           {/* Executive KPI Summary Cards */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-            <div className="bg-white border border-slate-200 rounded-xl p-3 shadow-sm text-center">
+            <div className="erp-card p-3 border-border text-center shadow-xs">
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
                 Total Invoices
               </span>
-              <p className="text-xl font-extrabold text-slate-900 mt-1">{totalInvoicesCount}</p>
+              <p className="text-xl font-extrabold font-mono text-slate-900 mt-1">{totalInvoicesCount}</p>
             </div>
 
-            <div className="bg-white border border-slate-200 rounded-xl p-3 shadow-sm text-center">
+            <div className="erp-card p-3 border-border text-center shadow-xs">
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
                 Total Sales
               </span>
-              <p className="text-xl font-extrabold text-blue-600 mt-1">
+              <p className="text-xl font-extrabold font-mono text-slate-900 mt-1">
                 {formatPrice(totalDailySales)}
               </p>
             </div>
 
-            <div className="bg-white border border-slate-200 rounded-xl p-3 shadow-sm text-center">
+            <div className="erp-card p-3 border-border text-center shadow-xs">
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
                 Total Cost
               </span>
-              <p className="text-xl font-extrabold text-slate-600 mt-1">
+              <p className="text-xl font-extrabold font-mono text-slate-700 mt-1">
                 {formatPrice(totalDailyCost)}
               </p>
             </div>
 
-            <div className="bg-white border border-slate-200 rounded-xl p-3 shadow-sm text-center">
+            <div className="erp-card p-3 border-border text-center shadow-xs">
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
                 Net Profit
               </span>
               <p
-                className={`text-xl font-extrabold mt-1 ${
-                  totalDailyProfit >= 0 ? "text-emerald-600" : "text-red-600"
+                className={`text-xl font-extrabold font-mono mt-1 ${
+                  totalDailyProfit >= 0 ? "text-emerald-700" : "text-rose-600"
                 }`}
               >
                 {totalDailyProfit >= 0 ? "+" : ""}
                 {formatPrice(totalDailyProfit)}
               </p>
-              <span className="text-[9px] text-slate-400 font-medium">
+              <span className="text-[9px] text-emerald-700 font-medium font-mono">
                 {dailyProfitMargin.toFixed(1)}% margin
               </span>
             </div>
 
-            <div className="bg-white border border-slate-200 rounded-xl p-3 shadow-sm text-center">
+            <div className="erp-card p-3 border-border text-center shadow-xs">
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
                 Settled / Cash
               </span>
-              <p className="text-xl font-extrabold text-emerald-600 mt-1">
+              <p className="text-xl font-extrabold font-mono text-emerald-800 mt-1">
                 {formatPrice(totalDailyPaid)}
               </p>
             </div>
 
-            <div className="bg-white border border-slate-200 rounded-xl p-3 shadow-sm text-center">
+            <div className="erp-card p-3 border-border text-center shadow-xs">
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
                 Due / Credit
               </span>
-              <p className="text-xl font-extrabold text-amber-600 mt-1">
+              <p className="text-xl font-extrabold font-mono text-amber-700 mt-1">
                 {formatPrice(totalDailyDue)}
               </p>
             </div>
           </div>
 
           {/* Itemized Table Preview */}
-          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-            <div className="p-3 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
+          <div className="erp-card border-border overflow-hidden shadow-xs">
+            <div className="p-3 bg-slate-50/80 border-b border-border flex justify-between items-center">
               <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">
                 Itemized Sales Log ({formatReportDate(selectedDate)})
               </span>
@@ -601,7 +601,7 @@ export const DailySalesReportModal: React.FC<DailySalesReportModalProps> = ({
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
-                    <tr className="bg-slate-900 text-white font-bold text-[10px] uppercase">
+                    <tr className="bg-slate-50/80 text-slate-600 font-bold text-[10px] uppercase border-b border-border">
                       <th className="p-2.5 text-center w-8">#</th>
                       <th className="p-2.5 text-center w-20">Time</th>
                       <th className="p-2.5">Invoice ID</th>
@@ -626,12 +626,12 @@ export const DailySalesReportModal: React.FC<DailySalesReportModalProps> = ({
                         .join(", ");
 
                       return (
-                        <tr key={inv.id} className="hover:bg-slate-50 transition">
+                        <tr key={inv.id} className="hover:bg-slate-50/70 transition-colors">
                           <td className="p-2.5 text-center text-slate-400 font-mono">{idx + 1}</td>
                           <td className="p-2.5 text-center text-slate-500 font-mono whitespace-nowrap">
                             {formatTimeOnly(inv.created_at)}
                           </td>
-                          <td className="p-2.5 font-mono font-bold text-blue-600 whitespace-nowrap">
+                          <td className="p-2.5 font-mono font-bold text-brand whitespace-nowrap">
                             {inv.receipt_number}
                           </td>
                           <td className="p-2.5">
@@ -648,31 +648,31 @@ export const DailySalesReportModal: React.FC<DailySalesReportModalProps> = ({
                           <td className="p-2.5 text-center whitespace-nowrap text-slate-600">
                             {getBranchName(inv.branch_id)}
                           </td>
-                          <td className="p-2.5 text-right font-extrabold text-slate-900 whitespace-nowrap">
+                          <td className="p-2.5 text-right font-extrabold font-mono text-slate-900 whitespace-nowrap">
                             {formatPrice(inv.total_amount)}
                           </td>
-                          <td className="p-2.5 text-right font-medium text-slate-600 whitespace-nowrap">
+                          <td className="p-2.5 text-right font-medium font-mono text-slate-600 whitespace-nowrap">
                             {formatPrice(cost)}
                           </td>
                           <td className="p-2.5 text-right whitespace-nowrap">
                             <span
-                              className={`font-bold block ${
-                                netProfit >= 0 ? "text-emerald-600" : "text-red-600"
+                              className={`font-bold font-mono block ${
+                                netProfit >= 0 ? "text-emerald-700" : "text-rose-600"
                               }`}
                             >
                               {netProfit >= 0 ? "+" : ""}
                               {formatPrice(netProfit)}
                             </span>
-                            <span className="text-[9px] text-slate-400 block font-medium">
+                            <span className="text-[9px] text-slate-400 block font-mono font-medium">
                               {marginPercent.toFixed(1)}%
                             </span>
                           </td>
                           <td className="p-2.5 text-center whitespace-nowrap">
                             <span
-                              className={`inline-block px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${
+                              className={`inline-block px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider border ${
                                 inv.status === "Paid"
-                                  ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                                  : "bg-amber-50 text-amber-700 border border-amber-200"
+                                  ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                                  : "bg-amber-50 text-amber-800 border border-amber-200"
                               }`}
                             >
                               {inv.status}
@@ -683,19 +683,19 @@ export const DailySalesReportModal: React.FC<DailySalesReportModalProps> = ({
                     })}
                   </tbody>
                   <tfoot>
-                    <tr className="bg-slate-50 border-t-2 border-slate-900 font-extrabold text-xs text-slate-900">
-                      <td colSpan={6} className="p-3 text-right uppercase tracking-wider">
+                    <tr className="bg-slate-50/80 border-t-2 border-slate-900 font-extrabold text-xs text-slate-900">
+                      <td colSpan={6} className="p-3 text-right uppercase tracking-wider font-mono">
                         Daily Totals ({totalInvoicesCount} Invoices):
                       </td>
-                      <td className="p-3 text-right text-blue-700 font-black whitespace-nowrap">
+                      <td className="p-3 text-right text-slate-900 font-mono font-black whitespace-nowrap">
                         {formatPrice(totalDailySales)}
                       </td>
-                      <td className="p-3 text-right text-slate-600 whitespace-nowrap">
+                      <td className="p-3 text-right text-slate-600 font-mono whitespace-nowrap">
                         {formatPrice(totalDailyCost)}
                       </td>
                       <td
-                        className={`p-3 text-right whitespace-nowrap ${
-                          totalDailyProfit >= 0 ? "text-emerald-600" : "text-red-600"
+                        className={`p-3 text-right font-mono whitespace-nowrap ${
+                          totalDailyProfit >= 0 ? "text-emerald-700" : "text-rose-600"
                         }`}
                       >
                         {totalDailyProfit >= 0 ? "+" : ""}
