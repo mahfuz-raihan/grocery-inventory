@@ -147,34 +147,34 @@ export default function UsersPage() {
   if (loading) {
     return (
       <div className="flex h-[60vh] items-center justify-center">
-        <div className="text-slate-400 font-semibold animate-pulse">Loading System Users...</div>
+        <div className="text-slate-400 font-semibold text-sm animate-pulse">Loading System Users...</div>
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       {/* Left Pane: Create User Form */}
-      <div className="bg-white p-8 rounded-xl shadow-sm border lg:col-span-1 h-fit">
-        <h2 className="text-xl font-bold text-gray-800 mb-6">Create New User</h2>
+      <div className="erp-card p-6 lg:col-span-1 h-fit">
+        <h2 className="text-base font-bold text-slate-900 mb-5">Create New User</h2>
         {userSuccessMessage && (
-          <div className="mb-6 p-4 bg-green-50 text-green-700 border border-green-200 rounded-lg text-sm transition-all">
+          <div className="mb-5 p-3.5 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-lg text-xs font-medium transition-all">
             {userSuccessMessage}
           </div>
         )}
         
         {branches.length === 0 && (
-          <div className="mb-6 p-4 bg-yellow-50 text-yellow-700 rounded-lg border border-yellow-200 text-sm">
+          <div className="mb-5 p-3.5 bg-amber-50 text-amber-800 rounded-lg border border-amber-200 text-xs font-medium">
             ⚠️ <b>No branches found.</b> Create a branch first to assign users.
           </div>
         )}
 
         <form onSubmit={handleCreateUser} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Full Name</label>
+            <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Full Name</label>
             <input
               type="text"
-              className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              className="w-full p-2.5 border border-border rounded-lg focus:ring-1 focus:ring-brand focus:border-brand outline-none text-xs text-slate-800 bg-white transition"
               value={newUserFullName}
               onChange={(e) => setNewUserFullName(e.target.value)}
               placeholder="e.g. John Doe"
@@ -184,10 +184,10 @@ export default function UsersPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Email Address</label>
+            <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Email Address</label>
             <input
               type="email"
-              className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              className="w-full p-2.5 border border-border rounded-lg focus:ring-1 focus:ring-brand focus:border-brand outline-none text-xs text-slate-800 bg-white font-mono transition"
               value={newUserEmail}
               onChange={(e) => setNewUserEmail(e.target.value)}
               placeholder="e.g. john@company.com"
@@ -196,10 +196,10 @@ export default function UsersPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Password</label>
+            <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Password</label>
             <input
               type="password"
-              className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              className="w-full p-2.5 border border-border rounded-lg focus:ring-1 focus:ring-brand focus:border-brand outline-none text-xs text-slate-800 bg-white transition"
               value={newUserPassword}
               onChange={(e) => setNewUserPassword(e.target.value)}
               placeholder="Min 8 characters"
@@ -210,9 +210,9 @@ export default function UsersPage() {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">System Role</label>
+              <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">System Role</label>
               <select
-                className="w-full p-2.5 border rounded-lg bg-white focus:ring-2 focus:ring-blue-500 outline-none"
+                className="w-full p-2.5 border border-border rounded-lg bg-white focus:ring-1 focus:ring-brand focus:border-brand outline-none text-xs text-slate-800 transition"
                 value={newUserRole}
                 onChange={(e) => setNewUserRole(e.target.value)}
               >
@@ -227,9 +227,9 @@ export default function UsersPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Branch</label>
+              <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Branch</label>
               <select
-                className="w-full p-2.5 border rounded-lg bg-white focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+                className="w-full p-2.5 border border-border rounded-lg bg-white focus:ring-1 focus:ring-brand focus:border-brand outline-none text-xs text-slate-800 transition disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
                 value={newUserBranchId}
                 onChange={(e) => setNewUserBranchId(e.target.value)}
                 disabled={newUserRole === "owner" || branches.length === 0}
@@ -246,7 +246,7 @@ export default function UsersPage() {
           <button
             type="submit"
             disabled={isSubmittingUser || (newUserRole !== "owner" && branches.length === 0)}
-            className="w-full py-3 bg-blue-600 text-white font-bold rounded-lg transition hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
+            className="btn-primary text-xs w-full py-2.5 flex items-center justify-center mt-2"
           >
             {isSubmittingUser ? "Registering..." : "Register User"}
           </button>
@@ -254,39 +254,39 @@ export default function UsersPage() {
       </div>
 
       {/* Right Pane: User Cards */}
-      <div className="bg-white p-8 rounded-xl shadow-sm border lg:col-span-2">
-        <h2 className="text-xl font-bold text-gray-800 mb-6">Registered Users ({users.length})</h2>
+      <div className="erp-card p-6 lg:col-span-2">
+        <h2 className="text-base font-bold text-slate-900 mb-5">Registered Users ({users.length})</h2>
         {users.length === 0 ? (
-          <p className="text-sm text-gray-500">No users found. Create one on the left panel.</p>
+          <p className="text-xs text-slate-500">No users found. Create one on the left panel.</p>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[550px] overflow-y-auto pr-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 max-h-[580px] overflow-y-auto pr-1">
             {users.map(u => {
               const roleColors: Record<string, string> = {
-                owner: "bg-indigo-50 text-indigo-700 border-indigo-200",
-                manager: "bg-blue-50 text-blue-700 border-blue-200",
-                cashier: "bg-emerald-50 text-emerald-700 border-emerald-200",
-                stock_handler: "bg-amber-50 text-amber-700 border-amber-200",
-                purchase_user: "bg-orange-50 text-orange-700 border-orange-200",
-                production_user: "bg-violet-50 text-violet-700 border-violet-200",
-                sales_user: "bg-teal-50 text-teal-700 border-teal-200"
+                owner: "bg-purple-50 text-purple-800 border-purple-200",
+                manager: "bg-blue-50 text-blue-800 border-blue-200",
+                cashier: "bg-emerald-50 text-emerald-800 border-emerald-200",
+                stock_handler: "bg-amber-50 text-amber-800 border-amber-200",
+                purchase_user: "bg-amber-50 text-amber-800 border-amber-200",
+                production_user: "bg-indigo-50 text-indigo-800 border-indigo-200",
+                sales_user: "bg-teal-50 text-teal-800 border-teal-200"
               };
 
               const branchName = branches.find(b => b.id === u.branch_id)?.name || "All Branches";
 
               return (
-                <div key={u.id} className="p-5 bg-gray-50 border rounded-xl flex flex-col justify-between hover:shadow-md hover:border-blue-200 transition-all">
-                  <div className="flex justify-between items-start mb-4">
+                <div key={u.id} className="p-4 bg-slate-50/70 border border-border rounded-xl flex flex-col justify-between hover:border-slate-300 hover:bg-white transition-all shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+                  <div className="flex justify-between items-start mb-3">
                     <div>
-                      <h4 className="font-semibold text-gray-800">{u.full_name}</h4>
-                      <p className="text-xs text-gray-500">{u.email}</p>
+                      <h4 className="font-semibold text-slate-900 text-xs">{u.full_name}</h4>
+                      <p className="text-xs font-mono text-slate-500 mt-0.5">{u.email}</p>
                     </div>
-                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${roleColors[u.role as keyof typeof roleColors] || "bg-gray-100 text-gray-700"}`}>
+                    <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold border ${roleColors[u.role as keyof typeof roleColors] || "bg-slate-100 text-slate-700 border-slate-200"}`}>
                       {u.role.replace('_', ' ')}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between text-xs text-gray-400 mt-2 border-t pt-3">
-                    <span>Branch: <b className="text-gray-600">{branchName}</b></span>
-                    <span>Joined: {new Date(u.created_at).toLocaleDateString()}</span>
+                  <div className="flex items-center justify-between text-xs text-slate-400 mt-2 border-t border-border/80 pt-2.5">
+                    <span>Branch: <b className="text-slate-700 font-medium">{branchName}</b></span>
+                    <span className="font-mono">Joined: {new Date(u.created_at).toLocaleDateString()}</span>
                   </div>
                 </div>
               );
