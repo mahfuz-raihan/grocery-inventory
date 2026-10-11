@@ -18,7 +18,7 @@ export const CustomerInvoicesModal: React.FC<CustomerInvoicesModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto animate-fadeIn">
-      <div className="bg-white rounded-xl border border-border max-w-3xl w-full shadow-2xl overflow-hidden flex flex-col my-8">
+      <div className="bg-white rounded-lg border border-border max-w-3xl w-full shadow-2xl overflow-hidden flex flex-col my-8">
         {/* Modal Header */}
         <div className="p-4 sm:p-5 bg-slate-50/80 backdrop-blur border-b border-border flex justify-between items-center">
           <div>
@@ -32,7 +32,7 @@ export const CustomerInvoicesModal: React.FC<CustomerInvoicesModalProps> = ({
           </div>
           <button
             onClick={onClose}
-            className="btn-secondary px-3 py-1.5 font-medium rounded-lg text-xs transition"
+            className="btn-secondary px-3 py-1.5 font-medium rounded-md text-xs transition"
           >
             Close
           </button>
@@ -45,7 +45,7 @@ export const CustomerInvoicesModal: React.FC<CustomerInvoicesModalProps> = ({
               No invoices recorded for this customer.
             </div>
           ) : (
-            <div className="border border-border rounded-xl overflow-hidden shadow-xs bg-white">
+            <div className="border border-border rounded-md overflow-hidden shadow-xs bg-white">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="bg-slate-50/80 text-slate-600 font-bold text-[10px] uppercase border-b border-border">
@@ -70,7 +70,7 @@ export const CustomerInvoicesModal: React.FC<CustomerInvoicesModalProps> = ({
                       <td className="p-3 text-right font-extrabold font-mono text-slate-900">{formatPrice(inv.total_amount)}</td>
                       <td className="p-3 text-center">
                         <span
-                          className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
+                          className={`inline-block px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${
                             inv.status === "Paid"
                               ? "bg-emerald-50 text-emerald-800 border-emerald-200"
                               : "bg-amber-50 text-amber-800 border-amber-200"
@@ -84,7 +84,7 @@ export const CustomerInvoicesModal: React.FC<CustomerInvoicesModalProps> = ({
                           onClick={() => {
                             onViewInvoice(inv);
                           }}
-                          className="px-2.5 py-1 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 font-semibold rounded-lg text-xs transition border border-emerald-200 shadow-xs"
+                          className="px-2.5 py-1 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 font-semibold rounded-md text-xs transition border border-emerald-200 shadow-xs"
                         >
                           View Invoice
                         </button>
