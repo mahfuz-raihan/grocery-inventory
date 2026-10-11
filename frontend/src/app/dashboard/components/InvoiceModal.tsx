@@ -122,7 +122,7 @@ export const printSaleInvoice = (
           .invoice-title {
             font-size: 18px;
             font-weight: 800;
-            color: #1e40af;
+            color: #065f46;
             margin: 0 0 4px 0;
             text-align: right;
             letter-spacing: 0.04em;
@@ -130,7 +130,7 @@ export const printSaleInvoice = (
           }
           .invoice-no {
             font-weight: 700;
-            color: #1e40af;
+            color: #065f46;
             font-size: 13px;
             letter-spacing: 0.01em;
             font-variant-numeric: tabular-nums;
@@ -368,29 +368,29 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto animate-fadeIn">
-      <div className="bg-white rounded-2xl border border-slate-200 max-w-2xl w-full shadow-2xl overflow-hidden flex flex-col my-8">
+      <div className="bg-white rounded-xl border border-border max-w-2xl w-full shadow-2xl overflow-hidden flex flex-col my-8">
         {/* Modal Top Bar */}
-        <div className="p-4 bg-slate-900 text-white flex justify-between items-center gap-3">
+        <div className="p-4 sm:p-5 bg-slate-50/80 backdrop-blur border-b border-border flex justify-between items-center gap-3">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold tracking-wide uppercase text-slate-300">Invoice Preview</span>
-            <span className="text-xs bg-blue-600/80 font-mono px-2 py-0.5 rounded font-medium text-white">
+            <span className="text-sm font-bold tracking-tight uppercase text-slate-900">Invoice Preview</span>
+            <span className="text-xs bg-emerald-50 text-emerald-800 border border-emerald-200 font-mono px-2 py-0.5 rounded font-medium">
               {invoice.receipt_number}
             </span>
           </div>
           <div className="flex items-center gap-2">
             <button
               onClick={handlePrint}
-              className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded-lg text-xs transition flex items-center gap-1.5 shadow-sm"
+              className="btn-primary px-3 py-1.5 text-white font-medium rounded-lg text-xs transition flex items-center gap-1.5 shadow-xs"
               title="Print or Save as PDF (A4 Layout)"
             >
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-3.5 h-3.5 text-emerald-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
               </svg>
               <span>Print / Download PDF</span>
             </button>
             <button
               onClick={onClose}
-              className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-medium rounded-lg text-xs transition"
+              className="btn-secondary px-3 py-1.5 font-medium rounded-lg text-xs transition"
             >
               Close
             </button>
@@ -398,8 +398,8 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
         </div>
 
         {/* Compact A4 Preview Card */}
-        <div className="p-6 bg-slate-100 overflow-y-auto max-h-[78vh]">
-          <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm text-xs text-slate-800 space-y-4">
+        <div className="p-6 bg-slate-50/60 overflow-y-auto max-h-[78vh]">
+          <div className="bg-white p-6 rounded-xl border border-border shadow-xs text-xs text-slate-800 space-y-4">
             {/* Header */}
             <div className="flex justify-between items-start border-b-2 border-slate-900 pb-3">
               <div>
@@ -414,26 +414,26 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
                 </p>
               </div>
               <div className="text-right">
-                <span className="text-blue-700 font-extrabold text-sm uppercase tracking-wider block">
+                <span className="text-brand font-extrabold text-sm uppercase tracking-wider block">
                   Retail Invoice
                 </span>
                 <span className="font-mono font-bold text-xs text-slate-900 block mt-0.5">
                   {invoice.receipt_number}
                 </span>
-                <span className="text-[10px] text-slate-400 block mt-0.5">
+                <span className="text-[10px] text-slate-400 block mt-0.5 font-mono">
                   {formatDateTime(invoice.created_at)}
                 </span>
               </div>
             </div>
 
             {/* Customer & Warehouse Details */}
-            <div className="grid grid-cols-2 gap-4 bg-slate-50 p-3 rounded-lg border border-slate-100">
+            <div className="grid grid-cols-2 gap-4 bg-slate-50 p-3 rounded-lg border border-border">
               <div>
                 <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
                   Customer Information
                 </span>
                 <p className="font-bold text-slate-900 text-xs">{invoice.customer_name}</p>
-                <p className="text-slate-600 text-[11px]">Phone: {invoice.customer_phone}</p>
+                <p className="text-slate-600 text-[11px] font-mono">Phone: {invoice.customer_phone}</p>
                 <p className="text-slate-600 text-[11px]">Address: {invoice.customer_address}</p>
               </div>
               <div className="text-right">
@@ -443,10 +443,10 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
                 <p className="font-bold text-slate-900 text-xs">{warehouseName}</p>
                 <div className="mt-1">
                   <span
-                    className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                    className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${
                       invoice.status === "Paid"
-                        ? "bg-emerald-100 text-emerald-800"
-                        : "bg-red-100 text-red-800"
+                        ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                        : "bg-rose-50 text-rose-800 border-rose-200"
                     }`}
                   >
                     Payment: {invoice.status}
@@ -456,10 +456,10 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
             </div>
 
             {/* Items Table */}
-            <div className="border border-slate-200 rounded-lg overflow-hidden">
+            <div className="border border-border rounded-lg overflow-hidden">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
-                  <tr className="bg-slate-900 text-white font-bold text-[10px] uppercase">
+                  <tr className="bg-slate-50 text-slate-600 font-bold text-[10px] uppercase border-b border-border">
                     <th className="p-2 text-center w-8">#</th>
                     <th className="p-2">Item Description</th>
                     <th className="p-2 text-center w-16">Qty</th>
@@ -469,14 +469,14 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {invoice.items.map((item, idx) => (
-                    <tr key={idx} className="hover:bg-slate-50/60">
+                    <tr key={idx} className="hover:bg-slate-50/60 transition-colors">
                       <td className="p-2 text-center text-slate-400">{idx + 1}</td>
                       <td className="p-2 font-semibold text-slate-800">
                         {getProductName(item.product_id)}
                       </td>
-                      <td className="p-2 text-center font-bold text-slate-900">{item.quantity}</td>
-                      <td className="p-2 text-right text-slate-600">{formatPrice(item.unit_price)}</td>
-                      <td className="p-2 text-right font-bold text-slate-900">
+                      <td className="p-2 text-center font-bold font-mono text-slate-900">{item.quantity}</td>
+                      <td className="p-2 text-right font-mono text-slate-600">{formatPrice(item.unit_price)}</td>
+                      <td className="p-2 text-right font-bold font-mono text-slate-900">
                         {formatPrice(item.quantity * item.unit_price)}
                       </td>
                     </tr>
@@ -490,25 +490,25 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
               <div className="w-64 space-y-1.5 text-xs">
                 <div className="flex justify-between text-slate-600">
                   <span>Subtotal:</span>
-                  <span className="font-semibold">{formatPrice(subtotal)}</span>
+                  <span className="font-semibold font-mono">{formatPrice(subtotal)}</span>
                 </div>
                 <div className="flex justify-between text-slate-600">
                   <span>Discount:</span>
-                  <span className="font-semibold text-red-600">-{formatPrice(invoice.discount)}</span>
+                  <span className="font-semibold font-mono text-rose-600">-{formatPrice(invoice.discount)}</span>
                 </div>
-                <div className="flex justify-between font-extrabold text-slate-900 text-sm border-t border-slate-300 pt-1.5">
+                <div className="flex justify-between font-extrabold text-slate-900 text-sm border-t border-border pt-1.5">
                   <span>Grand Total:</span>
-                  <span className="text-blue-900">{formatPrice(invoice.total_amount)}</span>
+                  <span className="font-mono text-slate-900">{formatPrice(invoice.total_amount)}</span>
                 </div>
-                <div className="flex justify-between text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded">
+                <div className="flex justify-between text-[11px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded">
                   <span>Amount Paid:</span>
-                  <span>{formatPrice(invoice.status === "Paid" ? invoice.total_amount : 0)}</span>
+                  <span className="font-mono">{formatPrice(invoice.status === "Paid" ? invoice.total_amount : 0)}</span>
                 </div>
               </div>
             </div>
 
             {/* Compact Footer */}
-            <div className="border-t border-slate-200 pt-3 text-center text-[10px] text-slate-400">
+            <div className="border-t border-border pt-3 text-center text-[10px] text-slate-400">
               A4 Page Format • Valid Computer-Generated Tax & Sales Invoice
             </div>
           </div>
