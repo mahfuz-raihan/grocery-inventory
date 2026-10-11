@@ -62,17 +62,17 @@ export const SuppliersTab: React.FC<SuppliersTabProps> = ({ suppliers, setSuppli
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      <div className="bg-white p-6 rounded-xl border h-fit shadow-sm">
-        <h3 className="text-lg font-bold text-gray-800 mb-4">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="erp-card p-6 h-fit">
+        <h3 className="text-base font-bold text-slate-900 mb-4">
           {editingSupplier ? "✏️ Edit Supplier" : "Register Supplier"}
         </h3>
         <form onSubmit={handleCreateSupplier} className="space-y-4">
           <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Supplier Company Name</label>
+            <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Supplier Company Name</label>
             <input
               type="text"
-              className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              className="w-full p-2.5 border border-border rounded-lg text-xs bg-white text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
               value={supplierName}
               onChange={(e) => setSupplierName(e.target.value)}
               placeholder="e.g. Timberwood Ltd"
@@ -80,50 +80,50 @@ export const SuppliersTab: React.FC<SuppliersTabProps> = ({ suppliers, setSuppli
             />
           </div>
           <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Contact Person</label>
+            <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Contact Person</label>
             <input
               type="text"
-              className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              className="w-full p-2.5 border border-border rounded-lg text-xs bg-white text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
               value={supplierContact}
               onChange={(e) => setSupplierContact(e.target.value)}
               placeholder="John Smith"
             />
           </div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Phone</label>
+              <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Phone</label>
               <input
                 type="text"
-                className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                className="w-full p-2.5 border border-border rounded-lg text-xs font-mono bg-white text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
                 value={supplierPhone}
                 onChange={(e) => setSupplierPhone(e.target.value)}
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Email</label>
+              <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Email</label>
               <input
                 type="email"
-                className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                className="w-full p-2.5 border border-border rounded-lg text-xs font-mono bg-white text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
                 value={supplierEmail}
                 onChange={(e) => setSupplierEmail(e.target.value)}
               />
             </div>
           </div>
           <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Office Address</label>
+            <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Office Address</label>
             <textarea
-              className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none h-16"
+              className="w-full p-2.5 border border-border rounded-lg text-xs bg-white text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none h-16 transition"
               value={supplierAddress}
               onChange={(e) => setSupplierAddress(e.target.value)}
             />
           </div>
           <div>
-            <label className="flex items-center gap-2 text-xs font-bold text-gray-600 uppercase cursor-pointer select-none">
+            <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer select-none">
               <input
                 type="checkbox"
                 checked={supplierActive}
                 onChange={(e) => setSupplierActive(e.target.checked)}
-                className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-gray-300"
+                className="w-4 h-4 rounded text-brand focus:ring-brand border-border"
               />
               <span>Supplier Status (Active)</span>
             </label>
@@ -131,7 +131,7 @@ export const SuppliersTab: React.FC<SuppliersTabProps> = ({ suppliers, setSuppli
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full py-2.5 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition disabled:bg-gray-400"
+            className="btn-primary w-full py-2.5 text-xs font-semibold justify-center disabled:opacity-50"
           >
             {isSubmitting ? "Saving..." : editingSupplier ? "Save Changes" : "Register Supplier"}
           </button>
@@ -139,7 +139,7 @@ export const SuppliersTab: React.FC<SuppliersTabProps> = ({ suppliers, setSuppli
             <button
               type="button"
               onClick={resetForm}
-              className="w-full py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition"
+              className="btn-secondary w-full py-2 text-xs font-medium justify-center"
             >
               Cancel Edit
             </button>
@@ -147,14 +147,14 @@ export const SuppliersTab: React.FC<SuppliersTabProps> = ({ suppliers, setSuppli
         </form>
       </div>
 
-      <div className="bg-white p-6 rounded-xl border lg:col-span-2 shadow-sm">
-        <h3 className="text-lg font-bold text-gray-800 mb-4">Registered Suppliers ({suppliers.length})</h3>
+      <div className="erp-card p-6 lg:col-span-2">
+        <h3 className="text-base font-bold text-slate-900 mb-4">Registered Suppliers ({suppliers.length})</h3>
         {suppliers.length === 0 ? (
-          <p className="text-sm text-gray-500">No suppliers registered.</p>
+          <p className="text-xs text-slate-500 italic py-8 text-center bg-slate-50/50 rounded-xl border border-border">No suppliers registered.</p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-gray-500">
-              <thead className="text-xs text-gray-700 bg-gray-100 uppercase font-bold">
+          <div className="overflow-x-auto border border-border rounded-xl">
+            <table className="w-full text-left text-xs">
+              <thead className="text-[11px] text-slate-500 bg-slate-50 uppercase font-semibold border-b border-border">
                 <tr>
                   <th className="p-3">Company</th>
                   <th className="p-3">Contact</th>
@@ -165,18 +165,18 @@ export const SuppliersTab: React.FC<SuppliersTabProps> = ({ suppliers, setSuppli
                   {userRole && ["owner", "manager"].includes(userRole) && <th className="p-3 text-center">Actions</th>}
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-border/60">
                 {suppliers.map((s) => (
-                  <tr key={s.id} className="border-b hover:bg-gray-55">
-                    <td className="p-3 font-semibold text-gray-900">{s.name}</td>
-                    <td className="p-3 text-xs">{s.contact_person || "-"}</td>
-                    <td className="p-3 text-xs">{s.phone || "-"}</td>
-                    <td className="p-3 text-xs">{s.email || "-"}</td>
-                    <td className="p-3 text-[11px] text-gray-500 max-w-xs truncate">{s.address || "-"}</td>
+                  <tr key={s.id} className="hover:bg-slate-50/70 transition">
+                    <td className="p-3 font-semibold text-slate-900">{s.name}</td>
+                    <td className="p-3 text-slate-600">{s.contact_person || "-"}</td>
+                    <td className="p-3 text-slate-600 font-mono">{s.phone || "-"}</td>
+                    <td className="p-3 text-slate-600 font-mono">{s.email || "-"}</td>
+                    <td className="p-3 text-[11px] text-slate-500 max-w-xs truncate">{s.address || "-"}</td>
                     <td className="p-3 text-center">
                       <span
-                        className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                          s.is_active !== false ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
+                          s.is_active !== false ? "bg-emerald-50 text-emerald-800 border-emerald-200" : "bg-rose-50 text-rose-800 border-rose-200"
                         }`}
                       >
                         {s.is_active !== false ? "Active" : "Inactive"}
@@ -195,7 +195,7 @@ export const SuppliersTab: React.FC<SuppliersTabProps> = ({ suppliers, setSuppli
                             setSupplierAddress(s.address || "");
                             setSupplierActive(s.is_active !== false);
                           }}
-                          className="px-2.5 py-1 bg-amber-50 text-amber-700 hover:bg-amber-100 rounded text-xs font-bold mr-1.5 transition"
+                          className="px-2.5 py-1 bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-200 rounded text-xs font-medium mr-1.5 transition"
                         >
                           Edit
                         </button>
@@ -210,10 +210,10 @@ export const SuppliersTab: React.FC<SuppliersTabProps> = ({ suppliers, setSuppli
                               alert("Failed to toggle supplier status");
                             }
                           }}
-                          className={`px-2.5 py-1 rounded text-xs font-bold transition ${
+                          className={`px-2.5 py-1 rounded text-xs font-medium border transition ${
                             s.is_active !== false
-                              ? "bg-red-50 text-red-700 hover:bg-red-100"
-                              : "bg-green-50 text-green-700 hover:bg-green-100"
+                              ? "bg-rose-50 text-rose-800 hover:bg-rose-100 border-rose-200"
+                              : "bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border-emerald-200"
                           }`}
                         >
                           {s.is_active !== false ? "Deactivate" : "Activate"}
