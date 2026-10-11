@@ -191,123 +191,123 @@ export const SoldInvoicesTab: React.FC<SoldInvoicesTabProps> = ({
       {/* 1. KPI Cards Row: 6-Card Executive Summary */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
         {/* Total Invoices (Sales Amount) */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm hover:shadow-md transition">
+        <div className="erp-card p-4 border-border rounded-xl shadow-xs hover:border-slate-300 transition">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
               Total Sales
             </span>
-            <span className="p-1.5 bg-blue-50 text-blue-600 rounded-xl">
+            <span className="p-1.5 bg-brand-light text-brand rounded-lg border border-emerald-200/60">
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </span>
           </div>
-          <p className="text-xl font-bold font-mono text-slate-900 mt-2">{formatPrice(totalAmount)}</p>
+          <p className="text-xl font-bold font-mono text-slate-900 mt-2 tabular-nums">{formatPrice(totalAmount)}</p>
           <div className="mt-1 text-[10px] text-slate-400 font-medium truncate">
             Gross invoiced revenue
           </div>
         </div>
 
         {/* Total Cost of Goods Sold */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm hover:shadow-md transition">
+        <div className="erp-card p-4 border-border rounded-xl shadow-xs hover:border-slate-300 transition">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
               Total Cost
             </span>
-            <span className="p-1.5 bg-slate-100 text-slate-600 rounded-xl">
+            <span className="p-1.5 bg-slate-100 text-slate-600 rounded-lg border border-slate-200">
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
               </svg>
             </span>
           </div>
-          <p className="text-xl font-bold font-mono text-slate-700 mt-2">{formatPrice(totalCost)}</p>
+          <p className="text-xl font-bold font-mono text-slate-700 mt-2 tabular-nums">{formatPrice(totalCost)}</p>
           <div className="mt-1 text-[10px] text-slate-400 font-medium truncate">
             Cost of goods sold (COGS)
           </div>
         </div>
 
         {/* Total Net Profit */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm hover:shadow-md transition">
+        <div className="erp-card p-4 border-border rounded-xl shadow-xs hover:border-slate-300 transition">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
               Net Profit
             </span>
-            <span className="p-1.5 bg-emerald-50 text-emerald-600 rounded-xl">
+            <span className="p-1.5 bg-emerald-50 text-emerald-700 rounded-lg border border-emerald-200">
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
               </svg>
             </span>
           </div>
           <p
-            className={`text-xl font-bold font-mono mt-2 ${
-              totalProfit >= 0 ? "text-emerald-600" : "text-red-600"
+            className={`text-xl font-bold font-mono mt-2 tabular-nums ${
+              totalProfit >= 0 ? "text-emerald-700" : "text-rose-600"
             }`}
           >
             {totalProfit >= 0 ? "+" : ""}
             {formatPrice(totalProfit)}
           </p>
-          <div className="mt-1 text-[10px] text-emerald-600 font-semibold truncate font-mono">
+          <div className="mt-1 text-[10px] text-emerald-700 font-semibold truncate font-mono">
             {overallMargin.toFixed(1)}% profit margin
           </div>
         </div>
 
         {/* Total Orders (Count) */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm hover:shadow-md transition">
+        <div className="erp-card p-4 border-border rounded-xl shadow-xs hover:border-slate-300 transition">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
               Total Orders
             </span>
-            <span className="p-1.5 bg-indigo-50 text-indigo-600 rounded-xl">
+            <span className="p-1.5 bg-purple-50 text-purple-700 rounded-lg border border-purple-200">
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
               </svg>
             </span>
           </div>
-          <p className="text-xl font-bold font-mono text-slate-900 mt-2">{totalOrders}</p>
+          <p className="text-xl font-bold font-mono text-slate-900 mt-2 tabular-nums">{totalOrders}</p>
           <div className="mt-1 text-[10px] text-slate-400 font-medium truncate">
             Total invoices generated
           </div>
         </div>
 
         {/* Total Paid Amount */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm hover:shadow-md transition">
+        <div className="erp-card p-4 border-border rounded-xl shadow-xs hover:border-slate-300 transition">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
               Settled / Paid
             </span>
-            <span className="p-1.5 bg-emerald-50 text-emerald-600 rounded-xl">
+            <span className="p-1.5 bg-emerald-50 text-emerald-700 rounded-lg border border-emerald-200">
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </span>
           </div>
-          <p className="text-xl font-bold font-mono text-emerald-600 mt-2">{formatPrice(paidAmount)}</p>
-          <div className="mt-1 text-[10px] text-emerald-600 font-medium truncate">
+          <p className="text-xl font-bold font-mono text-emerald-700 mt-2 tabular-nums">{formatPrice(paidAmount)}</p>
+          <div className="mt-1 text-[10px] text-emerald-700 font-medium truncate">
             Cleared receipts
           </div>
         </div>
 
         {/* Total Due / Pending Amount */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm hover:shadow-md transition">
+        <div className="erp-card p-4 border-border rounded-xl shadow-xs hover:border-slate-300 transition">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
               Receivables
             </span>
-            <span className="p-1.5 bg-amber-50 text-amber-600 rounded-xl">
+            <span className="p-1.5 bg-amber-50 text-amber-700 rounded-lg border border-amber-200">
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </span>
           </div>
-          <p className="text-xl font-bold font-mono text-amber-600 mt-2">{formatPrice(dueAmount)}</p>
-          <div className="mt-1 text-[10px] text-amber-600 font-medium truncate">
+          <p className="text-xl font-bold font-mono text-amber-700 mt-2 tabular-nums">{formatPrice(dueAmount)}</p>
+          <div className="mt-1 text-[10px] text-amber-700 font-medium truncate">
             Pending customer collections
           </div>
         </div>
       </div>
 
       {/* 2. Controls Toolbar: Search, Filters, Sorting, Columns & Daily Sales Print */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-3">
+      <div className="erp-card p-3.5 border-border rounded-xl shadow-xs space-y-3">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
           {/* Search Facility */}
           <div className="relative flex-1 min-w-[260px]">
@@ -316,7 +316,7 @@ export const SoldInvoicesTab: React.FC<SoldInvoicesTabProps> = ({
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search by Invoice ID, Customer Name, or Phone..."
-              className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-xs font-medium bg-slate-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-slate-900 transition"
+              className="w-full pl-9 pr-4 py-2 border border-border rounded-lg text-xs font-medium bg-slate-50/60 focus:bg-white focus:outline-none focus:ring-1 focus:ring-brand focus:border-brand transition"
             />
             <svg className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -337,7 +337,7 @@ export const SoldInvoicesTab: React.FC<SoldInvoicesTabProps> = ({
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 outline-none cursor-pointer hover:bg-slate-100 transition"
+              className="bg-white border border-border rounded-lg px-3 py-2 text-xs font-semibold text-slate-700 outline-none cursor-pointer hover:bg-slate-50 focus:ring-1 focus:ring-brand focus:border-brand transition shadow-xs"
             >
               <option value="all">All Statuses</option>
               <option value="paid">Paid</option>
@@ -348,7 +348,7 @@ export const SoldInvoicesTab: React.FC<SoldInvoicesTabProps> = ({
             <select
               value={branchFilter}
               onChange={(e) => setBranchFilter(e.target.value)}
-              className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 outline-none cursor-pointer hover:bg-slate-100 transition max-w-[160px]"
+              className="bg-white border border-border rounded-lg px-3 py-2 text-xs font-semibold text-slate-700 outline-none cursor-pointer hover:bg-slate-50 focus:ring-1 focus:ring-brand focus:border-brand transition shadow-xs max-w-[160px]"
             >
               <option value="all">All Warehouses</option>
               {branches.map((b) => (
@@ -362,7 +362,7 @@ export const SoldInvoicesTab: React.FC<SoldInvoicesTabProps> = ({
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as any)}
-              className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 outline-none cursor-pointer hover:bg-slate-100 transition"
+              className="bg-white border border-border rounded-lg px-3 py-2 text-xs font-semibold text-slate-700 outline-none cursor-pointer hover:bg-slate-50 focus:ring-1 focus:ring-brand focus:border-brand transition shadow-xs"
             >
               <option value="date_desc">Date: Newest First</option>
               <option value="date_asc">Date: Oldest First</option>
@@ -379,7 +379,7 @@ export const SoldInvoicesTab: React.FC<SoldInvoicesTabProps> = ({
               <button
                 type="button"
                 onClick={() => setShowColumnMenu(!showColumnMenu)}
-                className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition shadow-sm"
+                className="px-3 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-border rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-xs"
               >
                 <svg className="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
@@ -388,8 +388,8 @@ export const SoldInvoicesTab: React.FC<SoldInvoicesTabProps> = ({
               </button>
 
               {showColumnMenu && (
-                <div className="absolute right-0 top-11 w-52 bg-white border border-slate-200 rounded-xl shadow-xl z-30 p-3 text-xs space-y-2 animate-fadeIn">
-                  <div className="font-bold text-slate-400 uppercase tracking-wider text-[10px] pb-1 border-b">
+                <div className="absolute right-0 top-11 w-52 bg-white border border-border rounded-xl shadow-xl z-30 p-3 text-xs space-y-2 animate-fadeIn">
+                  <div className="font-bold text-slate-400 uppercase tracking-wider text-[10px] pb-1 border-b border-border">
                     Toggle Table Columns
                   </div>
                   {columns.map((col) => (
@@ -401,15 +401,15 @@ export const SoldInvoicesTab: React.FC<SoldInvoicesTabProps> = ({
                         type="checkbox"
                         checked={col.visible}
                         onChange={() => toggleColumn(col.key)}
-                        className="rounded text-blue-600 focus:ring-0 cursor-pointer"
+                        className="rounded text-brand focus:ring-0 cursor-pointer"
                       />
                       <span>{col.label}</span>
                     </label>
                   ))}
-                  <div className="pt-2 border-t flex justify-end">
+                  <div className="pt-2 border-t border-border flex justify-end">
                     <button
                       onClick={() => setShowColumnMenu(false)}
-                      className="text-[11px] font-bold text-blue-600 hover:underline"
+                      className="text-[11px] font-bold text-brand hover:underline"
                     >
                       Done
                     </button>
@@ -423,10 +423,10 @@ export const SoldInvoicesTab: React.FC<SoldInvoicesTabProps> = ({
               <button
                 type="button"
                 onClick={onOpenDailyReport}
-                className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-medium flex items-center gap-1.5 transition shadow-sm"
+                className="btn-primary px-3.5 py-2 text-xs font-semibold flex items-center gap-1.5 transition shadow-xs"
                 title="Print Daily Sales Details Report"
               >
-                <svg className="w-3.5 h-3.5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-3.5 h-3.5 text-emerald-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                 </svg>
                 <span>Daily Sales Report</span>
@@ -437,7 +437,7 @@ export const SoldInvoicesTab: React.FC<SoldInvoicesTabProps> = ({
       </div>
 
       {/* 3. Sold Invoices Table */}
-      <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+      <div className="erp-card border-border rounded-xl overflow-hidden shadow-xs">
         {filteredInvoices.length === 0 ? (
           <div className="text-center py-16 text-slate-400">
             <svg className="w-10 h-10 mx-auto mb-2 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -450,7 +450,7 @@ export const SoldInvoicesTab: React.FC<SoldInvoicesTabProps> = ({
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold text-[10px] uppercase">
+                <tr className="bg-slate-50 border-b border-border text-slate-500 font-bold text-[11px] uppercase tracking-wider">
                   {isVisible("receipt_number") && <th className="p-3">Invoice ID</th>}
                   {isVisible("customer") && <th className="p-3">Customer</th>}
                   {isVisible("date") && <th className="p-3">Date</th>}
@@ -463,17 +463,17 @@ export const SoldInvoicesTab: React.FC<SoldInvoicesTabProps> = ({
                   {isVisible("actions") && <th className="p-3 text-center w-16">Actions</th>}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-border">
                 {filteredInvoices.map((inv) => {
                   const paidValue = inv.status === "Paid" ? inv.total_amount : 0;
                   const invoiceCost = getInvoiceCost(inv, catalogProducts);
                   const { netProfit, marginPercent } = getInvoiceNetProfit(inv, catalogProducts);
 
                   return (
-                    <tr key={inv.id} className="hover:bg-slate-50/60 transition duration-150">
+                    <tr key={inv.id} className="hover:bg-slate-50/70 transition duration-150">
                       {/* Invoice ID */}
                       {isVisible("receipt_number") && (
-                        <td className="p-3 font-mono font-bold text-blue-600 whitespace-nowrap">
+                        <td className="p-3 font-mono font-bold text-brand hover:underline cursor-pointer whitespace-nowrap" onClick={() => onViewInvoice(inv)}>
                           {inv.receipt_number}
                         </td>
                       )}
@@ -511,7 +511,7 @@ export const SoldInvoicesTab: React.FC<SoldInvoicesTabProps> = ({
 
                       {/* Paid */}
                       {isVisible("paid") && (
-                        <td className="p-3 text-right font-bold font-mono text-emerald-600 whitespace-nowrap">
+                        <td className="p-3 text-right font-bold font-mono text-emerald-700 whitespace-nowrap">
                           {formatPrice(paidValue)}
                         </td>
                       )}
@@ -528,7 +528,7 @@ export const SoldInvoicesTab: React.FC<SoldInvoicesTabProps> = ({
                         <td className="p-3 text-right whitespace-nowrap">
                           <span
                             className={`font-bold font-mono block ${
-                              netProfit >= 0 ? "text-emerald-600" : "text-red-600"
+                              netProfit >= 0 ? "text-emerald-700" : "text-rose-600"
                             }`}
                           >
                             {netProfit >= 0 ? "+" : ""}
@@ -546,8 +546,8 @@ export const SoldInvoicesTab: React.FC<SoldInvoicesTabProps> = ({
                           <span
                             className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
                               inv.status === "Paid"
-                                ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                                : "bg-amber-50 text-amber-700 border border-amber-200"
+                                ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                                : "bg-amber-50 text-amber-800 border border-amber-200"
                             }`}
                           >
                             {inv.status}
@@ -606,9 +606,9 @@ export const SoldInvoicesTab: React.FC<SoldInvoicesTabProps> = ({
                                     setProfitModalInvoice(inv);
                                     setOpenMenuId(null);
                                   }}
-                                  className="w-full px-3 py-2 text-left hover:bg-emerald-50 flex items-center gap-2 text-emerald-700 font-semibold"
+                                  className="w-full px-3 py-2 text-left hover:bg-emerald-50 flex items-center gap-2 text-emerald-800 font-semibold"
                                 >
-                                  <svg className="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <svg className="w-3.5 h-3.5 text-brand" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                                   </svg>
                                   <span>Profit Calculation</span>
@@ -616,9 +616,9 @@ export const SoldInvoicesTab: React.FC<SoldInvoicesTabProps> = ({
                                 <div className="border-t border-slate-100 my-0.5"></div>
                                 <button
                                   onClick={() => handleDelete(inv)}
-                                  className="w-full px-3 py-2 text-left hover:bg-red-50 flex items-center gap-2 text-red-600 font-medium"
+                                  className="w-full px-3 py-2 text-left hover:bg-rose-50 flex items-center gap-2 text-rose-600 font-medium"
                                 >
-                                  <svg className="w-3.5 h-3.5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <svg className="w-3.5 h-3.5 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                   </svg>
                                   <span>Delete Invoice</span>
