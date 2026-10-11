@@ -64,28 +64,28 @@ export default function CompanyProfileModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl border shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto animate-scaleUp">
-        <div className="p-6 border-b flex items-center justify-between bg-blue-50 sticky top-0 z-10">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 overflow-y-auto">
+      <div className="bg-white rounded-xl border border-border shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto animate-scaleUp">
+        <div className="p-5 border-b border-border flex items-center justify-between bg-slate-50/80 backdrop-blur sticky top-0 z-10">
           <div>
-            <h3 className="text-lg font-bold text-blue-900">🏢 Update Company Profile</h3>
-            <p className="text-xs text-blue-600 mt-1">This information is shown on GRN forms and invoices</p>
+            <h3 className="text-base font-bold text-slate-900 flex items-center gap-1.5"><span>🏢</span> Update Company Profile</h3>
+            <p className="text-xs text-slate-500 mt-0.5">This information is shown on GRN forms and invoices</p>
           </div>
           <button
             type="button"
             onClick={() => setShowCompanyModal(false)}
-            className="text-gray-400 hover:text-gray-700 text-2xl font-bold transition-colors"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors text-xl font-bold leading-none"
           >
             &times;
           </button>
         </div>
 
-        <form onSubmit={handleUpdateCompanyProfile} className="p-6 space-y-4">
+        <form onSubmit={handleUpdateCompanyProfile} className="p-5 space-y-4">
           <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Company Name *</label>
+            <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Company Name *</label>
             <input
               type="text"
-              className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-sm font-semibold text-gray-800"
+              className="w-full p-2.5 border border-border rounded-lg focus:ring-1 focus:ring-brand focus:border-brand outline-none bg-white text-xs font-medium text-slate-800 transition"
               value={companyName}
               onChange={(e) => setCompanyName(e.target.value)}
               placeholder="e.g. Manor Furniture"
@@ -94,9 +94,9 @@ export default function CompanyProfileModal({
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Address *</label>
+            <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Address *</label>
             <textarea
-              className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-sm text-gray-700 h-20"
+              className="w-full p-2.5 border border-border rounded-lg focus:ring-1 focus:ring-brand focus:border-brand outline-none bg-white text-xs text-slate-800 h-20 transition resize-none"
               value={companyAddress}
               onChange={(e) => setCompanyAddress(e.target.value)}
               placeholder="e.g. Bozlur Mor, Kushita"
@@ -106,20 +106,20 @@ export default function CompanyProfileModal({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Phone Number</label>
+              <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Phone Number</label>
               <input
                 type="text"
-                className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-sm"
+                className="w-full p-2.5 border border-border rounded-lg focus:ring-1 focus:ring-brand focus:border-brand outline-none bg-white text-xs font-mono text-slate-800 transition"
                 value={companyPhone}
                 onChange={(e) => setCompanyPhone(e.target.value)}
                 placeholder="e.g. 01700000000"
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Email Address</label>
+              <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Email Address</label>
               <input
                 type="email"
-                className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-sm"
+                className="w-full p-2.5 border border-border rounded-lg focus:ring-1 focus:ring-brand focus:border-brand outline-none bg-white text-xs font-mono text-slate-800 transition"
                 value={companyEmail}
                 onChange={(e) => setCompanyEmail(e.target.value)}
                 placeholder="e.g. accounts@manor.com"
@@ -128,27 +128,27 @@ export default function CompanyProfileModal({
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Authorized Signatory / Contact Person</label>
+            <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Authorized Signatory / Contact Person</label>
             <input
               type="text"
-              className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-sm"
+              className="w-full p-2.5 border border-border rounded-lg focus:ring-1 focus:ring-brand focus:border-brand outline-none bg-white text-xs text-slate-800 transition"
               value={companyContact}
               onChange={(e) => setCompanyContact(e.target.value)}
               placeholder="e.g. Manager"
             />
           </div>
 
-          <div className="flex justify-end gap-3 pt-6 border-t">
+          <div className="flex justify-end gap-3 pt-5 border-t border-border">
             <button
               type="button"
               onClick={() => setShowCompanyModal(false)}
-              className="px-5 py-2.5 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors text-sm font-semibold"
+              className="btn-secondary text-xs"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all text-sm shadow-sm"
+              className="btn-primary text-xs"
             >
               Save Profile
             </button>
