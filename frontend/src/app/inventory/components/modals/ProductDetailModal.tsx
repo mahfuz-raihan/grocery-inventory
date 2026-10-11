@@ -27,7 +27,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 overflow-y-auto">
-      <div className="bg-white rounded-xl border border-border shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="bg-white rounded-lg border border-border shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
         <div className="p-5 border-b border-border flex items-center justify-between bg-slate-50/70">
           <div>
             <h3 className="text-base font-bold text-slate-900">{viewingProductDetail.product.name}</h3>
@@ -38,7 +38,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
           </div>
           <button
             onClick={() => setViewingProductDetail(null)}
-            className="text-slate-400 hover:text-slate-700 w-8 h-8 rounded-lg hover:bg-slate-200/60 flex items-center justify-center text-lg transition"
+            className="text-slate-400 hover:text-slate-700 w-8 h-8 rounded-md hover:bg-slate-200/60 flex items-center justify-center text-lg transition"
           >
             ✕
           </button>
@@ -65,44 +65,44 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
           {detailActiveTab === "overview" && (
             <div className="space-y-6">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div className="p-3.5 bg-slate-50/70 rounded-xl border border-border">
+                <div className="p-3.5 bg-slate-50/70 rounded-md border border-border">
                   <span className="text-[11px] text-slate-500 uppercase font-semibold block mb-1">Current Stock</span>
                   <span className="text-xl font-bold font-mono tabular-nums text-slate-900">
                     {viewingProductDetail.current_stock} {viewingProductDetail.product.unit || "pcs"}
                   </span>
                 </div>
-                <div className="p-3.5 bg-rose-50/50 rounded-xl border border-rose-100">
+                <div className="p-3.5 bg-rose-50/50 rounded-md border border-rose-100">
                   <span className="text-[11px] text-rose-600 uppercase font-semibold block mb-1">Min Stock Limit</span>
                   <span className="text-xl font-bold font-mono tabular-nums text-rose-700">{viewingProductDetail.product.min_stock_level || 0}</span>
                 </div>
 
                 {viewingProductDetail.has_been_received ? (
                   <>
-                    <div className="p-3.5 bg-emerald-50/50 rounded-xl border border-emerald-100">
+                    <div className="p-3.5 bg-emerald-50/50 rounded-md border border-emerald-100">
                       <span className="text-[11px] text-emerald-700 uppercase font-semibold block mb-1">Selling Price</span>
                       <span className="text-xl font-bold font-mono tabular-nums text-emerald-800">
                         {formatPrice(viewingProductDetail.product.selling_price)}
                       </span>
                     </div>
-                    <div className="p-3.5 bg-slate-50/70 rounded-xl border border-border">
+                    <div className="p-3.5 bg-slate-50/70 rounded-md border border-border">
                       <span className="text-[11px] text-slate-500 uppercase font-semibold block mb-1">Min Selling Price</span>
                       <span className="text-xl font-bold font-mono tabular-nums text-slate-900">
                         {formatPrice(viewingProductDetail.product.min_selling_price || 0)}
                       </span>
                     </div>
-                    <div className="p-3.5 bg-slate-50/70 rounded-xl border border-border">
+                    <div className="p-3.5 bg-slate-50/70 rounded-md border border-border">
                       <span className="text-[11px] text-slate-500 uppercase font-semibold block mb-1">Unit Price (DP)</span>
                       <span className="text-xl font-bold font-mono tabular-nums text-slate-900">
                         {formatPrice(viewingProductDetail.product.purchase_cost || 0)}
                       </span>
                     </div>
-                    <div className="p-3.5 bg-amber-50/50 rounded-xl border border-amber-100">
+                    <div className="p-3.5 bg-amber-50/50 rounded-md border border-amber-100">
                       <span className="text-[11px] text-amber-700 uppercase font-semibold block mb-1">Commission</span>
                       <span className="text-xl font-bold font-mono tabular-nums text-amber-800">
                         {viewingProductDetail.product.commission || 0}%
                       </span>
                     </div>
-                    <div className="p-3.5 bg-slate-50/70 rounded-xl border border-border">
+                    <div className="p-3.5 bg-slate-50/70 rounded-md border border-border">
                       <span className="text-[11px] text-slate-500 uppercase font-semibold block mb-1">Purchased Price</span>
                       <span className="text-xl font-bold font-mono tabular-nums text-slate-900">
                         {formatPrice(
@@ -111,13 +111,13 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                         )}
                       </span>
                     </div>
-                    <div className="p-3.5 bg-slate-50/70 rounded-xl border border-border">
+                    <div className="p-3.5 bg-slate-50/70 rounded-md border border-border">
                       <span className="text-[11px] text-slate-500 uppercase font-semibold block mb-1">Additional Cost</span>
                       <span className="text-xl font-bold font-mono tabular-nums text-slate-900">
                         {formatPrice(viewingProductDetail.product.additional_cost || 0)}
                       </span>
                     </div>
-                    <div className="p-3.5 bg-emerald-50/60 rounded-xl border border-emerald-200">
+                    <div className="p-3.5 bg-emerald-50/60 rounded-md border border-emerald-200">
                       <span className="text-[11px] text-emerald-800 uppercase font-semibold block mb-0.5">Average Cost</span>
                       <span className="text-xl font-bold font-mono tabular-nums text-brand">
                         {viewingProductDetail.product.average_cost != null && viewingProductDetail.product.average_cost > 0
@@ -128,14 +128,14 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                     </div>
                   </>
                 ) : (
-                  <div className="col-span-2 p-4 bg-slate-50 border border-dashed border-border rounded-xl flex items-center justify-center text-center text-xs text-slate-500 font-medium leading-relaxed">
+                  <div className="col-span-2 p-4 bg-slate-50 border border-dashed border-border rounded-md flex items-center justify-center text-center text-xs text-slate-500 font-medium leading-relaxed">
                     ℹ️ This product has not been received from any supplier yet. Pricing & costing details will become available after stock receiving.
                   </div>
                 )}
               </div>
 
               {/* Historical Stock lookup card */}
-              <div className="bg-slate-50/70 p-4 rounded-xl border border-border grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+              <div className="bg-slate-50/70 p-4 rounded-md border border-border grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
                 <div>
                   <h4 className="font-semibold text-xs text-slate-900 uppercase tracking-wider mb-1">📅 Historical Stock Lookup</h4>
                   <p className="text-xs text-slate-500">Compute cumulative stock level up to a specific historical date.</p>
@@ -162,7 +162,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
               </div>
 
               {/* Time based velocity calculations */}
-              <div className="bg-slate-50/50 p-4 rounded-xl border border-border grid grid-cols-1 md:grid-cols-3 gap-3 text-xs font-medium">
+              <div className="bg-slate-50/50 p-4 rounded-md border border-border grid grid-cols-1 md:grid-cols-3 gap-3 text-xs font-medium">
                 <div className="p-3 bg-white border border-border rounded-lg shadow-sm">
                   <span className="text-slate-400 block mb-1 uppercase tracking-wider text-[10px] font-semibold">
                     Avg Daily Consumption (30d)
@@ -234,7 +234,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                   <img
                     src={viewingProductDetail.product.product_image}
                     alt={viewingProductDetail.product.name}
-                    className="w-full max-w-xs h-40 object-cover rounded-xl border bg-gray-100"
+                    className="w-full max-w-xs h-40 object-cover rounded-md border bg-gray-100"
                     onError={(e) => {
                       (e.target as HTMLImageElement).src =
                         "https://images.unsplash.com/photo-1524758631624-e2822e304c36?auto=format&fit=crop&w=400&q=80";
@@ -243,7 +243,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                 </div>
               )}
 
-              <div className="bg-slate-50/50 p-4 rounded-xl border border-border">
+              <div className="bg-slate-50/50 p-4 rounded-md border border-border">
                 <h4 className="font-semibold text-xs text-slate-500 mb-3 uppercase tracking-wider">
                   Product Specifications & Parameters
                 </h4>
@@ -340,7 +340,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                   </h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {viewingProductDetail.variants.map((v: any) => (
-                      <div key={v.id} className="p-3 bg-white border border-border rounded-xl flex justify-between items-center text-xs shadow-sm">
+                      <div key={v.id} className="p-3 bg-white border border-border rounded-md flex justify-between items-center text-xs shadow-sm">
                         <div>
                           <span className="font-semibold text-slate-900">{v.name}</span>
                           <span className="text-[10px] text-slate-400 font-mono block">
@@ -359,7 +359,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
           {detailActiveTab === "inventory" && (
             <div className="space-y-4">
               <h4 className="font-semibold text-xs text-slate-500 uppercase tracking-wider">Warehouse Breakdown</h4>
-              <div className="overflow-x-auto border border-border rounded-xl">
+              <div className="overflow-x-auto border border-border rounded-md">
                 <table className="w-full text-left text-xs">
                   <thead className="text-[11px] text-slate-500 bg-slate-50 uppercase font-semibold border-b border-border">
                     <tr>
@@ -391,9 +391,9 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                 Recent Stock Transactions (Last 50)
               </h4>
               {viewingProductDetail.transactions && viewingProductDetail.transactions.length === 0 ? (
-                <p className="text-xs text-slate-500 italic py-8 text-center bg-slate-50/50 rounded-xl border border-border">No transaction history found.</p>
+                <p className="text-xs text-slate-500 italic py-8 text-center bg-slate-50/50 rounded-md border border-border">No transaction history found.</p>
               ) : (
-                <div className="overflow-x-auto max-h-96 border border-border rounded-xl">
+                <div className="overflow-x-auto max-h-96 border border-border rounded-md">
                   <table className="w-full text-left text-xs">
                     <thead className="text-[11px] text-slate-500 bg-slate-50 uppercase font-semibold border-b border-border sticky top-0 z-10">
                       <tr>
@@ -409,7 +409,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                             <tr key={tx.id} className="hover:bg-slate-50/70 transition">
                               <td className="p-3 text-xs text-slate-400 font-mono tabular-nums">{new Date(tx.created_at).toLocaleString()}</td>
                               <td className="p-3">
-                                <span className="text-[10px] bg-slate-100 text-slate-700 border border-border font-medium px-2 py-0.5 rounded-full capitalize">
+                                <span className="text-[10px] bg-slate-100 text-slate-700 border border-border font-medium px-2 py-0.5 rounded capitalize">
                                   {tx.movement_type.replace("_", " ")}
                                 </span>
                               </td>
