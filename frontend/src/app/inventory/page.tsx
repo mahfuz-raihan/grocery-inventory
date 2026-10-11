@@ -396,7 +396,7 @@ export default function InventoryControlPage() {
       )}
 
       {/* Tabs + Notification Bell */}
-      <div className="flex items-center justify-between mb-8 border-b border-slate-200 pb-px">
+      <div className="flex items-center justify-between mb-8 border-b border-border pb-px">
         <div className="flex space-x-1 overflow-x-auto">
           {visibleTabs.map((tab) => (
             <button
@@ -418,7 +418,7 @@ export default function InventoryControlPage() {
           {(rbacRules ? rbacRules.company_profile_edit?.includes(userRole) : userRole === "owner") && (
             <button
               onClick={() => setShowCompanyModal(true)}
-              className="px-3 py-2 bg-white hover:bg-slate-50 text-slate-700 rounded-lg transition flex items-center gap-1.5 text-xs font-semibold border border-slate-200 shadow-sm"
+              className="btn-secondary px-3 py-2 rounded-lg transition flex items-center gap-1.5 text-xs font-semibold shadow-xs"
               title="Update Company Profile"
             >
               🏢 Company Profile
@@ -433,7 +433,7 @@ export default function InventoryControlPage() {
             className={`relative p-2.5 rounded-lg border transition ${
               lowStock.length > 0
                 ? "bg-rose-50 hover:bg-rose-100 text-rose-700 border-rose-200"
-                : "bg-white hover:bg-slate-50 text-slate-600 border-slate-200"
+                : "bg-white hover:bg-slate-50 text-slate-600 border-border"
             }`}
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -453,8 +453,8 @@ export default function InventoryControlPage() {
 
           {/* Notification Dropdown */}
           {showNotifications && (
-            <div className="absolute right-0 top-12 w-80 bg-white border border-slate-200 rounded-xl shadow-2xl z-50 overflow-hidden animate-fadeIn">
-              <div className="p-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+            <div className="absolute right-0 top-12 w-80 bg-white border border-border rounded-xl shadow-2xl z-50 overflow-hidden animate-fadeIn">
+              <div className="p-4 border-b border-border bg-slate-50/80 backdrop-blur flex items-center justify-between">
                 <span className="font-bold text-slate-800 text-sm">Low Stock Alerts</span>
                 <span className="bg-rose-50 text-rose-700 border border-rose-200 text-xs font-bold px-2 py-0.5 rounded-full font-mono">
                   {lowStock.length} items
@@ -465,7 +465,7 @@ export default function InventoryControlPage() {
               ) : (
                 <div className="max-h-64 overflow-y-auto divide-y divide-slate-100">
                   {lowStock.map((l) => (
-                    <div key={l.product_id} className="p-3 hover:bg-rose-50/50 transition">
+                    <div key={l.product_id} className="p-3 hover:bg-rose-50/50 transition-colors">
                       <div className="font-semibold text-slate-800 text-xs">{l.name}</div>
                       <div className="flex justify-between mt-1 text-[10px] text-slate-500">
                         <span className="font-mono">SKU: {l.sku}</span>
@@ -478,7 +478,7 @@ export default function InventoryControlPage() {
                   ))}
                 </div>
               )}
-              <div className="p-3 border-t border-slate-200 bg-slate-50">
+              <div className="p-3 border-t border-border bg-slate-50/80">
                 <button
                   onClick={() => {
                     setActiveTab("reports");
