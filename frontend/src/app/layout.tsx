@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import './globals.css';
 
@@ -16,6 +16,8 @@ export default function RootLayout({
   const [userRole, setUserRole] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setIsClient(true);
@@ -33,6 +35,34 @@ export default function RootLayout({
       router.push('/login');
     }
   }, [pathname, router]);
+
+  // Close user dropdown on outside click or Esc key
+  useEffect(() => {
+    const handleOutsideClick = (event: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setIsUserMenuOpen(false);
+      }
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsUserMenuOpen(false);
+      }
+    };
+
+    if (isUserMenuOpen) {
+      document.addEventListener('mousedown', handleOutsideClick);
+      document.addEventListener('keydown', handleKeyDown);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isUserMenuOpen]);
+
+  // Close user menu on route change
+  useEffect(() => {
+    setIsUserMenuOpen(false);
+  }, [pathname]);
 
   const handleLogout = () => {
     localStorage.removeItem("erp_token");
@@ -258,23 +288,87 @@ export default function RootLayout({
                 {pathname === '/settings' ? 'Application Settings' : pathname === '/dashboard' ? 'HQ Dashboard' : pathname === '/users' ? 'User & Role Management' : pathname === '/inventory' ? 'Factory Inventory Control' : 'Point of Sale Terminal'}
               </h2>
             </div>
-            <div className="flex items-center space-x-3">
-              <a
-                href="/settings?tab=company"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 hover:text-slate-900 border border-slate-200 rounded-md transition shadow-xs"
-                title="View & Edit Company Profile"
+            <div className="relative" ref={userMenuRef}>
+              <button
+                type="button"
+                onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                className="flex items-center gap-2.5 p-1 sm:px-2.5 sm:py-1.5 rounded-md hover:bg-slate-100 transition-colors border border-transparent hover:border-border focus:outline-none focus:ring-1 focus:ring-brand"
+                aria-expanded={isUserMenuOpen}
+                aria-haspopup="true"
+                title="User profile & organization menu"
               >
-                <span>🏢</span>
-                <span className="hidden sm:inline">Company Profile</span>
-              </a>
-              <div className="h-5 w-px bg-slate-200 hidden sm:block"></div>
-              <div className="text-right hidden sm:block">
-                <p className="text-sm font-semibold text-slate-800">{userEmail}</p>
-                <p className="text-xs text-slate-500 uppercase tracking-wider font-bold">{userRole?.replace('_', ' ')}</p>
-              </div>
-              <div className="w-9 h-9 rounded-full bg-brand-50 border border-brand-200 flex items-center justify-center text-brand font-bold shadow-sm">
-                {getUserInitials()}
-              </div>
+                <div className="text-right hidden sm:block">
+                  <p className="text-xs font-semibold text-slate-800 leading-tight max-w-[180px] truncate">{userEmail}</p>
+                  <p className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">{userRole?.replace('_', ' ')}</p>
+                </div>
+                <div className="w-9 h-9 rounded-full bg-brand-50 border border-brand-200 flex items-center justify-center text-brand font-bold text-xs shadow-xs flex-shrink-0">
+                  {getUserInitials()}
+                </div>
+                <svg
+                  className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 hidden sm:block ${isUserMenuOpen ? 'rotate-180 text-brand' : ''}`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+
+              {/* Micro-Dropdown Menu */}
+              {isUserMenuOpen && (
+                <div className="absolute right-0 mt-2 w-60 bg-white rounded-md border border-border shadow-lg py-1.5 z-50 animate-fadeIn">
+                  {/* User Identity Header */}
+                  <div className="px-3.5 py-2 border-b border-border/80 bg-slate-50/60">
+                    <p className="text-xs font-semibold text-slate-900 truncate">{userEmail}</p>
+                    <div className="mt-1 flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                        {userRole?.replace('_', ' ')}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Menu Options */}
+                  <div className="py-1">
+                    <a
+                      href="/settings"
+                      onClick={() => setIsUserMenuOpen(false)}
+                      className={`flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium transition-colors ${
+                        pathname === '/settings'
+                          ? 'bg-brand-50 text-brand-900 font-semibold'
+                          : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'
+                      }`}
+                    >
+                      <span className="text-sm">👤</span>
+                      <span>Account Settings</span>
+                    </a>
+
+                    <a
+                      href="/settings?tab=company"
+                      onClick={() => setIsUserMenuOpen(false)}
+                      className="flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors"
+                    >
+                      <span className="text-sm">🏢</span>
+                      <span>Company Profile</span>
+                    </a>
+                  </div>
+
+                  {/* Logout Button */}
+                  <div className="pt-1 border-t border-border/80">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsUserMenuOpen(false);
+                        handleLogout();
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50 hover:text-rose-700 transition-colors text-left"
+                    >
+                      <span className="text-sm">🚪</span>
+                      <span>Logout</span>
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </header>
 
