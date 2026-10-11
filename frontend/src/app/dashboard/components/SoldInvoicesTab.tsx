@@ -191,12 +191,12 @@ export const SoldInvoicesTab: React.FC<SoldInvoicesTabProps> = ({
       {/* 1. KPI Cards Row: 6-Card Executive Summary */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
         {/* Total Invoices (Sales Amount) */}
-        <div className="erp-card p-4 border-border rounded-xl shadow-xs hover:border-slate-300 transition">
+        <div className="erp-card p-4 border-border rounded-md shadow-xs hover:border-slate-300 transition">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
               Total Sales
             </span>
-            <span className="p-1.5 bg-brand-light text-brand rounded-lg border border-emerald-200/60">
+            <span className="p-1.5 bg-brand-light text-brand rounded-md border border-emerald-200/60">
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
@@ -209,12 +209,12 @@ export const SoldInvoicesTab: React.FC<SoldInvoicesTabProps> = ({
         </div>
 
         {/* Total Cost of Goods Sold */}
-        <div className="erp-card p-4 border-border rounded-xl shadow-xs hover:border-slate-300 transition">
+        <div className="erp-card p-4 border-border rounded-md shadow-xs hover:border-slate-300 transition">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
               Total Cost
             </span>
-            <span className="p-1.5 bg-slate-100 text-slate-600 rounded-lg border border-slate-200">
+            <span className="p-1.5 bg-slate-100 text-slate-600 rounded-md border border-slate-200">
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
               </svg>
@@ -227,12 +227,12 @@ export const SoldInvoicesTab: React.FC<SoldInvoicesTabProps> = ({
         </div>
 
         {/* Total Net Profit */}
-        <div className="erp-card p-4 border-border rounded-xl shadow-xs hover:border-slate-300 transition">
+        <div className="erp-card p-4 border-border rounded-md shadow-xs hover:border-slate-300 transition">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
               Net Profit
             </span>
-            <span className="p-1.5 bg-emerald-50 text-emerald-700 rounded-lg border border-emerald-200">
+            <span className="p-1.5 bg-emerald-50 text-emerald-700 rounded-md border border-emerald-200">
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
               </svg>
@@ -252,12 +252,12 @@ export const SoldInvoicesTab: React.FC<SoldInvoicesTabProps> = ({
         </div>
 
         {/* Total Orders (Count) */}
-        <div className="erp-card p-4 border-border rounded-xl shadow-xs hover:border-slate-300 transition">
+        <div className="erp-card p-4 border-border rounded-md shadow-xs hover:border-slate-300 transition">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
               Total Orders
             </span>
-            <span className="p-1.5 bg-purple-50 text-purple-700 rounded-lg border border-purple-200">
+            <span className="p-1.5 bg-purple-50 text-purple-700 rounded-md border border-purple-200">
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
               </svg>
@@ -270,12 +270,12 @@ export const SoldInvoicesTab: React.FC<SoldInvoicesTabProps> = ({
         </div>
 
         {/* Total Paid Amount */}
-        <div className="erp-card p-4 border-border rounded-xl shadow-xs hover:border-slate-300 transition">
+        <div className="erp-card p-4 border-border rounded-md shadow-xs hover:border-slate-300 transition">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
               Settled / Paid
             </span>
-            <span className="p-1.5 bg-emerald-50 text-emerald-700 rounded-lg border border-emerald-200">
+            <span className="p-1.5 bg-emerald-50 text-emerald-700 rounded-md border border-emerald-200">
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
@@ -288,12 +288,12 @@ export const SoldInvoicesTab: React.FC<SoldInvoicesTabProps> = ({
         </div>
 
         {/* Total Due / Pending Amount */}
-        <div className="erp-card p-4 border-border rounded-xl shadow-xs hover:border-slate-300 transition">
+        <div className="erp-card p-4 border-border rounded-md shadow-xs hover:border-slate-300 transition">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
               Receivables
             </span>
-            <span className="p-1.5 bg-amber-50 text-amber-700 rounded-lg border border-amber-200">
+            <span className="p-1.5 bg-amber-50 text-amber-700 rounded-md border border-amber-200">
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
@@ -307,7 +307,7 @@ export const SoldInvoicesTab: React.FC<SoldInvoicesTabProps> = ({
       </div>
 
       {/* 2. Controls Toolbar: Search, Filters, Sorting, Columns & Daily Sales Print */}
-      <div className="erp-card p-3.5 border-border rounded-xl shadow-xs space-y-3">
+      <div className="erp-card p-3.5 border-border rounded-md shadow-xs space-y-3">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
           {/* Search Facility */}
           <div className="relative flex-1 min-w-[260px]">
@@ -316,7 +316,7 @@ export const SoldInvoicesTab: React.FC<SoldInvoicesTabProps> = ({
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search by Invoice ID, Customer Name, or Phone..."
-              className="w-full pl-9 pr-4 py-2 border border-border rounded-lg text-xs font-medium bg-slate-50/60 focus:bg-white focus:outline-none focus:ring-1 focus:ring-brand focus:border-brand transition"
+              className="w-full pl-9 pr-4 py-2 border border-border rounded-md text-xs font-medium bg-slate-50/60 focus:bg-white focus:outline-none focus:ring-1 focus:ring-brand focus:border-brand transition"
             />
             <svg className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -337,7 +337,7 @@ export const SoldInvoicesTab: React.FC<SoldInvoicesTabProps> = ({
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="bg-white border border-border rounded-lg px-3 py-2 text-xs font-semibold text-slate-700 outline-none cursor-pointer hover:bg-slate-50 focus:ring-1 focus:ring-brand focus:border-brand transition shadow-xs"
+              className="bg-white border border-border rounded-md px-3 py-2 text-xs font-semibold text-slate-700 outline-none cursor-pointer hover:bg-slate-50 focus:ring-1 focus:ring-brand focus:border-brand transition shadow-xs"
             >
               <option value="all">All Statuses</option>
               <option value="paid">Paid</option>
@@ -348,7 +348,7 @@ export const SoldInvoicesTab: React.FC<SoldInvoicesTabProps> = ({
             <select
               value={branchFilter}
               onChange={(e) => setBranchFilter(e.target.value)}
-              className="bg-white border border-border rounded-lg px-3 py-2 text-xs font-semibold text-slate-700 outline-none cursor-pointer hover:bg-slate-50 focus:ring-1 focus:ring-brand focus:border-brand transition shadow-xs max-w-[160px]"
+              className="bg-white border border-border rounded-md px-3 py-2 text-xs font-semibold text-slate-700 outline-none cursor-pointer hover:bg-slate-50 focus:ring-1 focus:ring-brand focus:border-brand transition shadow-xs max-w-[160px]"
             >
               <option value="all">All Warehouses</option>
               {branches.map((b) => (
@@ -362,7 +362,7 @@ export const SoldInvoicesTab: React.FC<SoldInvoicesTabProps> = ({
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as any)}
-              className="bg-white border border-border rounded-lg px-3 py-2 text-xs font-semibold text-slate-700 outline-none cursor-pointer hover:bg-slate-50 focus:ring-1 focus:ring-brand focus:border-brand transition shadow-xs"
+              className="bg-white border border-border rounded-md px-3 py-2 text-xs font-semibold text-slate-700 outline-none cursor-pointer hover:bg-slate-50 focus:ring-1 focus:ring-brand focus:border-brand transition shadow-xs"
             >
               <option value="date_desc">Date: Newest First</option>
               <option value="date_asc">Date: Oldest First</option>
@@ -379,7 +379,7 @@ export const SoldInvoicesTab: React.FC<SoldInvoicesTabProps> = ({
               <button
                 type="button"
                 onClick={() => setShowColumnMenu(!showColumnMenu)}
-                className="px-3 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-border rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-xs"
+                className="px-3 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-border rounded-md text-xs font-semibold flex items-center gap-1.5 transition shadow-xs"
               >
                 <svg className="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
@@ -388,7 +388,7 @@ export const SoldInvoicesTab: React.FC<SoldInvoicesTabProps> = ({
               </button>
 
               {showColumnMenu && (
-                <div className="absolute right-0 top-11 w-52 bg-white border border-border rounded-xl shadow-xl z-30 p-3 text-xs space-y-2 animate-fadeIn">
+                <div className="absolute right-0 top-11 w-52 bg-white border border-border rounded-md shadow-xl z-30 p-3 text-xs space-y-2 animate-fadeIn">
                   <div className="font-bold text-slate-400 uppercase tracking-wider text-[10px] pb-1 border-b border-border">
                     Toggle Table Columns
                   </div>
@@ -437,7 +437,7 @@ export const SoldInvoicesTab: React.FC<SoldInvoicesTabProps> = ({
       </div>
 
       {/* 3. Sold Invoices Table */}
-      <div className="erp-card border-border rounded-xl overflow-hidden shadow-xs">
+      <div className="erp-card border-border rounded-md overflow-hidden shadow-xs">
         {filteredInvoices.length === 0 ? (
           <div className="text-center py-16 text-slate-400">
             <svg className="w-10 h-10 mx-auto mb-2 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -544,7 +544,7 @@ export const SoldInvoicesTab: React.FC<SoldInvoicesTabProps> = ({
                       {isVisible("status") && (
                         <td className="p-3 text-center whitespace-nowrap">
                           <span
-                            className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                            className={`inline-block px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
                               inv.status === "Paid"
                                 ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
                                 : "bg-amber-50 text-amber-800 border border-amber-200"
@@ -563,7 +563,7 @@ export const SoldInvoicesTab: React.FC<SoldInvoicesTabProps> = ({
                             onClick={() =>
                               setOpenMenuId(openMenuId === inv.id ? null : inv.id)
                             }
-                            className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-600 font-bold text-sm transition"
+                            className="p-1.5 hover:bg-slate-100 rounded-md text-slate-600 font-bold text-sm transition"
                             title="Options"
                           >
                             ⋮
@@ -575,7 +575,7 @@ export const SoldInvoicesTab: React.FC<SoldInvoicesTabProps> = ({
                                 className="fixed inset-0 z-10 cursor-default"
                                 onClick={() => setOpenMenuId(null)}
                               />
-                              <div className="absolute right-3 top-10 w-48 bg-white border border-slate-200 rounded-xl shadow-2xl z-20 py-1 text-left text-xs animate-fadeIn">
+                              <div className="absolute right-3 top-10 w-48 bg-white border border-slate-200 rounded-md shadow-2xl z-20 py-1 text-left text-xs animate-fadeIn">
                                 <button
                                   onClick={() => {
                                     onViewInvoice(inv);
