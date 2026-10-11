@@ -158,10 +158,10 @@ export default function SettingsPage() {
       <div className="max-w-4xl space-y-6">
         
         {/* Tab Navigation header */}
-        <div className="inline-flex bg-slate-100/90 p-1 rounded-xl border border-border gap-1">
+        <div className="inline-flex bg-slate-100/90 p-1 rounded-md border border-border gap-1">
           <button
             onClick={() => setActiveTab("profile")}
-            className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all ${
+            className={`px-4 py-2 text-xs font-semibold rounded transition-all ${
               activeTab === "profile"
                 ? "bg-white text-slate-900 shadow-sm border border-border/60"
                 : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/50"
@@ -172,7 +172,7 @@ export default function SettingsPage() {
           {userRole === "owner" && (
             <button
               onClick={() => setActiveTab("rbac")}
-              className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all ${
+              className={`px-4 py-2 text-xs font-semibold rounded transition-all ${
                 activeTab === "rbac"
                   ? "bg-white text-slate-900 shadow-sm border border-border/60"
                   : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/50"
@@ -193,12 +193,12 @@ export default function SettingsPage() {
             
             <form onSubmit={handleUpdateProfile} className="p-6 space-y-6">
               {profileSuccess && (
-                <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-800 text-xs font-medium">
+                <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-md text-emerald-800 text-xs font-medium">
                   {profileSuccess}
                 </div>
               )}
               {profileError && (
-                <div className="p-3 bg-rose-50 border border-rose-200 rounded-lg text-rose-800 text-xs font-medium">
+                <div className="p-3 bg-rose-50 border border-rose-200 rounded-md text-rose-800 text-xs font-medium">
                   ⚠️ {profileError}
                 </div>
               )}
@@ -209,7 +209,7 @@ export default function SettingsPage() {
                   <input
                     type="email"
                     disabled
-                    className="w-full p-2.5 border border-border rounded-lg bg-slate-100 cursor-not-allowed text-slate-400 font-mono text-xs font-medium"
+                    className="w-full p-2.5 border border-border rounded-md bg-slate-100 cursor-not-allowed text-slate-400 font-mono text-xs font-medium"
                     value={email}
                   />
                   <span className="text-[10px] text-slate-400 mt-1 block">Email address cannot be changed.</span>
@@ -219,7 +219,7 @@ export default function SettingsPage() {
                   <input
                     type="text"
                     required
-                    className="w-full p-2.5 border border-border rounded-lg focus:ring-1 focus:ring-brand focus:border-brand outline-none text-xs font-medium text-slate-800 bg-white transition"
+                    className="w-full p-2.5 border border-border rounded-md focus:ring-1 focus:ring-brand focus:border-brand outline-none text-xs font-medium text-slate-800 bg-white transition"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     placeholder="Enter your name"
@@ -238,7 +238,7 @@ export default function SettingsPage() {
                     <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">New Password</label>
                     <input
                       type="password"
-                      className="w-full p-2.5 border border-border rounded-lg focus:ring-1 focus:ring-brand focus:border-brand outline-none text-xs text-slate-800 bg-white transition"
+                      className="w-full p-2.5 border border-border rounded-md focus:ring-1 focus:ring-brand focus:border-brand outline-none text-xs text-slate-800 bg-white transition"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••"
@@ -248,7 +248,7 @@ export default function SettingsPage() {
                     <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Confirm Password</label>
                     <input
                       type="password"
-                      className="w-full p-2.5 border border-border rounded-lg focus:ring-1 focus:ring-brand focus:border-brand outline-none text-xs text-slate-800 bg-white transition"
+                      className="w-full p-2.5 border border-border rounded-md focus:ring-1 focus:ring-brand focus:border-brand outline-none text-xs text-slate-800 bg-white transition"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       placeholder="••••••••"
@@ -280,12 +280,12 @@ export default function SettingsPage() {
 
             <div className="p-6 space-y-6">
               {rbacSuccess && (
-                <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-800 text-xs font-medium">
+                <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-md text-emerald-800 text-xs font-medium">
                   {rbacSuccess}
                 </div>
               )}
               {rbacError && (
-                <div className="p-3 bg-rose-50 border border-rose-200 rounded-lg text-rose-800 text-xs font-medium">
+                <div className="p-3 bg-rose-50 border border-rose-200 rounded-md text-rose-800 text-xs font-medium">
                   ⚠️ {rbacError}
                 </div>
               )}
@@ -293,7 +293,7 @@ export default function SettingsPage() {
               {/* 1. Visible Inventory Tabs */}
               <div className="space-y-3">
                 <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">1. Factory Inventory Control Tab Visibility</h4>
-                <div className="border border-border rounded-xl overflow-hidden bg-white shadow-xs">
+                <div className="border border-border rounded-md overflow-hidden bg-white shadow-xs">
                   <table className="w-full text-left text-xs border-collapse">
                     <thead className="bg-slate-50 font-bold text-slate-500 uppercase tracking-wider text-[11px] border-b border-border">
                       <tr>
@@ -331,7 +331,7 @@ export default function SettingsPage() {
               <div className="border-t border-border pt-6 space-y-3">
                 <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">2. Security Lockouts & Feature Actions</h4>
                 
-                <div className="border border-border rounded-xl overflow-hidden bg-white shadow-xs">
+                <div className="border border-border rounded-md overflow-hidden bg-white shadow-xs">
                   <table className="w-full text-left text-xs border-collapse">
                     <thead className="bg-slate-50 font-bold text-slate-500 uppercase tracking-wider text-[11px] border-b border-border">
                       <tr>
