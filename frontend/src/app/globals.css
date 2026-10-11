@@ -30,41 +30,41 @@ code, kbd, samp, pre, .font-mono {
 
 /* 4. Component Library: American Enterprise ERP Standards */
 @layer components {
-  /* Primary Action Button (Shopify / Toast POS style) */
+  /* Primary Action Button (Shopify / Toast POS style - crisp micro-corner) */
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-brand text-white font-medium text-sm rounded-lg hover:bg-brand-hover focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2 transition-all shadow-sm;
+    @apply inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-brand text-white font-medium text-sm rounded-md hover:bg-brand-hover focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2 transition-all shadow-sm;
   }
 
   /* Secondary Button */
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-1.5 px-3.5 py-2 bg-white text-slate-800 font-medium text-sm border border-slate-200 rounded-lg hover:bg-slate-50 hover:border-slate-300 focus:outline-none transition-all shadow-sm;
+    @apply inline-flex items-center justify-center gap-1.5 px-3.5 py-2 bg-white text-slate-800 font-medium text-sm border border-slate-200 rounded-md hover:bg-slate-50 hover:border-slate-300 focus:outline-none transition-all shadow-sm;
   }
 
-  /* Enterprise Card Container */
+  /* Enterprise Card Container (Crisp 6px micro-border, no bulbous curves) */
   .erp-card {
-    @apply bg-white p-5 rounded-xl border border-slate-200 shadow-card;
+    @apply bg-white p-5 rounded-md border border-slate-200 shadow-card;
   }
 
   /* Clean Input Field */
   .erp-input {
-    @apply block w-full px-3 py-2 text-sm text-slate-900 bg-white border border-slate-200 rounded-lg focus:border-brand focus:ring-1 focus:ring-brand outline-none transition-all placeholder:text-slate-400;
+    @apply block w-full px-3 py-2 text-sm text-slate-900 bg-white border border-slate-200 rounded-md focus:border-brand focus:ring-1 focus:ring-brand outline-none transition-all placeholder:text-slate-400;
   }
 
-  /* Silicon Valley Semantic Badges */
+  /* Silicon Valley Semantic Badges (Rectangular micro-tag chiclets) */
   .badge-success {
-    @apply inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200;
+    @apply inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded bg-emerald-50 text-emerald-800 border border-emerald-200;
   }
 
   .badge-warning {
-    @apply inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-md bg-amber-50 text-amber-800 border border-amber-200;
+    @apply inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded bg-amber-50 text-amber-800 border border-amber-200;
   }
 
   .badge-danger {
-    @apply inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-md bg-rose-50 text-rose-800 border border-rose-200;
+    @apply inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded bg-rose-50 text-rose-800 border border-rose-200;
   }
 
   .badge-purple {
-    @apply inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-md bg-purple-50 text-purple-800 border border-purple-200;
+    @apply inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded bg-purple-50 text-purple-800 border border-purple-200;
   }
 
   /* Tactile Keycap Chip */
