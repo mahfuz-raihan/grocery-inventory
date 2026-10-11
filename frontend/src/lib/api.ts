@@ -235,5 +235,33 @@ export const api = {
             console.error("API Error (updateUser):", error);
             throw error;
         }
+    },
+
+    getCompanyProfile: async (): Promise<any> => {
+        try {
+            const baseUrl = getApiBaseUrl();
+            const response = await fetch(`${baseUrl}/api/v1/inventory/company-profile`);
+            if (!response.ok) throw new Error("Failed to fetch company profile");
+            return await response.json();
+        } catch (error) {
+            console.error("API Error (getCompanyProfile):", error);
+            throw error;
+        }
+    },
+
+    updateCompanyProfile: async (payload: any): Promise<any> => {
+        try {
+            const baseUrl = getApiBaseUrl();
+            const response = await fetch(`${baseUrl}/api/v1/inventory/company-profile`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (!response.ok) throw new Error("Failed to update company profile");
+            return await response.json();
+        } catch (error) {
+            console.error("API Error (updateCompanyProfile):", error);
+            throw error;
+        }
     }
 };
