@@ -48,20 +48,20 @@ export default function ManageAttributesModals({
       {/* 1. Manage Product Types Modal */}
       {showProductTypesModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-xl border border-border shadow-2xl w-full max-w-md max-h-[80vh] flex flex-col animate-scaleUp overflow-hidden">
+          <div className="bg-white rounded-md border border-border shadow-2xl w-full max-w-md max-h-[80vh] flex flex-col animate-scaleUp overflow-hidden">
             <div className="p-4 border-b border-border flex items-center justify-between bg-slate-50/80 backdrop-blur">
               <h3 className="text-sm font-bold text-slate-900 flex items-center gap-1.5"><span>⚙️</span> Manage Product Types</h3>
               <button
                 type="button"
                 onClick={() => setShowProductTypesModal(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors text-lg font-bold leading-none"
+                className="p-1 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors text-lg font-bold leading-none"
               >
                 &times;
               </button>
             </div>
             <div className="p-4 overflow-y-auto flex-1 space-y-2">
               {productTypes.map((type, i) => (
-                <div key={type.key} className="flex items-center justify-between p-2.5 bg-slate-50/70 hover:bg-slate-100/70 rounded-lg border border-border transition-colors">
+                <div key={type.key} className="flex items-center justify-between p-2.5 bg-slate-50/70 hover:bg-slate-100/70 rounded-md border border-border transition-colors">
                   <div>
                     <span className="font-semibold text-slate-800 text-xs">{type.label}</span>
                     <span className="text-[10px] text-slate-400 font-mono block">Key: {type.key}</span>
@@ -87,7 +87,7 @@ export default function ManageAttributesModals({
                   type="text"
                   id="new-type-label"
                   placeholder="e.g. Fabrics"
-                  className="flex-1 p-2 border border-border rounded-lg text-xs outline-none bg-white font-medium text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand transition"
+                  className="flex-1 p-2 border border-border rounded-md text-xs outline-none bg-white font-medium text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand transition"
                 />
                 <button
                   type="button"
@@ -116,20 +116,20 @@ export default function ManageAttributesModals({
       {/* 2. Manage Categories Modal */}
       {showCategoriesModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-xl border border-border shadow-2xl w-full max-w-md max-h-[80vh] flex flex-col animate-scaleUp overflow-hidden">
+          <div className="bg-white rounded-md border border-border shadow-2xl w-full max-w-md max-h-[80vh] flex flex-col animate-scaleUp overflow-hidden">
             <div className="p-4 border-b border-border flex items-center justify-between bg-slate-50/80 backdrop-blur">
               <h3 className="text-sm font-bold text-slate-900 flex items-center gap-1.5"><span>⚙️</span> Manage Categories</h3>
               <button
                 type="button"
                 onClick={() => setShowCategoriesModal(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors text-lg font-bold leading-none"
+                className="p-1 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors text-lg font-bold leading-none"
               >
                 &times;
               </button>
             </div>
             <div className="p-4 overflow-y-auto flex-1 space-y-2">
               {categories.map((c) => (
-                <div key={c.id} className="flex items-center justify-between p-2.5 bg-slate-50/70 hover:bg-slate-100/70 rounded-lg border border-border transition-colors">
+                <div key={c.id} className="flex items-center justify-between p-2.5 bg-slate-50/70 hover:bg-slate-100/70 rounded-md border border-border transition-colors">
                   <span className="font-semibold text-slate-800 text-xs">{c.name}</span>
                   <button
                     type="button"
@@ -158,7 +158,7 @@ export default function ManageAttributesModals({
                   type="text"
                   id="new-category-name"
                   placeholder="e.g. Sofa Beds"
-                  className="flex-1 p-2 border border-border rounded-lg text-xs outline-none bg-white font-medium text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand transition"
+                  className="flex-1 p-2 border border-border rounded-md text-xs outline-none bg-white font-medium text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand transition"
                 />
                 <button
                   type="button"
@@ -188,20 +188,20 @@ export default function ManageAttributesModals({
       {/* 3. Manage Material Types Modal */}
       {showMaterialTypesModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-xl border border-border shadow-2xl w-full max-w-md max-h-[80vh] flex flex-col animate-scaleUp overflow-hidden">
+          <div className="bg-white rounded-md border border-border shadow-2xl w-full max-w-md max-h-[80vh] flex flex-col animate-scaleUp overflow-hidden">
             <div className="p-4 border-b border-border flex items-center justify-between bg-slate-50/80 backdrop-blur">
               <h3 className="text-sm font-bold text-slate-900 flex items-center gap-1.5"><span>⚙️</span> Manage Material Types</h3>
               <button
                 type="button"
                 onClick={() => setShowMaterialTypesModal(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors text-lg font-bold leading-none"
+                className="p-1 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors text-lg font-bold leading-none"
               >
                 &times;
               </button>
             </div>
             <div className="p-4 overflow-y-auto flex-1 space-y-2">
               {materialTypes.map((mat, i) => (
-                <div key={i} className="flex items-center justify-between p-2.5 bg-slate-50/70 hover:bg-slate-100/70 rounded-lg border border-border transition-colors">
+                <div key={i} className="flex items-center justify-between p-2.5 bg-slate-50/70 hover:bg-slate-100/70 rounded-md border border-border transition-colors">
                   <span className="font-semibold text-slate-800 text-xs">{mat}</span>
                   <button
                     type="button"
@@ -224,7 +224,7 @@ export default function ManageAttributesModals({
                   type="text"
                   id="new-material-name"
                   placeholder="e.g. Leatherette"
-                  className="flex-1 p-2 border border-border rounded-lg text-xs outline-none bg-white font-medium text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand transition"
+                  className="flex-1 p-2 border border-border rounded-md text-xs outline-none bg-white font-medium text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand transition"
                 />
                 <button
                   type="button"
@@ -252,20 +252,20 @@ export default function ManageAttributesModals({
       {/* 4. Manage Wood Types Modal */}
       {showWoodTypesModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-xl border border-border shadow-2xl w-full max-w-md max-h-[80vh] flex flex-col animate-scaleUp overflow-hidden">
+          <div className="bg-white rounded-md border border-border shadow-2xl w-full max-w-md max-h-[80vh] flex flex-col animate-scaleUp overflow-hidden">
             <div className="p-4 border-b border-border flex items-center justify-between bg-slate-50/80 backdrop-blur">
               <h3 className="text-sm font-bold text-slate-900 flex items-center gap-1.5"><span>⚙️</span> Manage Wood Types</h3>
               <button
                 type="button"
                 onClick={() => setShowWoodTypesModal(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors text-lg font-bold leading-none"
+                className="p-1 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors text-lg font-bold leading-none"
               >
                 &times;
               </button>
             </div>
             <div className="p-4 overflow-y-auto flex-1 space-y-2">
               {woodTypes.map((wood, i) => (
-                <div key={i} className="flex items-center justify-between p-2.5 bg-slate-50/70 hover:bg-slate-100/70 rounded-lg border border-border transition-colors">
+                <div key={i} className="flex items-center justify-between p-2.5 bg-slate-50/70 hover:bg-slate-100/70 rounded-md border border-border transition-colors">
                   <span className="font-semibold text-slate-800 text-xs">{wood}</span>
                   <button
                     type="button"
@@ -288,7 +288,7 @@ export default function ManageAttributesModals({
                   type="text"
                   id="new-wood-name"
                   placeholder="e.g. Acacia"
-                  className="flex-1 p-2 border border-border rounded-lg text-xs outline-none bg-white font-medium text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand transition"
+                  className="flex-1 p-2 border border-border rounded-md text-xs outline-none bg-white font-medium text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand transition"
                 />
                 <button
                   type="button"
