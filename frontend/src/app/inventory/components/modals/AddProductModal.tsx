@@ -121,24 +121,24 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl border shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto my-4 animate-scaleUp">
-        <div className="p-6 border-b flex items-center justify-between bg-gray-50 sticky top-0 z-10">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 overflow-y-auto">
+      <div className="bg-white rounded-xl border border-border shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto my-4">
+        <div className="p-5 border-b border-border flex items-center justify-between bg-slate-50/70 sticky top-0 z-10">
           <div>
-            <h3 className="text-lg font-bold text-gray-900">Add New Product to Catalog</h3>
-            <p className="text-xs text-gray-500 mt-1">Create a new product template or component</p>
+            <h3 className="text-base font-bold text-slate-900">Add New Product to Catalog</h3>
+            <p className="text-xs text-slate-500 mt-0.5">Create a new product template or component</p>
           </div>
           <button
             type="button"
             onClick={handleClose}
-            className="text-gray-400 hover:text-gray-700 text-2xl font-bold transition-colors"
+            className="text-slate-400 hover:text-slate-700 w-8 h-8 rounded-lg hover:bg-slate-200/60 flex items-center justify-center text-lg transition"
           >
-            &times;
+            ✕
           </button>
         </div>
 
         {productSuccessMessage && (
-          <div className="m-6 p-4 bg-green-50 border border-green-200 text-green-700 rounded-xl text-sm font-semibold">
+          <div className="m-6 p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-semibold">
             {productSuccessMessage}
           </div>
         )}
@@ -146,10 +146,10 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
         <form onSubmit={handleCreateProduct} className="p-6 space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Product Code (SKU) *</label>
+              <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Product Code (SKU) *</label>
               <input
                 type="text"
-                className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-sm"
+                className="w-full p-2.5 border border-border rounded-lg bg-white text-xs font-mono text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
                 value={newProductSku}
                 onChange={(e) => setNewProductSku(e.target.value)}
                 placeholder="e.g. WD-CH-01"
@@ -157,9 +157,9 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Product Unit *</label>
+              <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Product Unit *</label>
               <select
-                className="w-full p-2.5 border rounded-lg bg-white focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                className="w-full p-2.5 border border-border rounded-lg bg-white text-xs text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
                 value={newProductUnit}
                 onChange={(e) => setNewProductUnit(e.target.value)}
               >
@@ -172,10 +172,10 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Product Name *</label>
+            <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Product Name *</label>
             <input
               type="text"
-              className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-sm"
+              className="w-full p-2.5 border border-border rounded-lg bg-white text-xs text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
               value={newProductName}
               onChange={(e) => setNewProductName(e.target.value)}
               placeholder="e.g. Oak Wood Dining Chair"
@@ -185,9 +185,9 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Product Type *</label>
+              <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Product Type *</label>
               <select
-                className="w-full p-2.5 border rounded-lg bg-white focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                className="w-full p-2.5 border border-border rounded-lg bg-white text-xs text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
                 value={newProductType}
                 onChange={(e) => setNewProductType(e.target.value)}
               >
@@ -199,11 +199,11 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
               </select>
             </div>
             <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase mb-2">
+              <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
                 Parent Template (For Variations)
               </label>
               <select
-                className="w-full p-2.5 border rounded-lg bg-white focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                className="w-full p-2.5 border border-border rounded-lg bg-white text-xs text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
                 value={newProductParentId}
                 onChange={(e) => setNewProductParentId(e.target.value)}
               >
@@ -221,9 +221,9 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Category</label>
+              <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Category</label>
               <select
-                className="w-full p-2.5 border rounded-lg bg-white focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                className="w-full p-2.5 border border-border rounded-lg bg-white text-xs text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
                 value={newProductCategory}
                 onChange={(e) => setNewProductCategory(e.target.value)}
               >
@@ -236,10 +236,10 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
               </select>
             </div>
             <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Color Variation</label>
+              <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Color Variation</label>
               <input
                 type="text"
-                className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-sm"
+                className="w-full p-2.5 border border-border rounded-lg bg-white text-xs text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
                 value={newProductColor}
                 onChange={(e) => setNewProductColor(e.target.value)}
                 placeholder="e.g. Natural Varnish"
@@ -249,9 +249,9 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Material Type</label>
+              <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Material Type</label>
               <select
-                className="w-full p-2.5 border rounded-lg bg-white focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                className="w-full p-2.5 border border-border rounded-lg bg-white text-xs text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
                 value={newProductMaterialType}
                 onChange={(e) => setNewProductMaterialType(e.target.value)}
               >
@@ -264,9 +264,9 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
               </select>
             </div>
             <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Wood Type</label>
+              <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Wood Type</label>
               <select
-                className="w-full p-2.5 border rounded-lg bg-white focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                className="w-full p-2.5 border border-border rounded-lg bg-white text-xs text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
                 value={newProductWoodType}
                 onChange={(e) => setNewProductWoodType(e.target.value)}
               >
@@ -282,32 +282,32 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
 
           <div className="grid grid-cols-3 gap-4">
             <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Board Type</label>
+              <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Board Type</label>
               <input
                 type="text"
-                className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-sm"
+                className="w-full p-2.5 border border-border rounded-lg bg-white text-xs text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
                 value={newProductBoardType}
                 onChange={(e) => setNewProductBoardType(e.target.value)}
                 placeholder="e.g. MDF"
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Weight (kg)</label>
+              <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Weight (kg)</label>
               <input
                 type="number"
                 step="0.1"
-                className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-sm"
+                className="w-full p-2.5 border border-border rounded-lg bg-white text-xs font-mono text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
                 value={newProductWeight}
                 onChange={(e) => setNewProductWeight(e.target.value)}
                 placeholder="e.g. 12"
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Thickness (mm)</label>
+              <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Thickness (mm)</label>
               <input
                 type="number"
                 step="0.1"
-                className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-sm"
+                className="w-full p-2.5 border border-border rounded-lg bg-white text-xs font-mono text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
                 value={newProductThickness}
                 onChange={(e) => setNewProductThickness(e.target.value)}
                 placeholder="e.g. 18"
@@ -317,33 +317,33 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
 
           <div className="grid grid-cols-3 gap-4">
             <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Length (inch)</label>
+              <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Length (inch)</label>
               <input
                 type="number"
                 step="0.1"
-                className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-sm"
+                className="w-full p-2.5 border border-border rounded-lg bg-white text-xs font-mono text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
                 value={newProductLength}
                 onChange={(e) => setNewProductLength(e.target.value)}
                 placeholder="e.g. 36"
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Width (inch)</label>
+              <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Width (inch)</label>
               <input
                 type="number"
                 step="0.1"
-                className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-sm"
+                className="w-full p-2.5 border border-border rounded-lg bg-white text-xs font-mono text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
                 value={newProductWidth}
                 onChange={(e) => setNewProductWidth(e.target.value)}
                 placeholder="e.g. 24"
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Height (inch)</label>
+              <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Height (inch)</label>
               <input
                 type="number"
                 step="0.1"
-                className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-sm"
+                className="w-full p-2.5 border border-border rounded-lg bg-white text-xs font-mono text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
                 value={newProductHeight}
                 onChange={(e) => setNewProductHeight(e.target.value)}
                 placeholder="e.g. 30"
@@ -352,28 +352,28 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Product Image Link</label>
+            <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Product Image Link</label>
             <input
               type="text"
-              className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-sm"
+              className="w-full p-2.5 border border-border rounded-lg bg-white text-xs text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
               value={newProductImage}
               onChange={(e) => setNewProductImage(e.target.value)}
               placeholder="e.g. /images/chair.jpg"
             />
           </div>
 
-          <div className="flex justify-end gap-3 pt-6 border-t">
+          <div className="flex justify-end gap-3 pt-5 border-t border-border">
             <button
               type="button"
               onClick={handleClose}
-              className="px-5 py-2.5 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors text-sm font-semibold"
+              className="btn-secondary text-xs"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmittingProduct}
-              className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-xl font-bold transition-all text-sm shadow-sm"
+              className="btn-primary text-xs"
             >
               {isSubmittingProduct ? "Creating..." : "Save Product"}
             </button>
