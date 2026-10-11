@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { api } from "@/lib/api";
 
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState<"profile" | "rbac">("profile");
+  const [activeTab, setActiveTab] = useState<"profile" | "company" | "rbac">("profile");
   const [userRole, setUserRole] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -17,6 +17,16 @@ export default function SettingsPage() {
   const [profileSuccess, setProfileSuccess] = useState<string | null>(null);
   const [profileError, setProfileError] = useState<string | null>(null);
   const [savingProfile, setSavingProfile] = useState(false);
+
+  // Company Profile fields
+  const [companyName, setCompanyName] = useState("");
+  const [companyAddress, setCompanyAddress] = useState("");
+  const [companyPhone, setCompanyPhone] = useState("");
+  const [companyEmail, setCompanyEmail] = useState("");
+  const [companyContact, setCompanyContact] = useState("");
+  const [companySuccess, setCompanySuccess] = useState<string | null>(null);
+  const [companyError, setCompanyError] = useState<string | null>(null);
+  const [savingCompany, setSavingCompany] = useState(false);
 
   // RBAC fields
   const [rbacRules, setRbacRules] = useState<any>(null);
@@ -42,6 +52,19 @@ export default function SettingsPage() {
     setUserRole(role);
     setUserId(uid);
 
+    // Deep-link check for ?tab=company or ?tab=rbac or ?tab=profile
+    if (typeof window !== "undefined") {
+      const searchParams = new URLSearchParams(window.location.search);
+      const tabParam = searchParams.get("tab");
+      if (tabParam === "company") {
+        setActiveTab("company");
+      } else if (tabParam === "rbac") {
+        setActiveTab("rbac");
+      } else if (tabParam === "profile") {
+        setActiveTab("profile");
+      }
+    }
+
     async function loadData() {
       try {
         if (uid) {
@@ -52,6 +75,19 @@ export default function SettingsPage() {
         
         const rbac = await api.getSetting("rbac_rules");
         setRbacRules(rbac);
+
+        try {
+          const comp = await api.getCompanyProfile();
+          if (comp) {
+            setCompanyName(comp.name || "");
+            setCompanyAddress(comp.address || "");
+            setCompanyPhone(comp.phone || "");
+            setCompanyEmail(comp.email || "");
+            setCompanyContact(comp.contact_person || "");
+          }
+        } catch (compErr) {
+          console.error("Failed to load company profile", compErr);
+        }
       } catch (err) {
         console.error("Failed to load settings data", err);
       } finally {
@@ -93,6 +129,43 @@ export default function SettingsPage() {
       setProfileError(err.message || "Failed to update profile");
     } finally {
       setSavingProfile(false);
+    }
+  };
+
+  const canEditCompany = rbacRules?.company_profile_edit
+    ? rbacRules.company_profile_edit.includes(userRole)
+    : (userRole === "owner" || !userRole);
+
+  const handleUpdateCompany = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCompanySuccess(null);
+    setCompanyError(null);
+
+    if (!canEditCompany) {
+      setCompanyError("Unauthorized: You do not have permission to modify the Company Profile.");
+      return;
+    }
+
+    if (!companyName.trim()) {
+      setCompanyError("Company legal name is required.");
+      return;
+    }
+
+    setSavingCompany(true);
+    try {
+      const payload = {
+        name: companyName.trim(),
+        address: companyAddress.trim(),
+        phone: companyPhone.trim(),
+        email: companyEmail.trim(),
+        contact_person: companyContact.trim(),
+      };
+      await api.updateCompanyProfile(payload);
+      setCompanySuccess("✅ Company profile updated successfully!");
+    } catch (err: any) {
+      setCompanyError(err.message || "Failed to update company profile");
+    } finally {
+      setSavingCompany(false);
     }
   };
 
@@ -168,6 +241,16 @@ export default function SettingsPage() {
             }`}
           >
             👤 User Profile
+          </button>
+          <button
+            onClick={() => setActiveTab("company")}
+            className={`px-4 py-2 text-xs font-semibold rounded transition-all ${
+              activeTab === "company"
+                ? "bg-white text-slate-900 shadow-sm border border-border/60"
+                : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/50"
+            }`}
+          >
+            🏢 Company Profile
           </button>
           {userRole === "owner" && (
             <button
@@ -270,7 +353,129 @@ export default function SettingsPage() {
           </div>
         )}
 
-        {/* Tab 2: RBAC Config */}
+        {/* Tab 2: Company Profile */}
+        {activeTab === "company" && (
+          <div className="erp-card overflow-hidden">
+            <div className="p-5 border-b border-border bg-slate-50/80 backdrop-blur flex items-center justify-between">
+              <div>
+                <h3 className="text-base font-bold text-slate-900">Company Profile Settings</h3>
+                <p className="text-xs text-slate-500 mt-0.5">Manage enterprise organization name, contact details, and invoice headers</p>
+              </div>
+              {!canEditCompany && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-amber-50 text-amber-800 border border-amber-200 text-xs font-medium">
+                  🔒 Read-Only Mode
+                </span>
+              )}
+            </div>
+
+            <form onSubmit={handleUpdateCompany} className="p-6 space-y-6">
+              {companySuccess && (
+                <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-md text-emerald-800 text-xs font-medium">
+                  {companySuccess}
+                </div>
+              )}
+              {companyError && (
+                <div className="p-3 bg-rose-50 border border-rose-200 rounded-md text-rose-800 text-xs font-medium">
+                  ⚠️ {companyError}
+                </div>
+              )}
+
+              {!canEditCompany && (
+                <div className="p-3 bg-slate-50 border border-border rounded-md text-slate-600 text-xs font-medium">
+                  ℹ️ You are viewing the organization profile in read-only mode. Access to modify company profile details is restricted by administrator permissions.
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Company Legal Name *</label>
+                  <input
+                    type="text"
+                    required
+                    disabled={!canEditCompany || savingCompany}
+                    className={`w-full p-2.5 border border-border rounded-md text-xs font-medium focus:ring-1 focus:ring-brand focus:border-brand ${
+                      !canEditCompany ? "bg-slate-100 cursor-not-allowed text-slate-500" : "bg-white text-slate-900"
+                    }`}
+                    value={companyName}
+                    onChange={(e) => setCompanyName(e.target.value)}
+                    placeholder="e.g. Acme Enterprise Ltd."
+                  />
+                  <span className="text-[10px] text-slate-400 mt-1 block">Appears on invoices, purchase orders, receipts, and reports.</span>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Contact Person</label>
+                  <input
+                    type="text"
+                    disabled={!canEditCompany || savingCompany}
+                    className={`w-full p-2.5 border border-border rounded-md text-xs font-medium focus:ring-1 focus:ring-brand focus:border-brand ${
+                      !canEditCompany ? "bg-slate-100 cursor-not-allowed text-slate-500" : "bg-white text-slate-900"
+                    }`}
+                    value={companyContact}
+                    onChange={(e) => setCompanyContact(e.target.value)}
+                    placeholder="e.g. John Doe (Managing Director)"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Official Phone</label>
+                  <input
+                    type="tel"
+                    disabled={!canEditCompany || savingCompany}
+                    className={`w-full p-2.5 border border-border rounded-md text-xs font-medium focus:ring-1 focus:ring-brand focus:border-brand ${
+                      !canEditCompany ? "bg-slate-100 cursor-not-allowed text-slate-500" : "bg-white text-slate-900"
+                    }`}
+                    value={companyPhone}
+                    onChange={(e) => setCompanyPhone(e.target.value)}
+                    placeholder="+880 1XXXXXXXXX"
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Official Email</label>
+                  <input
+                    type="email"
+                    disabled={!canEditCompany || savingCompany}
+                    className={`w-full p-2.5 border border-border rounded-md text-xs font-medium focus:ring-1 focus:ring-brand focus:border-brand ${
+                      !canEditCompany ? "bg-slate-100 cursor-not-allowed text-slate-500" : "bg-white text-slate-900"
+                    }`}
+                    value={companyEmail}
+                    onChange={(e) => setCompanyEmail(e.target.value)}
+                    placeholder="contact@company.com"
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Office / Factory Address</label>
+                  <textarea
+                    rows={3}
+                    disabled={!canEditCompany || savingCompany}
+                    className={`w-full p-2.5 border border-border rounded-md text-xs font-medium focus:ring-1 focus:ring-brand focus:border-brand resize-none ${
+                      !canEditCompany ? "bg-slate-100 cursor-not-allowed text-slate-500" : "bg-white text-slate-900"
+                    }`}
+                    value={companyAddress}
+                    onChange={(e) => setCompanyAddress(e.target.value)}
+                    placeholder="Corporate headquarters and facility address..."
+                  />
+                </div>
+              </div>
+
+              {canEditCompany && (
+                <div className="flex justify-end pt-4 border-t border-border">
+                  <button
+                    type="submit"
+                    disabled={savingCompany}
+                    className="btn-primary text-xs"
+                  >
+                    {savingCompany ? "Saving Profile..." : "Save Company Profile"}
+                  </button>
+                </div>
+              )}
+            </form>
+          </div>
+        )}
+
+        {/* Tab 3: RBAC Config */}
         {activeTab === "rbac" && userRole === "owner" && rbacRules && (
           <div className="erp-card overflow-hidden">
             <div className="p-5 border-b border-border bg-slate-50/80 backdrop-blur">
