@@ -484,8 +484,6 @@ export default function POSTerminal() {
       setCompletedInvoice(createdInvoice);
 
       // ── OPTIMISTIC STOCK DEDUCTION ──────────────────────────────────────
-      // Immediately subtract sold quantities from the local products state so the
-      // POS list shows correct stock without waiting for the async NATS round-trip.
       setProducts(prev =>
         prev.map(p => {
           const soldItem = cartSnapshot.find(
@@ -510,12 +508,7 @@ export default function POSTerminal() {
         setPendingSync(queue.length);
       }
 
-      // Wait 500ms for NATS deduction to land in inventory DB, then re-fetch.
-      // (NATS round-trip: publish → broker → inventory subscriber → DB write ≈ 40-200ms)
-      // The optimistic update already shows the correct count instantly;
-      // this re-fetch syncs the authoritative server value.
       setTimeout(() => { fetchProductsList(selectedBranchId || undefined); }, 500);
-      // Second re-fetch at 3s as a safety net for slow environments
       setTimeout(() => { fetchProductsList(selectedBranchId || undefined); }, 3000);
 
     } catch (error) {
@@ -529,17 +522,22 @@ export default function POSTerminal() {
   const activeBranchName = branches.find(b => b.id === (selectedBranchId || defaultBranchId))?.name || "Default Warehouse";
 
   return (
-    <div className="flex h-full w-full bg-slate-50 font-sans text-slate-800 overflow-hidden relative">
+    <div className="flex h-full w-full bg-surface font-sans text-slate-800 overflow-hidden relative">
       {/* LEFT PANE: Product Catalog */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
-        <div className="bg-white p-4 shadow-sm border-b z-10 flex items-center justify-between gap-4">
-          <div className="flex items-center space-x-3">
-            <h1 className="text-xl font-bold text-blue-600 flex items-center gap-1.5">
-              <span>🛒</span> POS Terminal
+      <div className="flex-1 flex flex-col h-full overflow-hidden min-w-0">
+        
+        {/* Top Controls Header */}
+        <div className="bg-white p-4 border-b border-slate-200 z-10 flex items-center justify-between gap-4 shadow-xs">
+          <div className="flex items-center space-x-3 flex-shrink-0">
+            <h1 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+              <span className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-200 text-brand flex items-center justify-center text-sm shadow-xs">
+                🛒
+              </span>
+              <span>POS Terminal</span>
             </h1>
 
             {!isOnline && (
-              <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-bold border border-red-200 animate-pulse">
+              <span className="badge-danger animate-pulse">
                 Offline Mode
               </span>
             )}
@@ -547,12 +545,12 @@ export default function POSTerminal() {
 
           {/* Autocomplete Search input wrapper */}
           <div className="relative flex-1 max-w-xl">
-            <div className="flex items-center bg-slate-50 border rounded-xl focus-within:ring-2 focus-within:ring-blue-500 transition shadow-inner">
-              <span className="pl-3 text-slate-400">🔍</span>
+            <div className="flex items-center bg-slate-50/80 border border-slate-200 rounded-lg focus-within:bg-white focus-within:border-brand focus-within:ring-1 focus-within:ring-brand transition-all shadow-xs">
+              <span className="pl-3 text-slate-400 text-sm">🔍</span>
               <input
                 type="text"
                 placeholder="Search products by name or SKU..."
-                className="w-full p-2.5 bg-transparent outline-none text-sm text-slate-800 placeholder-slate-400 font-medium"
+                className="w-full p-2 bg-transparent outline-none text-xs text-slate-900 placeholder-slate-400 font-medium"
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
@@ -564,7 +562,7 @@ export default function POSTerminal() {
                 <button
                   type="button"
                   onClick={() => { setSearchQuery(""); setShowSuggestions(false); }}
-                  className="pr-3 text-slate-400 hover:text-slate-600 text-sm font-bold"
+                  className="pr-3 text-slate-400 hover:text-slate-600 text-xs font-bold"
                 >
                   ✕
                 </button>
@@ -578,7 +576,7 @@ export default function POSTerminal() {
                   className="fixed inset-0 z-25"
                   onClick={() => setShowSuggestions(false)}
                 />
-                <div className="absolute left-0 right-0 mt-1.5 bg-white border border-slate-200 rounded-xl shadow-xl z-30 overflow-hidden max-h-72 overflow-y-auto divide-y animate-fadeIn">
+                <div className="absolute left-0 right-0 mt-1.5 bg-white border border-slate-200 rounded-xl shadow-dropdown z-30 overflow-hidden max-h-72 overflow-y-auto divide-y divide-slate-100 animate-fadeIn">
                   {searchSuggestions.map((product) => {
                     const availableStock = getAvailableStock(product);
                     const outOfStock = availableStock <= 0;
@@ -592,17 +590,19 @@ export default function POSTerminal() {
                             setShowSuggestions(false);
                           }
                         }}
-                        className={`p-3 hover:bg-blue-50 cursor-pointer flex items-center justify-between transition-colors ${outOfStock ? "opacity-60 cursor-not-allowed" : ""}`}
+                        className={`p-3 hover:bg-slate-50 cursor-pointer flex items-center justify-between transition-colors ${outOfStock ? "opacity-60 cursor-not-allowed" : ""}`}
                       >
                         <div className="min-w-0 pr-4">
-                          <p className="font-semibold text-slate-800 text-sm truncate">{product.name} {product.supplier_name ? `(${product.supplier_name})` : ""}</p>
-                          <p className="text-xs font-mono font-bold text-blue-600">{product.sku}</p>
+                          <p className="font-semibold text-slate-900 text-xs truncate">
+                            {product.name} {product.supplier_name ? `(${product.supplier_name})` : ""}
+                          </p>
+                          <p className="text-[11px] font-mono font-medium text-slate-500">{product.sku}</p>
                         </div>
                         <div className="text-right flex-shrink-0">
-                          <p className="font-bold text-slate-900 text-sm">৳{product.selling_price.toFixed(2)}</p>
-                          <p className={`text-[10px] px-1.5 py-0.5 rounded font-bold inline-block ${availableStock > 0
-                            ? "bg-slate-100 text-slate-600"
-                            : "bg-red-50 text-red-600"
+                          <p className="font-bold font-mono text-slate-900 text-xs">৳{product.selling_price.toFixed(2)}</p>
+                          <p className={`text-[10px] px-1.5 py-0.5 rounded font-medium inline-block mt-0.5 ${availableStock > 0
+                            ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                            : "bg-rose-50 text-rose-700 border border-rose-200"
                             }`}>
                             Stock: {availableStock}
                           </p>
@@ -616,13 +616,13 @@ export default function POSTerminal() {
           </div>
 
           {/* Warehouse Dropdown Selector */}
-          <div className="flex items-center gap-1.5 flex-shrink-0">
-            <span className="text-xs font-bold text-slate-500 whitespace-nowrap">Warehouse:</span>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <span className="text-xs font-semibold text-slate-500 whitespace-nowrap">Warehouse:</span>
             <select
               value={selectedBranchId}
               onChange={(e) => handleBranchChange(e.target.value)}
               disabled={rbacRules ? !rbacRules.pos_warehouse_select?.includes(userRole) : (userRole !== "owner")}
-              className={`p-2 border rounded-xl text-xs font-semibold text-slate-700 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition ${(rbacRules ? !rbacRules.pos_warehouse_select?.includes(userRole) : (userRole !== "owner")) ? "cursor-not-allowed bg-slate-100 opacity-80" : ""}`}
+              className={`px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-medium text-slate-700 bg-slate-50 focus:bg-white focus:border-brand focus:ring-1 focus:ring-brand outline-none transition-all shadow-xs ${(rbacRules ? !rbacRules.pos_warehouse_select?.includes(userRole) : (userRole !== "owner")) ? "cursor-not-allowed bg-slate-100 opacity-80" : ""}`}
             >
               {(rbacRules ? rbacRules.pos_warehouse_select?.includes(userRole) : (userRole === "owner")) && <option value="">All Warehouses</option>}
               {branches.map(b => (
@@ -634,13 +634,13 @@ export default function POSTerminal() {
 
         {/* ── Supplier Filter Pills ── */}
         {uniquePosSuppliers.length > 1 && (
-          <div className="px-5 py-2.5 bg-white border-b border-slate-100 flex items-center gap-2 flex-wrap">
+          <div className="px-5 py-2.5 bg-white border-b border-slate-200 flex items-center gap-2 flex-wrap">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Supplier:</span>
             <button
               onClick={() => setPosSupplierFilter("")}
-              className={`px-3 py-1 rounded-lg text-xs font-semibold border transition ${!posSupplierFilter
-                ? "bg-blue-600 text-white border-blue-600"
-                : "bg-white text-slate-600 border-slate-200 hover:border-blue-300"
+              className={`px-3 py-1 rounded-lg text-xs font-medium border transition-all ${!posSupplierFilter
+                ? "bg-brand text-white border-brand shadow-xs"
+                : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:border-slate-300"
                 }`}
             >
               All
@@ -649,9 +649,9 @@ export default function POSTerminal() {
               <button
                 key={s}
                 onClick={() => setPosSupplierFilter(s === posSupplierFilter ? "" : s)}
-                className={`px-3 py-1 rounded-lg text-xs font-semibold border transition ${posSupplierFilter === s
-                  ? "bg-blue-600 text-white border-blue-600"
-                  : "bg-white text-slate-600 border-slate-200 hover:border-blue-300"
+                className={`px-3 py-1 rounded-lg text-xs font-medium border transition-all ${posSupplierFilter === s
+                  ? "bg-brand text-white border-brand shadow-xs"
+                  : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:border-slate-300"
                   }`}
               >
                 {s}
@@ -666,34 +666,34 @@ export default function POSTerminal() {
             <div className="flex items-center justify-center h-full text-slate-500 font-medium animate-pulse">Loading products...</div>
           ) : filteredProducts.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-64 text-slate-400 space-y-2">
-              <span className="text-4xl">🔎</span>
-              <p className="font-medium">No matching products found.</p>
+              <span className="text-3xl">🔎</span>
+              <p className="font-medium text-xs text-slate-600">No matching products found.</p>
               {(searchQuery || posSupplierFilter) && (
                 <button
                   onClick={() => { setSearchQuery(""); setPosSupplierFilter(""); }}
-                  className="text-blue-600 text-xs font-semibold hover:underline"
+                  className="text-brand text-xs font-semibold hover:underline"
                 >Clear filters</button>
               )}
             </div>
           ) : (
             posSupplierGroups.map(supplierKey => (
-              <div key={supplierKey} className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+              <div key={supplierKey} className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-card">
                 {/* Supplier header */}
-                <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-lg bg-blue-100 flex items-center justify-center">
-                      <svg className="w-3.5 h-3.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="px-4 py-2.5 bg-slate-50/80 border-b border-slate-200 flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-6 h-6 rounded-md bg-emerald-50 text-brand border border-emerald-200 flex items-center justify-center">
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                       </svg>
                     </div>
-                    <span className="font-bold text-slate-800 text-sm">{supplierKey}</span>
-                    <span className="text-xs text-slate-400">{posGrouped[supplierKey].length} product{posGrouped[supplierKey].length !== 1 ? "s" : ""}</span>
+                    <span className="font-bold text-slate-900 text-xs">{supplierKey}</span>
+                    <span className="text-[11px] text-slate-500 font-medium">{posGrouped[supplierKey].length} product{posGrouped[supplierKey].length !== 1 ? "s" : ""}</span>
                   </div>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${posGrouped[supplierKey].every(p => getAvailableStock(p) <= 0)
-                    ? "bg-red-50 text-red-600 border-red-200"
+                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border ${posGrouped[supplierKey].every(p => getAvailableStock(p) <= 0)
+                    ? "bg-rose-50 text-rose-700 border-rose-200"
                     : posGrouped[supplierKey].some(p => getAvailableStock(p) <= 0)
-                      ? "bg-amber-50 text-amber-600 border-amber-200"
-                      : "bg-emerald-50 text-emerald-600 border-emerald-200"
+                      ? "bg-amber-50 text-amber-800 border-amber-200"
+                      : "bg-emerald-50 text-emerald-800 border-emerald-200"
                     }`}>
                     {posGrouped[supplierKey].filter(p => getAvailableStock(p) > 0).length} in stock
                   </span>
@@ -703,7 +703,7 @@ export default function POSTerminal() {
                 <div className="overflow-x-auto">
                   <table className="w-full text-xs text-left border-collapse">
                     <thead>
-                      <tr className="border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                      <tr className="border-b border-slate-200 bg-slate-50/50 text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
                         <th className="px-4 py-2.5">Product Name</th>
                         <th className="px-4 py-2.5">SKU</th>
                         <th className="px-4 py-2.5">Category</th>
@@ -713,7 +713,7 @@ export default function POSTerminal() {
                         <th className="px-4 py-2.5 text-center">Action</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-50 font-medium text-slate-700">
+                    <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
                       {posGrouped[supplierKey].map((product) => {
                         const availableStock = getAvailableStock(product);
                         const outOfStock = availableStock <= 0;
@@ -721,11 +721,11 @@ export default function POSTerminal() {
                         return (
                           <tr
                             key={product.id}
-                            className={`hover:bg-blue-50/40 transition-colors ${outOfStock ? "opacity-50" : ""}`}
+                            className={`hover:bg-slate-50/70 transition-colors ${outOfStock ? "opacity-50" : ""}`}
                           >
                             <td className="px-4 py-2.5 font-semibold text-slate-900">{product.name}</td>
                             <td className="px-4 py-2.5">
-                              <span className="font-mono text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded">{product.sku}</span>
+                              <span className="font-mono text-[11px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded border border-slate-200/60">{product.sku}</span>
                             </td>
                             <td className="px-4 py-2.5 text-slate-500">{catName}</td>
                             <td className="px-4 py-2.5 text-slate-500">
@@ -735,23 +735,23 @@ export default function POSTerminal() {
                               }
                             </td>
                             <td className="px-4 py-2.5 text-center">
-                              <span className={`px-2.5 py-0.5 rounded-full font-bold text-[10px] border ${outOfStock
-                                ? "bg-red-50 text-red-700 border-red-200"
+                              <span className={`px-2 py-0.5 rounded-md font-semibold text-[10px] border ${outOfStock
+                                ? "bg-rose-50 text-rose-700 border-rose-200"
                                 : availableStock <= 5
-                                  ? "bg-amber-50 text-amber-700 border-amber-200"
-                                  : "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                  ? "bg-amber-50 text-amber-800 border-amber-200"
+                                  : "bg-emerald-50 text-emerald-800 border-emerald-200"
                                 }`}>
                                 {outOfStock ? "Out of Stock" : `${availableStock}`}
                               </span>
                             </td>
-                            <td className="px-4 py-2.5 text-right font-bold text-slate-900">৳{product.selling_price.toFixed(2)}</td>
+                            <td className="px-4 py-2.5 text-right font-mono font-bold text-slate-900">৳{product.selling_price.toFixed(2)}</td>
                             <td className="px-4 py-2.5 text-center">
                               <button
                                 onClick={() => !outOfStock && addToCart(product)}
                                 disabled={outOfStock}
-                                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${outOfStock
-                                  ? "bg-slate-100 text-slate-400 cursor-not-allowed"
-                                  : "bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white border border-blue-200"
+                                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all shadow-xs ${outOfStock
+                                  ? "bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200"
+                                  : "bg-emerald-50 text-brand hover:bg-brand hover:text-white border border-emerald-200"
                                   }`}
                               >
                                 + Add to Cart
@@ -769,69 +769,77 @@ export default function POSTerminal() {
         </div>
       </div>
 
-      {/* RIGHT PANE: Cart & Checkout Summary */}
-      <div className="w-[26rem] bg-white border-l shadow-xl flex flex-col h-full flex-shrink-0 z-20 overflow-hidden">
-        <div className="p-3.5 bg-slate-900 text-slate-100 flex justify-between items-center shadow-md flex-shrink-0">
-          <h2 className="text-sm font-bold flex flex-col gap-0.5 leading-tight">
-            <span className="flex items-center gap-1.5 text-base"><span>🛒</span> Current Cart</span>
-            <span className="text-[10px] text-slate-300 font-normal">Selling from: <strong className="text-amber-400 font-semibold">{activeBranchName}</strong></span>
+      {/* RIGHT PANE: Cart & Checkout Summary (Shopify & Toast POS Inspired) */}
+      <div className="w-[26rem] bg-white border-l border-slate-200 shadow-xl flex flex-col h-full flex-shrink-0 z-20 overflow-hidden">
+        
+        {/* Cart Top Bar */}
+        <div className="p-3.5 bg-slate-900 text-slate-100 flex justify-between items-center shadow-xs flex-shrink-0">
+          <h2 className="text-xs font-bold flex flex-col gap-0.5 leading-tight">
+            <span className="flex items-center gap-1.5 text-sm font-bold text-white">
+              <span>🛒</span> Current Cart
+            </span>
+            <span className="text-[10px] text-slate-400 font-normal">
+              Selling from: <strong className="text-amber-400 font-semibold">{activeBranchName}</strong>
+            </span>
           </h2>
           <div className="flex items-center space-x-2">
             {pendingSync > 0 && (
               <button
                 onClick={syncPendingOrders}
-                className="bg-amber-500 hover:bg-amber-400 text-slate-950 px-2.5 py-1 rounded-full text-xs font-bold shadow-sm transition flex items-center gap-1"
+                className="bg-amber-500 hover:bg-amber-400 text-slate-950 px-2 py-0.5 rounded-md text-[11px] font-bold shadow-xs transition flex items-center gap-1"
               >
                 ↻ Sync {pendingSync}
               </button>
             )}
-            <span className="bg-slate-800 text-slate-300 px-3 py-1 rounded-full text-xs font-semibold">{cart.length} Items</span>
+            <span className="bg-slate-800 text-slate-300 px-2.5 py-0.5 rounded-md text-xs font-mono font-medium border border-slate-700">
+              {cart.length} Items
+            </span>
           </div>
         </div>
 
-        {/* Scrollable Cart Items - flex-1 min-h-0 so it shrinks/expands properly */}
+        {/* Scrollable Cart Items */}
         <div className="flex-1 min-h-0 overflow-y-auto p-3 space-y-2">
           {cart.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-slate-400 space-y-2 py-8">
-              <span className="text-4xl">🛍️</span>
-              <p className="font-semibold text-xs">Cart is currently empty</p>
-              <p className="text-[10px] text-slate-400">Add products to get started.</p>
+              <span className="text-3xl">🛍️</span>
+              <p className="font-semibold text-xs text-slate-600">Cart is currently empty</p>
+              <p className="text-[11px] text-slate-400">Add products to get started.</p>
             </div>
           ) : (
             cart.map((item) => (
               <div
                 key={`${item.id}-${item.supplier_name || 'no-supplier'}`}
-                className="flex justify-between items-center bg-slate-50 border border-slate-200/60 rounded-xl p-2.5 gap-2 transition hover:border-slate-300"
+                className="flex justify-between items-center bg-slate-50/70 border border-slate-200 rounded-lg p-2.5 gap-2 transition hover:bg-slate-50 hover:border-slate-300 shadow-xs"
               >
                 <div className="min-w-0 flex-1">
                   <h4 className="font-semibold text-slate-900 text-xs truncate leading-tight">
                     {item.name}
                   </h4>
-                  <div className="text-[10px] text-slate-500 mt-0.5 flex flex-col gap-0.5">
+                  <div className="text-[10px] text-slate-500 mt-1 flex flex-col gap-0.5">
                     <span className="font-mono">SKU: {item.sku} &bull; ৳{item.selling_price.toFixed(2)}</span>
-                    <span className="text-[9px] font-semibold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-md inline-block w-fit mt-0.5">
+                    <span className="text-[9px] font-medium text-slate-600 bg-slate-100 border border-slate-200 px-1.5 py-0.2 rounded inline-block w-fit mt-0.5">
                       📍 {activeBranchName}
                     </span>
                   </div>
                 </div>
 
-                <div className="flex items-center bg-white border rounded-lg overflow-hidden flex-shrink-0">
+                <div className="flex items-center bg-white border border-slate-200 rounded-lg overflow-hidden flex-shrink-0 shadow-xs">
                   <button
                     onClick={() => updateQuantity(item.id, item.supplier_name, -1)}
-                    className="text-slate-500 hover:bg-slate-100 px-2 py-1 text-xs font-bold"
+                    className="text-slate-600 hover:bg-slate-100 px-2 py-1 text-xs font-bold transition-colors"
                   >
                     −
                   </button>
-                  <span className="font-bold text-slate-800 w-6 text-center text-xs">{item.cartQuantity}</span>
+                  <span className="font-bold font-mono text-slate-900 w-6 text-center text-xs">{item.cartQuantity}</span>
                   <button
                     onClick={() => updateQuantity(item.id, item.supplier_name, 1)}
-                    className="text-slate-500 hover:bg-slate-100 px-2 py-1 text-xs font-bold"
+                    className="text-slate-600 hover:bg-slate-100 px-2 py-1 text-xs font-bold transition-colors"
                   >
                     +
                   </button>
                 </div>
 
-                <div className="w-16 text-right font-bold text-slate-900 text-xs flex-shrink-0">
+                <div className="w-16 text-right font-mono font-bold text-slate-900 text-xs flex-shrink-0">
                   ৳{item.subtotal.toFixed(2)}
                 </div>
               </div>
@@ -839,22 +847,22 @@ export default function POSTerminal() {
           )}
         </div>
 
-        {/* Customer Information & Calculations - Completely Pinned & Fixed to screen */}
-        <div className="p-3 bg-slate-50 border-t space-y-2.5 flex-shrink-0">
-          <div className="bg-white p-2.5 rounded-xl border border-slate-200/80 space-y-1.5 shadow-sm">
+        {/* Customer Information & Calculations */}
+        <div className="p-3 bg-slate-50/80 border-t border-slate-200 space-y-2.5 flex-shrink-0">
+          <div className="bg-white p-2.5 rounded-lg border border-slate-200 space-y-2 shadow-xs">
             <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Customer Details</h3>
             <div className="grid grid-cols-2 gap-1.5">
               <input
                 type="text"
                 placeholder="Customer Name"
-                className="p-1.5 border border-slate-200 rounded-lg text-xs bg-slate-50 focus:bg-white focus:ring-1 focus:ring-blue-500 outline-none font-medium w-full"
+                className="p-1.5 border border-slate-200 rounded-lg text-xs bg-slate-50 focus:bg-white focus:border-brand focus:ring-1 focus:ring-brand outline-none font-medium w-full transition-all"
                 value={customerName}
                 onChange={(e) => setCustomerName(e.target.value)}
               />
               <input
                 type="text"
                 placeholder="Phone Number"
-                className="p-1.5 border border-slate-200 rounded-lg text-xs bg-slate-50 focus:bg-white focus:ring-1 focus:ring-blue-500 outline-none font-medium w-full"
+                className="p-1.5 border border-slate-200 rounded-lg text-xs bg-slate-50 focus:bg-white focus:border-brand focus:ring-1 focus:ring-brand outline-none font-medium w-full transition-all"
                 value={customerPhone}
                 onChange={(e) => setCustomerPhone(e.target.value)}
               />
@@ -862,20 +870,20 @@ export default function POSTerminal() {
             <input
               type="text"
               placeholder="Customer Address"
-              className="p-1.5 border border-slate-200 rounded-lg text-xs bg-slate-50 focus:bg-white focus:ring-1 focus:ring-blue-500 outline-none font-medium w-full"
+              className="p-1.5 border border-slate-200 rounded-lg text-xs bg-slate-50 focus:bg-white focus:border-brand focus:ring-1 focus:ring-brand outline-none font-medium w-full transition-all"
               value={customerAddress}
               onChange={(e) => setCustomerAddress(e.target.value)}
             />
             <div className="pt-1.5 flex items-center justify-between border-t border-slate-100 gap-4">
-              <label className="text-[10px] font-bold text-slate-400 uppercase">Discount</label>
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Discount</label>
               <div className="relative w-28">
-                <span className="absolute left-2 top-1 text-xs font-bold text-slate-400">৳</span>
+                <span className="absolute left-2 top-1 text-xs font-mono font-bold text-slate-400">৳</span>
                 <input
                   type="number"
                   step="0.01"
                   min="0"
                   placeholder="0.00"
-                  className="p-1 pl-5 border border-slate-200 rounded-lg text-xs bg-slate-50 focus:bg-white focus:ring-1 focus:ring-blue-500 outline-none text-right font-bold w-full"
+                  className="p-1 pl-5 border border-slate-200 rounded-lg text-xs bg-slate-50 focus:bg-white focus:border-brand focus:ring-1 focus:ring-brand outline-none text-right font-mono font-bold text-slate-900 w-full transition-all"
                   value={discountStr}
                   onChange={(e) => setDiscountStr(e.target.value)}
                 />
@@ -883,32 +891,32 @@ export default function POSTerminal() {
             </div>
           </div>
 
-          <div className="space-y-1 text-xs font-medium text-slate-500">
+          <div className="space-y-1 text-xs font-medium text-slate-500 px-0.5">
             <div className="flex justify-between">
               <span>Subtotal:</span>
-              <span className="font-bold text-slate-700">৳{cartTotal.toFixed(2)}</span>
+              <span className="font-bold font-mono text-slate-800">৳{cartTotal.toFixed(2)}</span>
             </div>
             {discountValue > 0 && (
-              <div className="flex justify-between text-red-500">
+              <div className="flex justify-between text-rose-600 font-medium">
                 <span>Discount Applied:</span>
-                <span className="font-bold">-৳{discountValue.toFixed(2)}</span>
+                <span className="font-bold font-mono">-৳{discountValue.toFixed(2)}</span>
               </div>
             )}
-            <div className="flex justify-between items-center text-slate-800 font-bold border-t pt-1 mt-1">
+            <div className="flex justify-between items-center text-slate-900 font-bold border-t border-slate-200 pt-1.5 mt-1">
               <span className="text-xs">Net Payable:</span>
-              <span className="text-lg text-emerald-600 font-black">৳{netPayable.toFixed(2)}</span>
+              <span className="text-xl text-brand font-black font-mono tracking-tight">৳{netPayable.toFixed(2)}</span>
             </div>
           </div>
 
           <button
             onClick={handleCheckout}
             disabled={cart.length === 0 || isProcessing}
-            className={`w-full py-2.5 rounded-xl text-white font-bold text-sm transition-all shadow-md
+            className={`w-full py-2.5 rounded-lg text-white font-semibold text-sm transition-all shadow-sm
               ${cart.length === 0
-                ? "bg-slate-300 cursor-not-allowed shadow-none"
+                ? "bg-slate-300 text-slate-500 cursor-not-allowed shadow-none"
                 : isProcessing
-                  ? "bg-blue-400 cursor-wait"
-                  : "bg-blue-600 hover:bg-blue-700 hover:shadow-blue-500/25 active:scale-[0.98]"
+                  ? "bg-brand/80 cursor-wait"
+                  : "bg-brand hover:bg-brand-hover active:scale-[0.99] shadow-xs"
               }`}
           >
             {isProcessing ? "Processing..." : "Complete Checkout"}
