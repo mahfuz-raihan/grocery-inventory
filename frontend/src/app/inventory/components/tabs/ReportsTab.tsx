@@ -124,9 +124,9 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
   const computedItemsSum = valuationDetails.reduce((sum, d) => sum + d.current_stock, 0);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Nested Report Tabs */}
-      <div className="flex space-x-1 border-b pb-px mb-6 bg-white p-1 rounded-lg border max-w-fit shadow-sm">
+      <div className="flex space-x-1 border border-border p-1 rounded-xl bg-white max-w-fit shadow-sm">
         {(
           [
             { id: "valuation", label: "Valuation & Alerts" },
@@ -138,10 +138,10 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
           <button
             key={tab.id}
             onClick={() => setReportsNestedTab(tab.id)}
-            className={`px-4 py-2 text-sm font-semibold rounded-md transition-all ${
+            className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all ${
               reportsNestedTab === tab.id
-                ? "bg-blue-600 text-white shadow-sm font-bold"
-                : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                ? "bg-brand text-white shadow-sm font-semibold"
+                : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
             }`}
           >
             {tab.label}
@@ -150,14 +150,14 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
       </div>
 
       {reportsNestedTab === "valuation" && (
-        <div className="space-y-8">
+        <div className="space-y-6">
           {/* Valuation Summaries */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-blue-600 p-6 rounded-xl text-white shadow-md">
-              <h4 className="text-blue-200 text-xs font-bold uppercase tracking-wider mb-2">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="erp-card p-5 border-l-4 border-l-emerald-600">
+              <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
                 Total Inventory Value
               </h4>
-              <p className="text-4xl font-extrabold">
+              <p className="text-2xl font-bold font-mono tabular-nums text-slate-900">
                 ৳
                 {computedValuationSum.toLocaleString(undefined, {
                   minimumFractionDigits: 2,
@@ -165,30 +165,30 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
                 })}
               </p>
             </div>
-            <div className="bg-emerald-600 p-6 rounded-xl text-white shadow-md">
-              <h4 className="text-emerald-200 text-xs font-bold uppercase tracking-wider mb-2">
+            <div className="erp-card p-5 border-l-4 border-l-brand">
+              <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
                 Total Storage Items
               </h4>
-              <p className="text-4xl font-extrabold">{computedItemsSum.toLocaleString()}</p>
+              <p className="text-2xl font-bold font-mono tabular-nums text-slate-900">{computedItemsSum.toLocaleString()}</p>
             </div>
-            <div className="bg-orange-600 p-6 rounded-xl text-white shadow-md">
-              <h4 className="text-orange-200 text-xs font-bold uppercase tracking-wider mb-2">
+            <div className="erp-card p-5 border-l-4 border-l-rose-500">
+              <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
                 Low Stock Alerts
               </h4>
-              <p className="text-4xl font-extrabold">{lowStockList.length}</p>
+              <p className="text-2xl font-bold font-mono tabular-nums text-rose-700">{lowStockList.length}</p>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Valuation details list */}
-            <div className="bg-white p-6 rounded-xl border shadow-sm">
-              <h3 className="text-lg font-bold text-gray-800 mb-4">Stock Valuation Breakdown</h3>
+            <div className="erp-card p-6">
+              <h3 className="text-base font-bold text-slate-900 mb-4">Stock Valuation Breakdown</h3>
               {valuationDetails.length === 0 ? (
-                <p className="text-sm text-gray-500">No valuation logs available.</p>
+                <p className="text-xs text-slate-500 italic py-8 text-center bg-slate-50/50 rounded-xl border border-border">No valuation logs available.</p>
               ) : (
-                <div className="max-h-96 overflow-y-auto pr-2">
-                  <table className="w-full text-left text-sm text-gray-500">
-                    <thead className="text-xs text-gray-700 bg-gray-100 uppercase font-bold">
+                <div className="max-h-96 overflow-y-auto pr-2 border border-border rounded-xl">
+                  <table className="w-full text-left text-xs">
+                    <thead className="text-[11px] text-slate-500 bg-slate-50 uppercase font-semibold border-b border-border sticky top-0 z-10">
                       <tr>
                         <th className="p-3">Product</th>
                         <th className="p-3 text-right">Stock</th>
@@ -196,24 +196,24 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
                         <th className="p-3 text-right">Valuation</th>
                       </tr>
                     </thead>
-                    <tbody>
+                    <tbody className="divide-y divide-border/60">
                       {valuationDetails.map((d) => (
-                        <tr key={d.product_id} className="border-b hover:bg-gray-55">
+                        <tr key={d.product_id} className="hover:bg-slate-50/70 transition">
                           <td className="p-3">
-                            <div className="font-semibold text-gray-900">{d.name}</div>
-                            <div className="text-xs text-gray-400">
+                            <div className="font-semibold text-slate-900">{d.name}</div>
+                            <div className="text-[10px] text-slate-400 font-mono">
                               {d.sku} | {d.product_type}
                             </div>
                           </td>
-                          <td className="p-3 text-right font-semibold text-gray-800">{d.current_stock}</td>
-                          <td className="p-3 text-right">
+                          <td className="p-3 text-right font-mono tabular-nums font-semibold text-slate-800">{d.current_stock}</td>
+                          <td className="p-3 text-right font-mono tabular-nums text-slate-600">
                             ৳
                             {d.unit_cost.toLocaleString(undefined, {
                               minimumFractionDigits: 2,
                               maximumFractionDigits: 2,
                             })}
                           </td>
-                          <td className="p-3 text-right font-bold text-blue-600">
+                          <td className="p-3 text-right font-mono tabular-nums font-bold text-brand">
                             ৳
                             {d.total_value.toLocaleString(undefined, {
                               minimumFractionDigits: 2,
@@ -229,16 +229,18 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
             </div>
 
             {/* Low stock alerts list */}
-            <div className="bg-white p-6 rounded-xl border shadow-sm">
-              <h3 className="text-lg font-bold text-orange-850 mb-4">🚨 Critical Low Stock Alerts</h3>
+            <div className="erp-card p-6">
+              <h3 className="text-base font-bold text-rose-800 mb-4 flex items-center gap-1.5">
+                <span>🚨</span> Critical Low Stock Alerts
+              </h3>
               {lowStockList.length === 0 ? (
-                <div className="p-4 bg-green-50 text-green-700 border border-green-200 rounded-lg text-sm">
+                <div className="p-4 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-xl text-xs font-medium">
                   ✓ All products are currently above their safety thresholds.
                 </div>
               ) : (
-                <div className="max-h-96 overflow-y-auto pr-2">
-                  <table className="w-full text-left text-sm text-gray-500">
-                    <thead className="text-xs text-gray-700 bg-gray-100 uppercase font-bold">
+                <div className="max-h-96 overflow-y-auto pr-2 border border-border rounded-xl">
+                  <table className="w-full text-left text-xs">
+                    <thead className="text-[11px] text-slate-500 bg-slate-50 uppercase font-semibold border-b border-border sticky top-0 z-10">
                       <tr>
                         <th className="p-3">Product</th>
                         <th className="p-3 text-right">Stock</th>
@@ -246,18 +248,18 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
                         <th className="p-3 text-right">Reorder Qty</th>
                       </tr>
                     </thead>
-                    <tbody>
+                    <tbody className="divide-y divide-border/60">
                       {lowStockList.map((l) => (
-                        <tr key={l.product_id} className="border-b hover:bg-red-55/30">
+                        <tr key={l.product_id} className="hover:bg-rose-50/40 transition">
                           <td className="p-3">
-                            <div className="font-semibold text-red-900">{l.name}</div>
-                            <div className="text-xs text-gray-400">
+                            <div className="font-semibold text-rose-900">{l.name}</div>
+                            <div className="text-[10px] text-slate-400 font-mono">
                               {l.sku} | {l.product_type}
                             </div>
                           </td>
-                          <td className="p-3 text-right font-bold text-red-650">{l.current_stock}</td>
-                          <td className="p-3 text-right font-medium text-gray-650">{l.min_stock_level}</td>
-                          <td className="p-3 text-right font-semibold text-blue-600">{l.reorder_quantity}</td>
+                          <td className="p-3 text-right font-mono tabular-nums font-bold text-rose-700">{l.current_stock}</td>
+                          <td className="p-3 text-right font-mono tabular-nums text-slate-600">{l.min_stock_level}</td>
+                          <td className="p-3 text-right font-mono tabular-nums font-semibold text-brand">{l.reorder_quantity}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -270,13 +272,13 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
       )}
 
       {reportsNestedTab === "movement" && (
-        <div className="bg-white p-6 rounded-xl border shadow-sm space-y-6">
-          <div className="flex flex-wrap items-center gap-4 justify-between border-b pb-4">
-            <h3 className="text-lg font-bold text-gray-805">Stock Movement Log</h3>
+        <div className="erp-card p-6 space-y-6">
+          <div className="flex flex-wrap items-center gap-4 justify-between border-b border-border pb-4">
+            <h3 className="text-base font-bold text-slate-900">Stock Movement Log</h3>
             <div className="flex flex-wrap gap-2">
               <select
-                className={`p-2 border rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500 ${
-                  userRole !== "owner" ? "bg-gray-100 cursor-not-allowed text-gray-500 font-semibold" : ""
+                className={`p-2 border border-border rounded-lg text-xs bg-white text-slate-800 outline-none focus:ring-1 focus:ring-brand focus:border-brand transition ${
+                  userRole !== "owner" ? "bg-slate-100 cursor-not-allowed text-slate-500 font-medium" : ""
                 }`}
                 value={filterMovementBranch}
                 onChange={(e) => setFilterMovementBranch(e.target.value)}
@@ -290,7 +292,7 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
                 ))}
               </select>
               <select
-                className="p-2 border rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500"
+                className="p-2 border border-border rounded-lg text-xs bg-white text-slate-800 outline-none focus:ring-1 focus:ring-brand focus:border-brand transition"
                 value={filterMovementProduct}
                 onChange={(e) => setFilterMovementProduct(e.target.value)}
               >
@@ -302,7 +304,7 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
                 ))}
               </select>
               <select
-                className="p-2 border rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500"
+                className="p-2 border border-border rounded-lg text-xs bg-white text-slate-800 outline-none focus:ring-1 focus:ring-brand focus:border-brand transition"
                 value={filterMovementType}
                 onChange={(e) => setFilterMovementType(e.target.value)}
               >
@@ -320,11 +322,11 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
           </div>
 
           {movements.length === 0 ? (
-            <p className="text-sm text-gray-500 italic">No movement logs found.</p>
+            <p className="text-xs text-slate-500 italic py-8 text-center bg-slate-50/50 rounded-xl border border-border">No movement logs found.</p>
           ) : (
-            <div className="overflow-x-auto max-h-[50vh]">
-              <table className="w-full text-left text-sm text-gray-500">
-                <thead className="text-xs text-gray-700 bg-gray-100 uppercase font-bold">
+            <div className="overflow-x-auto max-h-[50vh] border border-border rounded-xl">
+              <table className="w-full text-left text-xs">
+                <thead className="text-[11px] text-slate-500 bg-slate-50 uppercase font-semibold border-b border-border sticky top-0 z-10">
                   <tr>
                     <th className="p-3">Date</th>
                     <th className="p-3">Product</th>
@@ -333,23 +335,23 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
                     <th className="p-3 text-right">Delta Qty</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-border/60">
                   {movements.map((m) => (
-                    <tr key={m.id} className="border-b hover:bg-gray-50">
-                      <td className="p-3 text-xs text-gray-400">{new Date(m.created_at).toLocaleString()}</td>
+                    <tr key={m.id} className="hover:bg-slate-50/70 transition">
+                      <td className="p-3 text-xs text-slate-400 font-mono tabular-nums">{new Date(m.created_at).toLocaleString()}</td>
                       <td className="p-3">
-                        <span className="font-semibold text-gray-900">{m.product_name}</span>
-                        <span className="text-xs text-gray-400 block">{m.product_sku}</span>
+                        <span className="font-semibold text-slate-900">{m.product_name}</span>
+                        <span className="text-[10px] text-slate-400 font-mono block">{m.product_sku}</span>
                       </td>
-                      <td className="p-3">{m.branch_name}</td>
+                      <td className="p-3 text-slate-700 font-medium">{m.branch_name}</td>
                       <td className="p-3">
-                        <span className="text-xs bg-slate-100 text-slate-700 font-bold px-2.5 py-0.5 rounded-full capitalize">
+                        <span className="text-[10px] bg-slate-100 text-slate-700 border border-border font-medium px-2 py-0.5 rounded-full capitalize">
                           {m.movement_type.replace("_", " ")}
                         </span>
                       </td>
                       <td
-                        className={`p-3 text-right font-bold ${
-                          m.quantity_change < 0 ? "text-red-650" : "text-green-650"
+                        className={`p-3 text-right font-mono font-bold tabular-nums ${
+                          m.quantity_change < 0 ? "text-rose-700" : "text-emerald-700"
                         }`}
                       >
                         {m.quantity_change > 0 ? `+${m.quantity_change}` : m.quantity_change}
@@ -364,22 +366,22 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
       )}
 
       {reportsNestedTab === "dead_stock" && (
-        <div className="bg-white p-6 rounded-xl border shadow-sm space-y-6">
-          <div className="flex flex-wrap items-center gap-4 justify-between border-b pb-4">
-            <h3 className="text-lg font-bold text-gray-805">Dead Stock Report</h3>
+        <div className="erp-card p-6 space-y-6">
+          <div className="flex flex-wrap items-center gap-4 justify-between border-b border-border pb-4">
+            <h3 className="text-base font-bold text-slate-900">Dead Stock Report</h3>
             <div className="flex gap-2">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-gray-500 uppercase">Days of Inactivity:</span>
+                <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Days of Inactivity:</span>
                 <input
                   type="number"
                   value={deadStockDays}
                   onChange={(e) => setDeadStockDays(parseInt(e.target.value) || 30)}
-                  className="p-1.5 border rounded-lg text-sm w-20 outline-none"
+                  className="p-1.5 border border-border rounded-lg text-xs font-mono w-20 outline-none text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand transition"
                 />
               </div>
               <select
-                className={`p-2 border rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500 ${
-                  userRole !== "owner" ? "bg-gray-100 cursor-not-allowed text-gray-500 font-semibold" : ""
+                className={`p-2 border border-border rounded-lg text-xs bg-white text-slate-800 outline-none focus:ring-1 focus:ring-brand focus:border-brand transition ${
+                  userRole !== "owner" ? "bg-slate-100 cursor-not-allowed text-slate-500 font-medium" : ""
                 }`}
                 value={filterDeadStockBranch}
                 onChange={(e) => setFilterDeadStockBranch(e.target.value)}
@@ -396,11 +398,11 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
           </div>
 
           {deadStock.length === 0 ? (
-            <p className="text-sm text-gray-500 italic">No inactive stock matches found for this period.</p>
+            <p className="text-xs text-slate-500 italic py-8 text-center bg-slate-50/50 rounded-xl border border-border">No inactive stock matches found for this period.</p>
           ) : (
-            <div className="overflow-x-auto max-h-[50vh]">
-              <table className="w-full text-left text-sm text-gray-500">
-                <thead className="text-xs text-gray-700 bg-gray-100 uppercase font-bold">
+            <div className="overflow-x-auto max-h-[50vh] border border-border rounded-xl">
+              <table className="w-full text-left text-xs">
+                <thead className="text-[11px] text-slate-500 bg-slate-50 uppercase font-semibold border-b border-border sticky top-0 z-10">
                   <tr>
                     <th className="p-3">Product SKU</th>
                     <th className="p-3">Product Name</th>
@@ -408,13 +410,13 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
                     <th className="p-3 text-right">Last Movement Date</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-border/60">
                   {deadStock.map((d) => (
-                    <tr key={d.product_id} className="border-b hover:bg-gray-55">
-                      <td className="p-3 font-semibold text-gray-900">{d.sku}</td>
-                      <td className="p-3 font-medium text-gray-850">{d.name}</td>
-                      <td className="p-3 text-right font-extrabold text-blue-600">{d.current_stock}</td>
-                      <td className="p-3 text-right text-xs text-gray-400">
+                    <tr key={d.product_id} className="hover:bg-slate-50/70 transition">
+                      <td className="p-3 font-mono font-semibold text-slate-900">{d.sku}</td>
+                      <td className="p-3 font-medium text-slate-800">{d.name}</td>
+                      <td className="p-3 text-right font-mono tabular-nums font-bold text-brand">{d.current_stock}</td>
+                      <td className="p-3 text-right text-xs text-slate-400 font-mono tabular-nums">
                         {d.last_movement_date ? new Date(d.last_movement_date).toLocaleString() : "Never moved"}
                       </td>
                     </tr>
@@ -427,12 +429,12 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
       )}
 
       {reportsNestedTab === "consumption" && (
-        <div className="bg-white p-6 rounded-xl border shadow-sm space-y-6">
-          <div className="flex flex-wrap items-center gap-4 justify-between border-b pb-4">
-            <h3 className="text-lg font-bold text-gray-805">Production Consumption Summary</h3>
+        <div className="erp-card p-6 space-y-6">
+          <div className="flex flex-wrap items-center gap-4 justify-between border-b border-border pb-4">
+            <h3 className="text-base font-bold text-slate-900">Production Consumption Summary</h3>
             <select
-              className={`p-2 border rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500 ${
-                userRole !== "owner" ? "bg-gray-100 cursor-not-allowed text-gray-500 font-semibold" : ""
+              className={`p-2 border border-border rounded-lg text-xs bg-white text-slate-800 outline-none focus:ring-1 focus:ring-brand focus:border-brand transition ${
+                userRole !== "owner" ? "bg-slate-100 cursor-not-allowed text-slate-500 font-medium" : ""
               }`}
               value={filterConsumptionBranch}
               onChange={(e) => setFilterConsumptionBranch(e.target.value)}
@@ -448,23 +450,23 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
           </div>
 
           {consumption.length === 0 ? (
-            <p className="text-sm text-gray-500 italic">No consumption records found.</p>
+            <p className="text-xs text-slate-500 italic py-8 text-center bg-slate-50/50 rounded-xl border border-border">No consumption records found.</p>
           ) : (
-            <div className="overflow-x-auto max-h-[50vh]">
-              <table className="w-full text-left text-sm text-gray-500">
-                <thead className="text-xs text-gray-700 bg-gray-100 uppercase font-bold">
+            <div className="overflow-x-auto max-h-[50vh] border border-border rounded-xl">
+              <table className="w-full text-left text-xs">
+                <thead className="text-[11px] text-slate-500 bg-slate-50 uppercase font-semibold border-b border-border sticky top-0 z-10">
                   <tr>
                     <th className="p-3">Product SKU</th>
                     <th className="p-3">Product Name</th>
                     <th className="p-3 text-right">Total Consumed</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-border/60">
                   {consumption.map((c) => (
-                    <tr key={c.product_id} className="border-b hover:bg-gray-50">
-                      <td className="p-3 font-semibold text-gray-900">{c.sku}</td>
-                      <td className="p-3 font-medium text-gray-800">{c.name}</td>
-                      <td className="p-3 text-right font-extrabold text-orange-650">
+                    <tr key={c.product_id} className="hover:bg-slate-50/70 transition">
+                      <td className="p-3 font-mono font-semibold text-slate-900">{c.sku}</td>
+                      <td className="p-3 font-medium text-slate-800">{c.name}</td>
+                      <td className="p-3 text-right font-mono tabular-nums font-bold text-amber-800">
                         {c.total_consumed} {c.unit || "pcs"}
                       </td>
                     </tr>
