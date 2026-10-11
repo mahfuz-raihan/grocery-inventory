@@ -62,10 +62,10 @@ export const SalesAnalyticsTab: React.FC<SalesAnalyticsTabProps> = ({
     return (
       <div className="space-y-6 animate-pulse">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="h-32 bg-white border border-slate-200 rounded-2xl" />
-          <div className="h-32 bg-white border border-slate-200 rounded-2xl" />
+          <div className="h-32 bg-white border border-slate-200 rounded-md" />
+          <div className="h-32 bg-white border border-slate-200 rounded-md" />
         </div>
-        <div className="h-64 bg-white border border-slate-200 rounded-2xl" />
+        <div className="h-64 bg-white border border-slate-200 rounded-md" />
       </div>
     );
   }
@@ -75,7 +75,7 @@ export const SalesAnalyticsTab: React.FC<SalesAnalyticsTabProps> = ({
       {/* KPI Summary Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
         {/* Revenue Card */}
-        <div className="erp-card p-5 border-border shadow-xs rounded-xl flex items-center justify-between transition hover:border-slate-300">
+        <div className="erp-card p-5 border-border shadow-xs rounded-md flex items-center justify-between transition hover:border-slate-300">
           <div className="space-y-1">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
               Total Revenue
@@ -84,13 +84,13 @@ export const SalesAnalyticsTab: React.FC<SalesAnalyticsTabProps> = ({
               {formatPrice(analytics?.total_revenue || 0)}
             </p>
             <div className="pt-1.5">
-              <span className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-800 px-2.5 py-0.5 rounded-full text-[10px] font-bold border border-emerald-200">
+              <span className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-800 px-2.5 py-0.5 rounded text-[10px] font-bold border border-emerald-200">
                 <span className="w-1.5 h-1.5 bg-emerald-600 rounded-full animate-pulse"></span>
                 Settled Sales
               </span>
             </div>
           </div>
-          <div className="w-11 h-11 bg-brand-light text-brand rounded-xl flex items-center justify-center border border-emerald-200/60">
+          <div className="w-11 h-11 bg-brand-light text-brand rounded-md flex items-center justify-center border border-emerald-200/60">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
@@ -103,7 +103,7 @@ export const SalesAnalyticsTab: React.FC<SalesAnalyticsTabProps> = ({
         </div>
 
         {/* Orders Card */}
-        <div className="erp-card p-5 border-border shadow-xs rounded-xl flex items-center justify-between transition hover:border-slate-300">
+        <div className="erp-card p-5 border-border shadow-xs rounded-md flex items-center justify-between transition hover:border-slate-300">
           <div className="space-y-1">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
               Total Orders
@@ -112,13 +112,13 @@ export const SalesAnalyticsTab: React.FC<SalesAnalyticsTabProps> = ({
               {analytics?.total_orders || 0}
             </p>
             <div className="pt-1.5">
-              <span className="inline-flex items-center gap-1.5 bg-slate-100 text-slate-700 px-2.5 py-0.5 rounded-full text-[10px] font-bold border border-slate-200">
+              <span className="inline-flex items-center gap-1.5 bg-slate-100 text-slate-700 px-2.5 py-0.5 rounded text-[10px] font-bold border border-slate-200">
                 <span className="w-1.5 h-1.5 bg-slate-500 rounded-full"></span>
                 Paid Orders
               </span>
             </div>
           </div>
-          <div className="w-11 h-11 bg-slate-100 text-slate-700 rounded-xl flex items-center justify-center border border-slate-200">
+          <div className="w-11 h-11 bg-slate-100 text-slate-700 rounded-md flex items-center justify-center border border-slate-200">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
@@ -141,7 +141,7 @@ export const SalesAnalyticsTab: React.FC<SalesAnalyticsTabProps> = ({
       />
 
       {/* Recent Sales Table */}
-      <div className="erp-card p-5 border-border shadow-xs rounded-xl transition hover:border-slate-300">
+      <div className="erp-card p-5 border-border shadow-xs rounded-md transition hover:border-slate-300">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
           <div>
             <h3 className="font-bold text-slate-900 text-sm tracking-tight">Recent Sales Details</h3>
@@ -151,7 +151,7 @@ export const SalesAnalyticsTab: React.FC<SalesAnalyticsTabProps> = ({
           </div>
           <button
             onClick={() => setShowAllSales(!showAllSales)}
-            className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-lg shadow-xs transition duration-150 sm:self-center"
+            className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-md shadow-xs transition duration-150 sm:self-center"
           >
             {showAllSales ? "Show Less" : "View All"}
           </button>
@@ -331,7 +331,7 @@ function LineChart({
       : "0%";
 
   return (
-    <div className="erp-card p-5 border-border shadow-xs rounded-xl flex flex-col h-[320px] overflow-hidden w-full select-none transition hover:border-slate-300">
+    <div className="erp-card p-5 border-border shadow-xs rounded-md flex flex-col h-[320px] overflow-hidden w-full select-none transition hover:border-slate-300">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-4 flex-shrink-0">
         <div>
           <h3 className="font-bold text-slate-900 text-sm tracking-tight">{title}</h3>
@@ -354,7 +354,7 @@ function LineChart({
           <select
             value={activeGroup}
             onChange={(e) => setActiveGroup(e.target.value as any)}
-            className="bg-white border border-border rounded-lg px-2.5 py-1 text-xs font-semibold text-slate-700 shadow-xs focus:outline-none focus:ring-1 focus:ring-brand transition cursor-pointer"
+            className="bg-white border border-border rounded-md px-2.5 py-1 text-xs font-semibold text-slate-700 shadow-xs focus:outline-none focus:ring-1 focus:ring-brand transition cursor-pointer"
           >
             <option value="daily">Daily</option>
             <option value="weekly">Weekly</option>
@@ -402,7 +402,7 @@ function LineChart({
                   }`}
                   style={{ left: tooltipLeftOffset }}
                 >
-                  <div className="bg-slate-900 text-white rounded-xl p-2.5 shadow-md space-y-0.5 min-w-[120px] border border-slate-800">
+                  <div className="bg-slate-900 text-white rounded-md p-2.5 shadow-md space-y-0.5 min-w-[120px] border border-slate-800">
                     <div className="text-[9px] font-mono text-slate-400 uppercase tracking-tight">
                       {data[hoveredIndex].label}
                     </div>

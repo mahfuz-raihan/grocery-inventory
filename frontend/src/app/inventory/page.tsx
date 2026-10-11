@@ -44,7 +44,7 @@ const InvoicePreviewModal = dynamic(
   { ssr: false }
 );
 const CompanyProfileModal = dynamic(
-  () => import("./components/modals/CompanyProfileModal").then((mod) => mod.CompanyProfileModal),
+  () => import("./components/modals/CompanyProfileModal").then((mod) => mod.CompanyProfileModal || mod.default),
   { ssr: false }
 );
 const ManageAttributesModals = dynamic(
