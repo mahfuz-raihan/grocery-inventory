@@ -126,7 +126,7 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
   return (
     <div className="space-y-6">
       {/* Nested Report Tabs */}
-      <div className="flex space-x-1 border border-border p-1 rounded-xl bg-white max-w-fit shadow-sm">
+      <div className="flex space-x-1 border border-border p-1 rounded-md bg-white max-w-fit shadow-sm">
         {(
           [
             { id: "valuation", label: "Valuation & Alerts" },
@@ -138,7 +138,7 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
           <button
             key={tab.id}
             onClick={() => setReportsNestedTab(tab.id)}
-            className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+            className={`px-3.5 py-1.5 text-xs font-semibold rounded transition-all ${
               reportsNestedTab === tab.id
                 ? "bg-brand text-white shadow-sm font-semibold"
                 : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
@@ -184,9 +184,9 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
             <div className="erp-card p-6">
               <h3 className="text-base font-bold text-slate-900 mb-4">Stock Valuation Breakdown</h3>
               {valuationDetails.length === 0 ? (
-                <p className="text-xs text-slate-500 italic py-8 text-center bg-slate-50/50 rounded-xl border border-border">No valuation logs available.</p>
+                <p className="text-xs text-slate-500 italic py-8 text-center bg-slate-50/50 rounded-md border border-border">No valuation logs available.</p>
               ) : (
-                <div className="max-h-96 overflow-y-auto pr-2 border border-border rounded-xl">
+                <div className="max-h-96 overflow-y-auto pr-2 border border-border rounded-md">
                   <table className="w-full text-left text-xs">
                     <thead className="text-[11px] text-slate-500 bg-slate-50 uppercase font-semibold border-b border-border sticky top-0 z-10">
                       <tr>
@@ -234,11 +234,11 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
                 <span>🚨</span> Critical Low Stock Alerts
               </h3>
               {lowStockList.length === 0 ? (
-                <div className="p-4 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-xl text-xs font-medium">
+                <div className="p-4 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-md text-xs font-medium">
                   ✓ All products are currently above their safety thresholds.
                 </div>
               ) : (
-                <div className="max-h-96 overflow-y-auto pr-2 border border-border rounded-xl">
+                <div className="max-h-96 overflow-y-auto pr-2 border border-border rounded-md">
                   <table className="w-full text-left text-xs">
                     <thead className="text-[11px] text-slate-500 bg-slate-50 uppercase font-semibold border-b border-border sticky top-0 z-10">
                       <tr>
@@ -277,7 +277,7 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
             <h3 className="text-base font-bold text-slate-900">Stock Movement Log</h3>
             <div className="flex flex-wrap gap-2">
               <select
-                className={`p-2 border border-border rounded-lg text-xs bg-white text-slate-800 outline-none focus:ring-1 focus:ring-brand focus:border-brand transition ${
+                className={`p-2 border border-border rounded-md text-xs bg-white text-slate-800 outline-none focus:ring-1 focus:ring-brand focus:border-brand transition ${
                   userRole !== "owner" ? "bg-slate-100 cursor-not-allowed text-slate-500 font-medium" : ""
                 }`}
                 value={filterMovementBranch}
@@ -292,7 +292,7 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
                 ))}
               </select>
               <select
-                className="p-2 border border-border rounded-lg text-xs bg-white text-slate-800 outline-none focus:ring-1 focus:ring-brand focus:border-brand transition"
+                className="p-2 border border-border rounded-md text-xs bg-white text-slate-800 outline-none focus:ring-1 focus:ring-brand focus:border-brand transition"
                 value={filterMovementProduct}
                 onChange={(e) => setFilterMovementProduct(e.target.value)}
               >
@@ -304,7 +304,7 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
                 ))}
               </select>
               <select
-                className="p-2 border border-border rounded-lg text-xs bg-white text-slate-800 outline-none focus:ring-1 focus:ring-brand focus:border-brand transition"
+                className="p-2 border border-border rounded-md text-xs bg-white text-slate-800 outline-none focus:ring-1 focus:ring-brand focus:border-brand transition"
                 value={filterMovementType}
                 onChange={(e) => setFilterMovementType(e.target.value)}
               >
@@ -322,9 +322,9 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
           </div>
 
           {movements.length === 0 ? (
-            <p className="text-xs text-slate-500 italic py-8 text-center bg-slate-50/50 rounded-xl border border-border">No movement logs found.</p>
+            <p className="text-xs text-slate-500 italic py-8 text-center bg-slate-50/50 rounded-md border border-border">No movement logs found.</p>
           ) : (
-            <div className="overflow-x-auto max-h-[50vh] border border-border rounded-xl">
+            <div className="overflow-x-auto max-h-[50vh] border border-border rounded-md">
               <table className="w-full text-left text-xs">
                 <thead className="text-[11px] text-slate-500 bg-slate-50 uppercase font-semibold border-b border-border sticky top-0 z-10">
                   <tr>
@@ -345,7 +345,7 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
                       </td>
                       <td className="p-3 text-slate-700 font-medium">{m.branch_name}</td>
                       <td className="p-3">
-                        <span className="text-[10px] bg-slate-100 text-slate-700 border border-border font-medium px-2 py-0.5 rounded-full capitalize">
+                        <span className="text-[10px] bg-slate-100 text-slate-700 border border-border font-medium px-2 py-0.5 rounded capitalize">
                           {m.movement_type.replace("_", " ")}
                         </span>
                       </td>
@@ -376,11 +376,11 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
                   type="number"
                   value={deadStockDays}
                   onChange={(e) => setDeadStockDays(parseInt(e.target.value) || 30)}
-                  className="p-1.5 border border-border rounded-lg text-xs font-mono w-20 outline-none text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand transition"
+                  className="p-1.5 border border-border rounded-md text-xs font-mono w-20 outline-none text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand transition"
                 />
               </div>
               <select
-                className={`p-2 border border-border rounded-lg text-xs bg-white text-slate-800 outline-none focus:ring-1 focus:ring-brand focus:border-brand transition ${
+                className={`p-2 border border-border rounded-md text-xs bg-white text-slate-800 outline-none focus:ring-1 focus:ring-brand focus:border-brand transition ${
                   userRole !== "owner" ? "bg-slate-100 cursor-not-allowed text-slate-500 font-medium" : ""
                 }`}
                 value={filterDeadStockBranch}
@@ -398,9 +398,9 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
           </div>
 
           {deadStock.length === 0 ? (
-            <p className="text-xs text-slate-500 italic py-8 text-center bg-slate-50/50 rounded-xl border border-border">No inactive stock matches found for this period.</p>
+            <p className="text-xs text-slate-500 italic py-8 text-center bg-slate-50/50 rounded-md border border-border">No inactive stock matches found for this period.</p>
           ) : (
-            <div className="overflow-x-auto max-h-[50vh] border border-border rounded-xl">
+            <div className="overflow-x-auto max-h-[50vh] border border-border rounded-md">
               <table className="w-full text-left text-xs">
                 <thead className="text-[11px] text-slate-500 bg-slate-50 uppercase font-semibold border-b border-border sticky top-0 z-10">
                   <tr>
@@ -433,7 +433,7 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
           <div className="flex flex-wrap items-center gap-4 justify-between border-b border-border pb-4">
             <h3 className="text-base font-bold text-slate-900">Production Consumption Summary</h3>
             <select
-              className={`p-2 border border-border rounded-lg text-xs bg-white text-slate-800 outline-none focus:ring-1 focus:ring-brand focus:border-brand transition ${
+              className={`p-2 border border-border rounded-md text-xs bg-white text-slate-800 outline-none focus:ring-1 focus:ring-brand focus:border-brand transition ${
                 userRole !== "owner" ? "bg-slate-100 cursor-not-allowed text-slate-500 font-medium" : ""
               }`}
               value={filterConsumptionBranch}
@@ -450,9 +450,9 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
           </div>
 
           {consumption.length === 0 ? (
-            <p className="text-xs text-slate-500 italic py-8 text-center bg-slate-50/50 rounded-xl border border-border">No consumption records found.</p>
+            <p className="text-xs text-slate-500 italic py-8 text-center bg-slate-50/50 rounded-md border border-border">No consumption records found.</p>
           ) : (
-            <div className="overflow-x-auto max-h-[50vh] border border-border rounded-xl">
+            <div className="overflow-x-auto max-h-[50vh] border border-border rounded-md">
               <table className="w-full text-left text-xs">
                 <thead className="text-[11px] text-slate-500 bg-slate-50 uppercase font-semibold border-b border-border sticky top-0 z-10">
                   <tr>
