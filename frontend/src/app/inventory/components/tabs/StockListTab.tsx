@@ -37,11 +37,11 @@ export const StockListTab: React.FC<StockListTabProps> = ({
       <div className="space-y-4 animate-pulse">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="bg-white rounded-xl h-24 border border-border shadow-sm" />
+            <div key={i} className="bg-white rounded-md h-24 border border-border shadow-sm" />
           ))}
         </div>
-        <div className="bg-white rounded-xl h-14 border border-border shadow-sm" />
-        <div className="bg-white rounded-xl h-48 border border-border shadow-sm" />
+        <div className="bg-white rounded-md h-14 border border-border shadow-sm" />
+        <div className="bg-white rounded-md h-48 border border-border shadow-sm" />
       </div>
     );
   }
@@ -92,7 +92,7 @@ export const StockListTab: React.FC<StockListTabProps> = ({
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="erp-card p-5 flex items-center gap-4">
-          <div className="w-11 h-11 rounded-lg bg-emerald-50 text-brand flex items-center justify-center flex-shrink-0 border border-emerald-100/60">
+          <div className="w-11 h-11 rounded-md bg-emerald-50 text-brand flex items-center justify-center flex-shrink-0 border border-emerald-100/60">
             <svg className="w-5 h-5 text-brand" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
@@ -118,7 +118,7 @@ export const StockListTab: React.FC<StockListTabProps> = ({
         </div>
 
         <div className="erp-card p-5 flex items-center gap-4">
-          <div className="w-11 h-11 rounded-lg bg-emerald-50 text-brand flex items-center justify-center flex-shrink-0 border border-emerald-100/60">
+          <div className="w-11 h-11 rounded-md bg-emerald-50 text-brand flex items-center justify-center flex-shrink-0 border border-emerald-100/60">
             <svg className="w-5 h-5 text-brand" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
@@ -146,7 +146,7 @@ export const StockListTab: React.FC<StockListTabProps> = ({
         </div>
 
         <div className="erp-card p-5 flex items-center gap-4">
-          <div className="w-11 h-11 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center flex-shrink-0 border border-rose-100/60">
+          <div className="w-11 h-11 rounded-md bg-rose-50 text-rose-600 flex items-center justify-center flex-shrink-0 border border-rose-100/60">
             <svg className="w-5 h-5 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
@@ -192,14 +192,14 @@ export const StockListTab: React.FC<StockListTabProps> = ({
             <input
               type="text"
               placeholder="Search by product name, SKU or supplier..."
-              className="w-full pl-9 pr-3 py-2 border border-border rounded-lg text-xs bg-slate-50/50 text-slate-800 focus:bg-white focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
+              className="w-full pl-9 pr-3 py-2 border border-border rounded-md text-xs bg-slate-50/50 text-slate-800 focus:bg-white focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
               value={stockListSearch}
               onChange={(e) => setStockListSearch(e.target.value)}
             />
           </div>
 
           <select
-            className="p-2 border border-border rounded-lg bg-slate-50/50 text-slate-800 text-xs focus:bg-white focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
+            className="p-2 border border-border rounded-md bg-slate-50/50 text-slate-800 text-xs focus:bg-white focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
             value={stockListSupplierFilter}
             onChange={(e) => setStockListSupplierFilter(e.target.value)}
           >
@@ -212,7 +212,7 @@ export const StockListTab: React.FC<StockListTabProps> = ({
           </select>
 
           <select
-            className="p-2 border border-border rounded-lg bg-slate-50/50 text-slate-800 text-xs focus:bg-white focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
+            className="p-2 border border-border rounded-md bg-slate-50/50 text-slate-800 text-xs focus:bg-white focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
             value={stockListCategoryFilter}
             onChange={(e) => setStockListCategoryFilter(e.target.value)}
           >
@@ -225,7 +225,7 @@ export const StockListTab: React.FC<StockListTabProps> = ({
           </select>
 
           <select
-            className="p-2 border border-border rounded-lg bg-slate-50/50 text-slate-800 text-xs focus:bg-white focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
+            className="p-2 border border-border rounded-md bg-slate-50/50 text-slate-800 text-xs focus:bg-white focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
             value={stockListStatusFilter}
             onChange={(e) => setStockListStatusFilter(e.target.value)}
           >
@@ -241,7 +241,7 @@ export const StockListTab: React.FC<StockListTabProps> = ({
             <span className="text-xs text-slate-500 font-medium">Warehouse:</span>
             <button
               onClick={() => setStockListWarehouseFilter("")}
-              className={`px-3 py-1 rounded-lg text-xs font-semibold border transition ${
+              className={`px-3 py-1 rounded text-xs font-semibold border transition ${
                 !stockListWarehouseFilter
                   ? "bg-brand text-white border-brand"
                   : "bg-white text-slate-600 border-border hover:border-slate-300"
@@ -253,7 +253,7 @@ export const StockListTab: React.FC<StockListTabProps> = ({
               <button
                 key={w}
                 onClick={() => setStockListWarehouseFilter(w)}
-                className={`px-3 py-1 rounded-lg text-xs font-semibold border transition ${
+                className={`px-3 py-1 rounded text-xs font-semibold border transition ${
                   stockListWarehouseFilter === w
                     ? "bg-brand text-white border-brand"
                     : "bg-white text-slate-600 border-border hover:border-slate-300"
@@ -297,7 +297,7 @@ export const StockListTab: React.FC<StockListTabProps> = ({
             <div key={supplierKey} className="erp-card overflow-hidden">
               <div className="px-5 py-3.5 bg-slate-50/70 border-b border-border flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-brand-50 text-brand flex items-center justify-center border border-emerald-100/60">
+                  <div className="w-8 h-8 rounded-md bg-brand-50 text-brand flex items-center justify-center border border-emerald-100/60">
                     <svg className="w-4 h-4 text-brand" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path
                         strokeLinecap="round"
@@ -320,7 +320,7 @@ export const StockListTab: React.FC<StockListTabProps> = ({
                     if (!count) return null;
                     const conf = statusConfig[st];
                     return (
-                      <span key={st} className={`px-2.5 py-0.5 rounded-full text-[10px] font-semibold border ${conf.color}`}>
+                      <span key={st} className={`px-2.5 py-0.5 rounded text-[10px] font-semibold border ${conf.color}`}>
                         {count} {conf.label}
                       </span>
                     );
@@ -410,7 +410,7 @@ export const StockListTab: React.FC<StockListTabProps> = ({
                           </td>
                           <td className="px-4 py-3">
                             <span
-                              className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${conf.color}`}
+                              className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-[11px] font-semibold border ${conf.color}`}
                             >
                               <span className={`w-1.5 h-1.5 rounded-full ${conf.dot}`} />
                               {conf.label}
@@ -431,7 +431,7 @@ export const StockListTab: React.FC<StockListTabProps> = ({
       </div>
 
       {filteredRows.length > 0 && (
-        <div className="bg-slate-900 text-white rounded-xl px-5 py-3.5 flex items-center justify-between shadow-sm">
+        <div className="bg-slate-900 text-white rounded-md px-5 py-3.5 flex items-center justify-between shadow-sm">
           <span className="text-sm font-medium text-slate-300">
             Showing {filteredRows.length} stock record{filteredRows.length !== 1 ? "s" : ""} across{" "}
             {supplierGroups.length} supplier{supplierGroups.length !== 1 ? "s" : ""}
