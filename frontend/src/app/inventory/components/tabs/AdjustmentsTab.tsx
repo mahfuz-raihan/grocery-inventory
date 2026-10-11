@@ -79,7 +79,7 @@ export const AdjustmentsTab: React.FC<AdjustmentsTabProps> = ({
           <div>
             <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Select Product</label>
             <select
-              className="w-full p-2.5 border border-border rounded-lg bg-white text-xs text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
+              className="w-full p-2.5 border border-border rounded-md bg-white text-xs text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
               value={adjProduct}
               onChange={(e) => setAdjProduct(e.target.value)}
             >
@@ -93,7 +93,7 @@ export const AdjustmentsTab: React.FC<AdjustmentsTabProps> = ({
           <div>
             <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Warehouse Location</label>
             <select
-              className="w-full p-2.5 border border-border rounded-lg bg-white text-xs text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
+              className="w-full p-2.5 border border-border rounded-md bg-white text-xs text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
               value={adjBranch}
               onChange={(e) => setAdjBranch(e.target.value)}
             >
@@ -110,7 +110,7 @@ export const AdjustmentsTab: React.FC<AdjustmentsTabProps> = ({
               <input
                 type="number"
                 step="0.01"
-                className="w-full p-2.5 border border-border rounded-lg bg-slate-50/50 text-xs font-mono text-slate-800 focus:bg-white focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
+                className="w-full p-2.5 border border-border rounded-md bg-slate-50/50 text-xs font-mono text-slate-800 focus:bg-white focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
                 value={adjCurrent}
                 onChange={(e) => setAdjCurrent(e.target.value)}
                 placeholder="0.00"
@@ -121,7 +121,7 @@ export const AdjustmentsTab: React.FC<AdjustmentsTabProps> = ({
               <input
                 type="number"
                 step="0.01"
-                className="w-full p-2.5 border border-border rounded-lg text-xs font-mono text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
+                className="w-full p-2.5 border border-border rounded-md text-xs font-mono text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
                 value={adjChange}
                 onChange={(e) => setAdjChange(e.target.value)}
                 placeholder="e.g. -5.0 or 15.0"
@@ -133,7 +133,7 @@ export const AdjustmentsTab: React.FC<AdjustmentsTabProps> = ({
             <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Reason for Adjustment</label>
             <input
               type="text"
-              className="w-full p-2.5 border border-border rounded-lg text-xs text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
+              className="w-full p-2.5 border border-border rounded-md text-xs text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
               value={adjReason}
               onChange={(e) => setAdjReason(e.target.value)}
               placeholder="e.g. Stock audit variance, Damaged core"
@@ -143,7 +143,7 @@ export const AdjustmentsTab: React.FC<AdjustmentsTabProps> = ({
           <div>
             <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Internal Notes</label>
             <textarea
-              className="w-full p-2.5 border border-border rounded-lg focus:ring-1 focus:ring-brand focus:border-brand outline-none h-16 text-xs bg-white text-slate-800 transition"
+              className="w-full p-2.5 border border-border rounded-md focus:ring-1 focus:ring-brand focus:border-brand outline-none h-16 text-xs bg-white text-slate-800 transition"
               value={adjNotes}
               onChange={(e) => setAdjNotes(e.target.value)}
             />
@@ -161,9 +161,9 @@ export const AdjustmentsTab: React.FC<AdjustmentsTabProps> = ({
       <div className="erp-card p-6 lg:col-span-2">
         <h3 className="text-base font-bold text-slate-900 mb-4">Adjustments Audit Log</h3>
         {adjustments.length === 0 ? (
-          <p className="text-xs text-slate-500 italic py-8 text-center bg-slate-50/50 rounded-xl border border-border">No stock corrections logged yet.</p>
+          <p className="text-xs text-slate-500 italic py-8 text-center bg-slate-50/50 rounded-md border border-border">No stock corrections logged yet.</p>
         ) : (
-          <div className="overflow-x-auto border border-border rounded-xl">
+          <div className="overflow-x-auto border border-border rounded-md">
             <table className="w-full text-left text-xs">
               <thead className="text-[11px] text-slate-500 bg-slate-50 uppercase font-semibold border-b border-border">
                 <tr>
