@@ -73,11 +73,11 @@ export const ProfitBreakdownModal: React.FC<ProfitBreakdownModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto animate-fadeIn">
-      <div className="bg-white rounded-xl border border-border max-w-3xl w-full shadow-2xl overflow-hidden flex flex-col my-8">
+      <div className="bg-white rounded-lg border border-border max-w-3xl w-full shadow-2xl overflow-hidden flex flex-col my-8">
         {/* Header */}
         <div className="px-5 py-4 bg-slate-50/80 backdrop-blur border-b border-border flex justify-between items-center gap-3">
           <div className="flex items-center gap-2.5">
-            <span className="p-1.5 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-lg">
+            <span className="p-1.5 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-md">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
               </svg>
@@ -106,7 +106,7 @@ export const ProfitBreakdownModal: React.FC<ProfitBreakdownModalProps> = ({
 
           <button
             onClick={onClose}
-            className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition"
+            className="p-1 text-slate-400 hover:text-slate-600 rounded-md hover:bg-slate-100 transition"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
@@ -124,7 +124,7 @@ export const ProfitBreakdownModal: React.FC<ProfitBreakdownModalProps> = ({
 
             <div className="grid grid-cols-2 sm:grid-cols-6 gap-2 text-center">
               {/* Subtotal */}
-              <div className="p-2.5 bg-slate-50/80 rounded-lg border border-border">
+              <div className="p-2.5 bg-slate-50/80 rounded-md border border-border">
                 <span className="text-[10px] text-slate-500 font-medium block">Gross Subtotal</span>
                 <span className="text-sm font-bold font-mono text-slate-800 block mt-1 tabular-nums">
                   {formatPrice(grossSubtotal)}
@@ -132,7 +132,7 @@ export const ProfitBreakdownModal: React.FC<ProfitBreakdownModalProps> = ({
               </div>
 
               {/* Discount */}
-              <div className="p-2.5 bg-slate-50/80 rounded-lg border border-border">
+              <div className="p-2.5 bg-slate-50/80 rounded-md border border-border">
                 <span className="text-[10px] text-slate-500 font-medium block">(-) Discount</span>
                 <span className="text-sm font-bold font-mono text-rose-600 block mt-1 tabular-nums">
                   {discount > 0 ? `-${formatPrice(discount)}` : "৳0.00"}
@@ -140,7 +140,7 @@ export const ProfitBreakdownModal: React.FC<ProfitBreakdownModalProps> = ({
               </div>
 
               {/* Net Revenue */}
-              <div className="p-2.5 bg-slate-50/80 rounded-lg border border-border">
+              <div className="p-2.5 bg-slate-50/80 rounded-md border border-border">
                 <span className="text-[10px] text-slate-700 font-bold block">(=) Net Revenue</span>
                 <span className="text-sm font-bold font-mono text-slate-900 block mt-1 tabular-nums">
                   {formatPrice(netRevenue)}
@@ -148,7 +148,7 @@ export const ProfitBreakdownModal: React.FC<ProfitBreakdownModalProps> = ({
               </div>
 
               {/* Total Cost */}
-              <div className="p-2.5 bg-slate-50/80 rounded-lg border border-border">
+              <div className="p-2.5 bg-slate-50/80 rounded-md border border-border">
                 <span className="text-[10px] text-slate-500 font-medium block">(-) Total Cost</span>
                 <span className="text-sm font-bold font-mono text-slate-700 block mt-1 tabular-nums">
                   {formatPrice(totalCost)}
@@ -156,7 +156,7 @@ export const ProfitBreakdownModal: React.FC<ProfitBreakdownModalProps> = ({
               </div>
 
               {/* Net Profit */}
-              <div className={`p-2.5 rounded-lg border ${
+              <div className={`p-2.5 rounded-md border ${
                 isProfitable ? "bg-emerald-50 border-emerald-200" : "bg-rose-50 border-rose-200"
               }`}>
                 <span className={`text-[10px] font-bold block ${
@@ -172,7 +172,7 @@ export const ProfitBreakdownModal: React.FC<ProfitBreakdownModalProps> = ({
               </div>
 
               {/* Profit Margin */}
-              <div className={`p-2.5 rounded-lg border ${
+              <div className={`p-2.5 rounded-md border ${
                 isProfitable ? "bg-emerald-50 border-emerald-200" : "bg-rose-50 border-rose-200"
               }`}>
                 <span className={`text-[10px] font-bold block ${
@@ -189,7 +189,7 @@ export const ProfitBreakdownModal: React.FC<ProfitBreakdownModalProps> = ({
             </div>
 
             {/* Arithmetic Formula Visibility */}
-            <div className="mt-3 pt-3 border-t border-border flex flex-wrap items-center justify-between gap-2 text-[11px] font-mono text-slate-600 bg-slate-50/80 px-3 py-2 rounded-lg border border-border/60">
+            <div className="mt-3 pt-3 border-t border-border flex flex-wrap items-center justify-between gap-2 text-[11px] font-mono text-slate-600 bg-slate-50/80 px-3 py-2 rounded-md border border-border/60">
               <div>
                 <span className="text-slate-400">Net Profit =</span> {formatPrice(netRevenue)} <span className="text-slate-400">-</span> {formatPrice(totalCost)} <span className="text-slate-400">=</span> <strong className={isProfitable ? "text-emerald-700" : "text-red-700"}>{isProfitable ? "+" : ""}{formatPrice(netProfit)}</strong>
               </div>
@@ -203,7 +203,7 @@ export const ProfitBreakdownModal: React.FC<ProfitBreakdownModalProps> = ({
           </div>
 
           {/* Itemized Table */}
-          <div className="bg-white border border-border rounded-xl overflow-hidden shadow-xs">
+          <div className="bg-white border border-border rounded-md overflow-hidden shadow-xs">
             <div className="px-4 py-2.5 bg-slate-50/80 text-slate-700 font-bold uppercase tracking-wider text-[11px] border-b border-border flex justify-between items-center">
               <span>
                 Itemized Numbers
@@ -326,14 +326,14 @@ export const ProfitBreakdownModal: React.FC<ProfitBreakdownModalProps> = ({
                   onClose();
                   onViewInvoice(invoice);
                 }}
-                className="btn-secondary px-3 py-1.5 font-semibold rounded-lg text-xs transition"
+                className="btn-secondary px-3 py-1.5 font-semibold rounded-md text-xs transition"
               >
                 View Invoice
               </button>
             )}
             <button
               onClick={onClose}
-              className="btn-secondary px-4 py-1.5 font-bold rounded-lg text-xs transition"
+              className="btn-secondary px-4 py-1.5 font-bold rounded-md text-xs transition"
             >
               Close
             </button>
