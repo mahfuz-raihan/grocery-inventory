@@ -184,10 +184,10 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 overflow-y-auto">
-      <div className="bg-white rounded-xl border border-border shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto my-4">
+      <div className="bg-white rounded-lg border border-border shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto my-4">
         <div className="p-5 border-b border-border flex items-center justify-between bg-slate-50/70 sticky top-0 z-10">
           <h3 className="text-base font-bold text-slate-900">Edit Product: {editingProduct.name}</h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-700 w-8 h-8 rounded-lg hover:bg-slate-200/60 flex items-center justify-center text-lg transition">
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-700 w-8 h-8 rounded-md hover:bg-slate-200/60 flex items-center justify-center text-lg transition">
             ✕
           </button>
         </div>
@@ -197,7 +197,7 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
               <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">SKU Reference</label>
               <input
                 type="text"
-                className="w-full p-2.5 border border-border rounded-lg bg-white text-xs font-mono text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
+                className="w-full p-2.5 border border-border rounded-md bg-white text-xs font-mono text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
                 value={editSku}
                 onChange={(e) => setEditSku(e.target.value)}
                 required
@@ -206,7 +206,7 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
             <div>
               <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Product Unit</label>
               <select
-                className="w-full p-2.5 border border-border rounded-lg bg-white text-xs text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
+                className="w-full p-2.5 border border-border rounded-md bg-white text-xs text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
                 value={editUnit}
                 onChange={(e) => setEditUnit(e.target.value)}
               >
@@ -221,7 +221,7 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
             <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Product Name</label>
             <input
               type="text"
-              className="w-full p-2.5 border border-border rounded-lg bg-white text-xs text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
+              className="w-full p-2.5 border border-border rounded-md bg-white text-xs text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
               value={editName}
               onChange={(e) => setEditName(e.target.value)}
               required
@@ -231,7 +231,7 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
             <div>
               <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Product Type</label>
               <select
-                className="w-full p-2.5 border border-border rounded-lg bg-white text-xs text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
+                className="w-full p-2.5 border border-border rounded-md bg-white text-xs text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
                 value={editType}
                 onChange={(e) => setEditType(e.target.value)}
               >
@@ -247,7 +247,7 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
                 Parent Template (For Variations)
               </label>
               <select
-                className="w-full p-2.5 border border-border rounded-lg bg-white text-xs text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
+                className="w-full p-2.5 border border-border rounded-md bg-white text-xs text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
                 value={editParentId}
                 onChange={(e) => setEditParentId(e.target.value)}
               >
@@ -266,7 +266,7 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
             <div>
               <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Category</label>
               <select
-                className="w-full p-2.5 border border-border rounded-lg bg-white text-xs text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
+                className="w-full p-2.5 border border-border rounded-md bg-white text-xs text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
                 value={editCategory}
                 onChange={(e) => setEditCategory(e.target.value)}
               >
@@ -284,7 +284,7 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
               <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Color Variation</label>
               <input
                 type="text"
-                className="w-full p-2.5 border border-border rounded-lg text-xs text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
+                className="w-full p-2.5 border border-border rounded-md text-xs text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
                 value={editColor}
                 onChange={(e) => setEditColor(e.target.value)}
               />
@@ -292,7 +292,7 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
             <div>
               <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Material Type</label>
               <select
-                className="w-full p-2.5 border border-border rounded-lg bg-white text-xs font-medium text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
+                className="w-full p-2.5 border border-border rounded-md bg-white text-xs font-medium text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
                 value={editMaterialType}
                 onChange={(e) => setEditMaterialType(e.target.value)}
               >
@@ -309,7 +309,7 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
             <div>
               <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Wood Type</label>
               <select
-                className="w-full p-2.5 border border-border rounded-lg bg-white text-xs font-medium text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
+                className="w-full p-2.5 border border-border rounded-md bg-white text-xs font-medium text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
                 value={editWoodType}
                 onChange={(e) => setEditWoodType(e.target.value)}
               >
@@ -324,7 +324,7 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
           </div>
 
           {/* Pricing & Stock Levels */}
-          <div className="bg-slate-50/60 p-4 rounded-xl border border-border space-y-4">
+          <div className="bg-slate-50/60 p-4 rounded-md border border-border space-y-4">
             <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Pricing & Stock Levels</h4>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
@@ -332,7 +332,7 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
                 <input
                   type="number"
                   step="any"
-                  className={`w-full p-2.5 border border-border rounded-lg focus:ring-1 focus:ring-brand focus:border-brand outline-none text-xs font-mono tabular-nums text-slate-800 bg-white transition ${
+                  className={`w-full p-2.5 border border-border rounded-md focus:ring-1 focus:ring-brand focus:border-brand outline-none text-xs font-mono tabular-nums text-slate-800 bg-white transition ${
                     !canEditPrice ? "bg-slate-100 cursor-not-allowed text-slate-400" : ""
                   }`}
                   value={editPrice}
@@ -351,7 +351,7 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
                 <input
                   type="number"
                   step="any"
-                  className={`w-full p-2.5 border border-border rounded-lg focus:ring-1 focus:ring-brand focus:border-brand outline-none text-xs font-mono tabular-nums text-slate-800 bg-white transition ${
+                  className={`w-full p-2.5 border border-border rounded-md focus:ring-1 focus:ring-brand focus:border-brand outline-none text-xs font-mono tabular-nums text-slate-800 bg-white transition ${
                     !canEditPrice ? "bg-slate-100 cursor-not-allowed text-slate-400" : ""
                   }`}
                   value={editMinSellingPrice}
@@ -366,7 +366,7 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
                 <input
                   type="number"
                   step="any"
-                  className={`w-full p-2.5 border border-border rounded-lg focus:ring-1 focus:ring-brand focus:border-brand outline-none text-xs font-mono tabular-nums text-slate-800 bg-white transition ${
+                  className={`w-full p-2.5 border border-border rounded-md focus:ring-1 focus:ring-brand focus:border-brand outline-none text-xs font-mono tabular-nums text-slate-800 bg-white transition ${
                     !canEditPrice ? "bg-slate-100 cursor-not-allowed text-slate-400" : ""
                   }`}
                   value={editCost}
@@ -382,7 +382,7 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
                 <input
                   type="number"
                   step="any"
-                  className="w-full p-2.5 border border-border rounded-lg focus:ring-1 focus:ring-brand focus:border-brand outline-none text-xs font-mono tabular-nums text-slate-800 bg-white transition"
+                  className="w-full p-2.5 border border-border rounded-md focus:ring-1 focus:ring-brand focus:border-brand outline-none text-xs font-mono tabular-nums text-slate-800 bg-white transition"
                   value={editMinStock}
                   onChange={(e) => setEditMinStock(e.target.value)}
                   placeholder="0"
@@ -393,7 +393,7 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
                 <input
                   type="number"
                   step="any"
-                  className="w-full p-2.5 border border-border rounded-lg focus:ring-1 focus:ring-brand focus:border-brand outline-none text-xs font-mono tabular-nums text-slate-800 bg-white transition"
+                  className="w-full p-2.5 border border-border rounded-md focus:ring-1 focus:ring-brand focus:border-brand outline-none text-xs font-mono tabular-nums text-slate-800 bg-white transition"
                   value={editMaxStock}
                   onChange={(e) => setEditMaxStock(e.target.value)}
                   placeholder="0"
@@ -404,7 +404,7 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
                 <input
                   type="number"
                   step="any"
-                  className="w-full p-2.5 border border-border rounded-lg focus:ring-1 focus:ring-brand focus:border-brand outline-none text-xs font-mono tabular-nums text-slate-800 bg-white transition"
+                  className="w-full p-2.5 border border-border rounded-md focus:ring-1 focus:ring-brand focus:border-brand outline-none text-xs font-mono tabular-nums text-slate-800 bg-white transition"
                   value={editReorderQty}
                   onChange={(e) => setEditReorderQty(e.target.value)}
                   placeholder="0"
@@ -418,7 +418,7 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
               <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Board Type</label>
               <input
                 type="text"
-                className="w-full p-2.5 border border-border rounded-lg text-xs text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none bg-white transition"
+                className="w-full p-2.5 border border-border rounded-md text-xs text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none bg-white transition"
                 value={editBoardType}
                 onChange={(e) => setEditBoardType(e.target.value)}
               />
@@ -428,7 +428,7 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
               <input
                 type="number"
                 step="0.1"
-                className="w-full p-2.5 border border-border rounded-lg text-xs font-mono text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none bg-white transition"
+                className="w-full p-2.5 border border-border rounded-md text-xs font-mono text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none bg-white transition"
                 value={editWeight}
                 onChange={(e) => setEditWeight(e.target.value)}
               />
@@ -438,7 +438,7 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
               <input
                 type="number"
                 step="0.1"
-                className="w-full p-2.5 border border-border rounded-lg text-xs font-mono text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none bg-white transition"
+                className="w-full p-2.5 border border-border rounded-md text-xs font-mono text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none bg-white transition"
                 value={editThickness}
                 onChange={(e) => setEditThickness(e.target.value)}
               />
@@ -450,7 +450,7 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
               <input
                 type="number"
                 step="0.1"
-                className="w-full p-2.5 border border-border rounded-lg text-xs font-mono text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none bg-white transition"
+                className="w-full p-2.5 border border-border rounded-md text-xs font-mono text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none bg-white transition"
                 value={editLength}
                 onChange={(e) => setEditLength(e.target.value)}
               />
@@ -460,7 +460,7 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
               <input
                 type="number"
                 step="0.1"
-                className="w-full p-2.5 border border-border rounded-lg text-xs font-mono text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none bg-white transition"
+                className="w-full p-2.5 border border-border rounded-md text-xs font-mono text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none bg-white transition"
                 value={editWidth}
                 onChange={(e) => setEditWidth(e.target.value)}
               />
@@ -470,7 +470,7 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
               <input
                 type="number"
                 step="0.1"
-                className="w-full p-2.5 border border-border rounded-lg text-xs font-mono text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none bg-white transition"
+                className="w-full p-2.5 border border-border rounded-md text-xs font-mono text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none bg-white transition"
                 value={editHeight}
                 onChange={(e) => setEditHeight(e.target.value)}
               />
@@ -482,7 +482,7 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
               <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Product Image Link</label>
               <input
                 type="text"
-                className="w-full p-2.5 border border-border rounded-lg text-xs text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none bg-white transition"
+                className="w-full p-2.5 border border-border rounded-md text-xs text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none bg-white transition"
                 value={editImage}
                 onChange={(e) => setEditImage(e.target.value)}
               />
