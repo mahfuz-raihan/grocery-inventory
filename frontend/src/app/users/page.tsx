@@ -158,13 +158,13 @@ export default function UsersPage() {
       <div className="erp-card p-6 lg:col-span-1 h-fit">
         <h2 className="text-base font-bold text-slate-900 mb-5">Create New User</h2>
         {userSuccessMessage && (
-          <div className="mb-5 p-3.5 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-lg text-xs font-medium transition-all">
+          <div className="mb-5 p-3.5 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-md text-xs font-medium transition-all">
             {userSuccessMessage}
           </div>
         )}
         
         {branches.length === 0 && (
-          <div className="mb-5 p-3.5 bg-amber-50 text-amber-800 rounded-lg border border-amber-200 text-xs font-medium">
+          <div className="mb-5 p-3.5 bg-amber-50 text-amber-800 rounded-md border border-amber-200 text-xs font-medium">
             ⚠️ <b>No branches found.</b> Create a branch first to assign users.
           </div>
         )}
@@ -174,7 +174,7 @@ export default function UsersPage() {
             <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Full Name</label>
             <input
               type="text"
-              className="w-full p-2.5 border border-border rounded-lg focus:ring-1 focus:ring-brand focus:border-brand outline-none text-xs text-slate-800 bg-white transition"
+              className="w-full p-2.5 border border-border rounded-md focus:ring-1 focus:ring-brand focus:border-brand outline-none text-xs text-slate-800 bg-white transition"
               value={newUserFullName}
               onChange={(e) => setNewUserFullName(e.target.value)}
               placeholder="e.g. John Doe"
@@ -187,7 +187,7 @@ export default function UsersPage() {
             <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Email Address</label>
             <input
               type="email"
-              className="w-full p-2.5 border border-border rounded-lg focus:ring-1 focus:ring-brand focus:border-brand outline-none text-xs text-slate-800 bg-white font-mono transition"
+              className="w-full p-2.5 border border-border rounded-md focus:ring-1 focus:ring-brand focus:border-brand outline-none text-xs text-slate-800 bg-white font-mono transition"
               value={newUserEmail}
               onChange={(e) => setNewUserEmail(e.target.value)}
               placeholder="e.g. john@company.com"
@@ -199,7 +199,7 @@ export default function UsersPage() {
             <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Password</label>
             <input
               type="password"
-              className="w-full p-2.5 border border-border rounded-lg focus:ring-1 focus:ring-brand focus:border-brand outline-none text-xs text-slate-800 bg-white transition"
+              className="w-full p-2.5 border border-border rounded-md focus:ring-1 focus:ring-brand focus:border-brand outline-none text-xs text-slate-800 bg-white transition"
               value={newUserPassword}
               onChange={(e) => setNewUserPassword(e.target.value)}
               placeholder="Min 8 characters"
@@ -212,7 +212,7 @@ export default function UsersPage() {
             <div>
               <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">System Role</label>
               <select
-                className="w-full p-2.5 border border-border rounded-lg bg-white focus:ring-1 focus:ring-brand focus:border-brand outline-none text-xs text-slate-800 transition"
+                className="w-full p-2.5 border border-border rounded-md bg-white focus:ring-1 focus:ring-brand focus:border-brand outline-none text-xs text-slate-800 transition"
                 value={newUserRole}
                 onChange={(e) => setNewUserRole(e.target.value)}
               >
@@ -229,7 +229,7 @@ export default function UsersPage() {
             <div>
               <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Branch</label>
               <select
-                className="w-full p-2.5 border border-border rounded-lg bg-white focus:ring-1 focus:ring-brand focus:border-brand outline-none text-xs text-slate-800 transition disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
+                className="w-full p-2.5 border border-border rounded-md bg-white focus:ring-1 focus:ring-brand focus:border-brand outline-none text-xs text-slate-800 transition disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
                 value={newUserBranchId}
                 onChange={(e) => setNewUserBranchId(e.target.value)}
                 disabled={newUserRole === "owner" || branches.length === 0}
@@ -274,13 +274,13 @@ export default function UsersPage() {
               const branchName = branches.find(b => b.id === u.branch_id)?.name || "All Branches";
 
               return (
-                <div key={u.id} className="p-4 bg-slate-50/70 border border-border rounded-xl flex flex-col justify-between hover:border-slate-300 hover:bg-white transition-all shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+                <div key={u.id} className="p-4 bg-slate-50/70 border border-border rounded-md flex flex-col justify-between hover:border-slate-300 hover:bg-white transition-all shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
                   <div className="flex justify-between items-start mb-3">
                     <div>
                       <h4 className="font-semibold text-slate-900 text-xs">{u.full_name}</h4>
                       <p className="text-xs font-mono text-slate-500 mt-0.5">{u.email}</p>
                     </div>
-                    <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold border ${roleColors[u.role as keyof typeof roleColors] || "bg-slate-100 text-slate-700 border-slate-200"}`}>
+                    <span className={`px-2 py-0.5 rounded text-[11px] font-bold border ${roleColors[u.role as keyof typeof roleColors] || "bg-slate-100 text-slate-700 border-slate-200"}`}>
                       {u.role.replace('_', ' ')}
                     </span>
                   </div>
