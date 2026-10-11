@@ -258,7 +258,16 @@ export default function RootLayout({
                 {pathname === '/settings' ? 'Application Settings' : pathname === '/dashboard' ? 'HQ Dashboard' : pathname === '/users' ? 'User & Role Management' : pathname === '/inventory' ? 'Factory Inventory Control' : 'Point of Sale Terminal'}
               </h2>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-3">
+              <a
+                href="/settings?tab=company"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 hover:text-slate-900 border border-slate-200 rounded-md transition shadow-xs"
+                title="View & Edit Company Profile"
+              >
+                <span>🏢</span>
+                <span className="hidden sm:inline">Company Profile</span>
+              </a>
+              <div className="h-5 w-px bg-slate-200 hidden sm:block"></div>
               <div className="text-right hidden sm:block">
                 <p className="text-sm font-semibold text-slate-800">{userEmail}</p>
                 <p className="text-xs text-slate-500 uppercase tracking-wider font-bold">{userRole?.replace('_', ' ')}</p>
