@@ -1,24 +1,26 @@
-/* 1. Tailwind Directives: Tells Tailwind to generate the necessary CSS */
+/* 1. Tailwind Directives */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* 2. CSS Variables: Think of these as "the theme settings" */
+/* 2. Theme CSS Variables: Heritage Forest & American Enterprise System */
 :root {
---primary-color: 59 130 246;    /* Standard Blue */
---bg-page: 248 250 252;         /* Light Slate */
---text-main: 15 23 42;          /* Dark Slate */
+  --primary-color: 6 95 70;         /* #065F46 Heritage Forest Green */
+  --bg-page: 248 249 250;           /* #F8F9FA Low-Glare Tech Canvas */
+  --text-main: 15 23 42;            /* #0F172A Deep Slate Heading */
+  --text-body: 51 65 85;            /* #334155 Primary Body */
+  --text-muted: 100 116 139;        /* #64748B Secondary Label */
 }
 
-/* 3. Base Styles: Sets the foundation for the whole app */
+/* 3. Base Styles */
 body {
-background-color: rgb(var(--bg-page));
-color: rgb(var(--text-main));
-font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11', 'tnum';
--webkit-font-smoothing: antialiased;
--moz-osx-font-smoothing: grayscale;
-text-rendering: optimizeLegibility;
+  background-color: rgb(var(--bg-page));
+  color: rgb(var(--text-body));
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11', 'tnum';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 code, kbd, samp, pre, .font-mono {
@@ -26,20 +28,47 @@ code, kbd, samp, pre, .font-mono {
   font-variant-numeric: tabular-nums;
 }
 
-/* 4. Component Library: Reusable styles for your ERP interface */
+/* 4. Component Library: American Enterprise ERP Standards */
 @layer components {
-  /* Use this for all your main action buttons */
+  /* Primary Action Button (Shopify / Toast POS style) */
   .btn-primary {
-    @apply px-4 py-2 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition-colors shadow-sm;
+    @apply inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-brand text-white font-medium text-sm rounded-lg hover:bg-brand-hover focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2 transition-all shadow-sm;
   }
 
-/* Use this for white cards that hold data/info */
-.erp-card {
-@apply bg-white p-6 rounded-xl border border-slate-200 shadow-sm;
-}
+  /* Secondary Button */
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-1.5 px-3.5 py-2 bg-white text-slate-800 font-medium text-sm border border-slate-200 rounded-lg hover:bg-slate-50 hover:border-slate-300 focus:outline-none transition-all shadow-sm;
+  }
 
-/* Use this for text inputs */
-.erp-input {
-@apply block w-full px-3 py-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 outline-none;
-}
+  /* Enterprise Card Container */
+  .erp-card {
+    @apply bg-white p-5 rounded-xl border border-slate-200 shadow-card;
+  }
+
+  /* Clean Input Field */
+  .erp-input {
+    @apply block w-full px-3 py-2 text-sm text-slate-900 bg-white border border-slate-200 rounded-lg focus:border-brand focus:ring-1 focus:ring-brand outline-none transition-all placeholder:text-slate-400;
+  }
+
+  /* Silicon Valley Semantic Badges */
+  .badge-success {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200;
+  }
+
+  .badge-warning {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-md bg-amber-50 text-amber-800 border border-amber-200;
+  }
+
+  .badge-danger {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-md bg-rose-50 text-rose-800 border border-rose-200;
+  }
+
+  .badge-purple {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-md bg-purple-50 text-purple-800 border border-purple-200;
+  }
+
+  /* Tactile Keycap Chip */
+  .kbd-chip {
+    @apply inline-flex items-center justify-center px-1.5 py-0.5 text-[11px] font-mono font-medium text-slate-500 bg-slate-100 border border-slate-200 rounded shadow-sm;
+  }
 }
