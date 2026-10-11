@@ -54,7 +54,7 @@ export const CustomerLedgerModal: React.FC<CustomerLedgerModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto animate-fadeIn">
-      <div className="bg-white rounded-xl border border-border max-w-4xl w-full shadow-2xl overflow-hidden flex flex-col my-8">
+      <div className="bg-white rounded-lg border border-border max-w-4xl w-full shadow-2xl overflow-hidden flex flex-col my-8">
         {/* Modal Header */}
         <div className="p-4 sm:p-5 bg-slate-50/80 backdrop-blur border-b border-border flex justify-between items-center">
           <div>
@@ -68,7 +68,7 @@ export const CustomerLedgerModal: React.FC<CustomerLedgerModalProps> = ({
           </div>
           <button
             onClick={onClose}
-            className="btn-secondary px-3 py-1.5 font-medium rounded-lg text-xs transition"
+            className="btn-secondary px-3 py-1.5 font-medium rounded-md text-xs transition"
           >
             Close
           </button>
@@ -76,25 +76,25 @@ export const CustomerLedgerModal: React.FC<CustomerLedgerModalProps> = ({
 
         {/* Financial Summary Cards */}
         <div className="p-5 bg-slate-50/60 border-b border-border grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-          <div className="p-3 bg-white rounded-xl border border-border shadow-xs">
+          <div className="p-3 bg-white rounded-md border border-border shadow-xs">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
               Total Invoices
             </span>
             <span className="text-lg font-extrabold font-mono text-slate-900">{customer.total_invoices}</span>
           </div>
-          <div className="p-3 bg-white rounded-xl border border-border shadow-xs">
+          <div className="p-3 bg-white rounded-md border border-border shadow-xs">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
               Items Purchased
             </span>
             <span className="text-lg font-extrabold font-mono text-slate-900">{totalUnits} pcs</span>
           </div>
-          <div className="p-3 bg-white rounded-xl border border-border shadow-xs">
+          <div className="p-3 bg-white rounded-md border border-border shadow-xs">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
               Gross Purchases
             </span>
             <span className="text-lg font-extrabold font-mono text-slate-900">{formatPrice(runningTotal)}</span>
           </div>
-          <div className="p-3 bg-white rounded-xl border border-border shadow-xs">
+          <div className="p-3 bg-white rounded-md border border-border shadow-xs">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
               Total Paid Spend
             </span>
@@ -109,7 +109,7 @@ export const CustomerLedgerModal: React.FC<CustomerLedgerModalProps> = ({
               No item purchase history found for this customer.
             </div>
           ) : (
-            <div className="border border-border rounded-xl overflow-hidden shadow-xs bg-white">
+            <div className="border border-border rounded-md overflow-hidden shadow-xs bg-white">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="bg-slate-50/80 text-slate-600 font-bold text-[10px] uppercase border-b border-border">
