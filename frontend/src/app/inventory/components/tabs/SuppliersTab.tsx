@@ -72,7 +72,7 @@ export const SuppliersTab: React.FC<SuppliersTabProps> = ({ suppliers, setSuppli
             <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Supplier Company Name</label>
             <input
               type="text"
-              className="w-full p-2.5 border border-border rounded-lg text-xs bg-white text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
+              className="w-full p-2.5 border border-border rounded-md text-xs bg-white text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
               value={supplierName}
               onChange={(e) => setSupplierName(e.target.value)}
               placeholder="e.g. Timberwood Ltd"
@@ -83,7 +83,7 @@ export const SuppliersTab: React.FC<SuppliersTabProps> = ({ suppliers, setSuppli
             <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Contact Person</label>
             <input
               type="text"
-              className="w-full p-2.5 border border-border rounded-lg text-xs bg-white text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
+              className="w-full p-2.5 border border-border rounded-md text-xs bg-white text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
               value={supplierContact}
               onChange={(e) => setSupplierContact(e.target.value)}
               placeholder="John Smith"
@@ -94,7 +94,7 @@ export const SuppliersTab: React.FC<SuppliersTabProps> = ({ suppliers, setSuppli
               <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Phone</label>
               <input
                 type="text"
-                className="w-full p-2.5 border border-border rounded-lg text-xs font-mono bg-white text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
+                className="w-full p-2.5 border border-border rounded-md text-xs font-mono bg-white text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
                 value={supplierPhone}
                 onChange={(e) => setSupplierPhone(e.target.value)}
               />
@@ -103,7 +103,7 @@ export const SuppliersTab: React.FC<SuppliersTabProps> = ({ suppliers, setSuppli
               <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Email</label>
               <input
                 type="email"
-                className="w-full p-2.5 border border-border rounded-lg text-xs font-mono bg-white text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
+                className="w-full p-2.5 border border-border rounded-md text-xs font-mono bg-white text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
                 value={supplierEmail}
                 onChange={(e) => setSupplierEmail(e.target.value)}
               />
@@ -112,7 +112,7 @@ export const SuppliersTab: React.FC<SuppliersTabProps> = ({ suppliers, setSuppli
           <div>
             <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Office Address</label>
             <textarea
-              className="w-full p-2.5 border border-border rounded-lg text-xs bg-white text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none h-16 transition"
+              className="w-full p-2.5 border border-border rounded-md text-xs bg-white text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none h-16 transition"
               value={supplierAddress}
               onChange={(e) => setSupplierAddress(e.target.value)}
             />
@@ -150,9 +150,9 @@ export const SuppliersTab: React.FC<SuppliersTabProps> = ({ suppliers, setSuppli
       <div className="erp-card p-6 lg:col-span-2">
         <h3 className="text-base font-bold text-slate-900 mb-4">Registered Suppliers ({suppliers.length})</h3>
         {suppliers.length === 0 ? (
-          <p className="text-xs text-slate-500 italic py-8 text-center bg-slate-50/50 rounded-xl border border-border">No suppliers registered.</p>
+          <p className="text-xs text-slate-500 italic py-8 text-center bg-slate-50/50 rounded-md border border-border">No suppliers registered.</p>
         ) : (
-          <div className="overflow-x-auto border border-border rounded-xl">
+          <div className="overflow-x-auto border border-border rounded-md">
             <table className="w-full text-left text-xs">
               <thead className="text-[11px] text-slate-500 bg-slate-50 uppercase font-semibold border-b border-border">
                 <tr>
@@ -175,7 +175,7 @@ export const SuppliersTab: React.FC<SuppliersTabProps> = ({ suppliers, setSuppli
                     <td className="p-3 text-[11px] text-slate-500 max-w-xs truncate">{s.address || "-"}</td>
                     <td className="p-3 text-center">
                       <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
+                        className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold border ${
                           s.is_active !== false ? "bg-emerald-50 text-emerald-800 border-emerald-200" : "bg-rose-50 text-rose-800 border-rose-200"
                         }`}
                       >
