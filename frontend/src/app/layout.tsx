@@ -107,7 +107,7 @@ export default function RootLayout({
             {isSidebarCollapsed ? (
               <button
                 onClick={() => setIsSidebarCollapsed(false)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-800 hover:bg-slate-100 transition flex items-center justify-center"
+                className="p-1.5 rounded-md text-slate-400 hover:text-slate-800 hover:bg-slate-100 transition flex items-center justify-center"
                 title="Expand Sidebar"
               >
                 <svg className="w-6 h-6 text-brand" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -124,7 +124,7 @@ export default function RootLayout({
                 </div>
                 <button
                   onClick={() => setIsSidebarCollapsed(true)}
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition"
+                  className="p-1.5 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition"
                   title="Collapse Sidebar"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -141,7 +141,7 @@ export default function RootLayout({
               <a 
                 href="/dashboard" 
                 title={isSidebarCollapsed ? "Dashboard" : ""} 
-                className={`flex items-center ${isSidebarCollapsed ? 'justify-center py-3.5 px-0' : 'px-4 py-3'} rounded-xl transition-all ${
+                className={`flex items-center ${isSidebarCollapsed ? 'justify-center py-3.5 px-0' : 'px-4 py-3'} rounded-md transition-all ${
                   pathname === '/dashboard' 
                     ? 'text-brand-900 bg-brand-50 border-l-4 border-brand font-semibold shadow-xs' 
                     : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 font-medium'
@@ -159,7 +159,7 @@ export default function RootLayout({
               <a 
                 href="/inventory" 
                 title={isSidebarCollapsed ? "Inventory" : ""} 
-                className={`flex items-center ${isSidebarCollapsed ? 'justify-center py-3.5 px-0' : 'px-4 py-3'} rounded-xl transition-all ${
+                className={`flex items-center ${isSidebarCollapsed ? 'justify-center py-3.5 px-0' : 'px-4 py-3'} rounded-md transition-all ${
                   pathname === '/inventory' 
                     ? 'text-brand-900 bg-brand-50 border-l-4 border-brand font-semibold shadow-xs' 
                     : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 font-medium'
@@ -177,7 +177,7 @@ export default function RootLayout({
               <a 
                 href="/" 
                 title={isSidebarCollapsed ? "Point of Sale" : ""} 
-                className={`flex items-center ${isSidebarCollapsed ? 'justify-center py-3.5 px-0' : 'px-4 py-3'} rounded-xl transition-all ${
+                className={`flex items-center ${isSidebarCollapsed ? 'justify-center py-3.5 px-0' : 'px-4 py-3'} rounded-md transition-all ${
                   pathname === '/' 
                     ? 'text-brand-900 bg-brand-50 border-l-4 border-brand font-semibold shadow-xs' 
                     : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 font-medium'
@@ -195,7 +195,7 @@ export default function RootLayout({
               <a 
                 href="/users" 
                 title={isSidebarCollapsed ? "Users" : ""} 
-                className={`flex items-center ${isSidebarCollapsed ? 'justify-center py-3.5 px-0' : 'px-4 py-3'} rounded-xl transition-all ${
+                className={`flex items-center ${isSidebarCollapsed ? 'justify-center py-3.5 px-0' : 'px-4 py-3'} rounded-md transition-all ${
                   pathname === '/users' 
                     ? 'text-brand-900 bg-brand-50 border-l-4 border-brand font-semibold shadow-xs' 
                     : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 font-medium'
@@ -213,7 +213,7 @@ export default function RootLayout({
               <a 
                 href="/settings" 
                 title={isSidebarCollapsed ? "Settings" : ""} 
-                className={`flex items-center ${isSidebarCollapsed ? 'justify-center py-3.5 px-0' : 'px-4 py-3'} rounded-xl transition-all ${
+                className={`flex items-center ${isSidebarCollapsed ? 'justify-center py-3.5 px-0' : 'px-4 py-3'} rounded-md transition-all ${
                   pathname === '/settings' 
                     ? 'text-brand-900 bg-brand-50 border-l-4 border-brand font-semibold shadow-xs' 
                     : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 font-medium'
@@ -231,7 +231,7 @@ export default function RootLayout({
             <button
               onClick={handleLogout}
               title={isSidebarCollapsed ? "Logout" : ""}
-              className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center py-3 px-0' : 'px-4 py-3'} text-rose-600 hover:bg-rose-50 rounded-xl transition-all font-medium text-sm`}
+              className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center py-3 px-0' : 'px-4 py-3'} text-rose-600 hover:bg-rose-50 rounded-md transition-all font-medium text-sm`}
             >
               <svg className={`w-5 h-5 ${isSidebarCollapsed ? '' : 'mr-3'} flex-shrink-0`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -247,7 +247,7 @@ export default function RootLayout({
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-                className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-slate-800 transition hidden md:block"
+                className="p-1.5 rounded-md hover:bg-slate-100 text-slate-500 hover:text-slate-800 transition hidden md:block"
                 title={isSidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
