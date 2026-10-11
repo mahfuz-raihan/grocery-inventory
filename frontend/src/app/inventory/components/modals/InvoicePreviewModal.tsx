@@ -301,7 +301,7 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 overflow-y-auto">
-      <div className="bg-white rounded-xl border border-border shadow-2xl w-full max-w-3xl max-h-[95vh] overflow-y-auto my-4 animate-scaleUp">
+      <div className="bg-white rounded-lg border border-border shadow-2xl w-full max-w-3xl max-h-[95vh] overflow-y-auto my-4 animate-scaleUp">
         <div className="p-5 border-b border-border flex items-center justify-between bg-slate-50/80 backdrop-blur sticky top-0 z-10">
           <div>
             <h3 className="text-base font-bold text-slate-900">Purchase Invoice Preview</h3>
@@ -311,7 +311,7 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
             <button
               type="button"
               onClick={handlePrintInvoice}
-              className="px-3 py-1.5 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-border rounded-lg transition-all shadow-sm flex items-center gap-1.5"
+              className="px-3 py-1.5 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-border rounded-md transition-all shadow-sm flex items-center gap-1.5"
             >
               🖨 Print / Save PDF
             </button>
@@ -325,7 +325,7 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors text-xl font-bold leading-none ml-1"
+              className="p-1.5 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors text-xl font-bold leading-none ml-1"
             >
               &times;
             </button>
@@ -365,7 +365,7 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 bg-slate-50/60 p-4 rounded-xl border border-border">
+          <div className="grid grid-cols-2 gap-4 bg-slate-50/60 p-4 rounded-md border border-border">
             <div>
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
                 Supplier Profile
@@ -393,7 +393,7 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
             </div>
           </div>
 
-          <div className="border border-border rounded-xl overflow-hidden bg-white">
+          <div className="border border-border rounded-md overflow-hidden bg-white">
             <table className="w-full text-xs border-collapse">
               <thead>
                 <tr className="bg-slate-50 font-bold border-b border-border text-slate-500 uppercase tracking-wider text-[11px]">
