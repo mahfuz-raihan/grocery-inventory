@@ -148,27 +148,35 @@ export default function SettingsPage() {
   if (loading) {
     return (
       <div className="flex h-[60vh] items-center justify-center">
-        <div className="text-slate-400 font-semibold animate-pulse">Loading Application Settings...</div>
+        <div className="text-slate-400 font-semibold text-sm animate-pulse">Loading Application Settings...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-800 p-6">
-      <div className="max-w-4xl mx-auto space-y-6">
+    <div className="min-h-screen bg-surface-canvas text-slate-800 pb-12">
+      <div className="max-w-4xl space-y-6">
         
         {/* Tab Navigation header */}
-        <div className="flex border-b border-gray-200 bg-white p-2 rounded-xl border shadow-sm max-w-fit space-x-1">
+        <div className="inline-flex bg-slate-100/90 p-1 rounded-xl border border-border gap-1">
           <button
             onClick={() => setActiveTab("profile")}
-            className={`px-4 py-2.5 text-sm font-semibold rounded-lg transition-all ${activeTab === "profile" ? "bg-blue-600 text-white shadow-sm font-bold" : "text-gray-500 hover:text-gray-700 hover:bg-gray-55"}`}
+            className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all ${
+              activeTab === "profile"
+                ? "bg-white text-slate-900 shadow-sm border border-border/60"
+                : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/50"
+            }`}
           >
             👤 User Profile
           </button>
           {userRole === "owner" && (
             <button
               onClick={() => setActiveTab("rbac")}
-              className={`px-4 py-2.5 text-sm font-semibold rounded-lg transition-all ${activeTab === "rbac" ? "bg-blue-600 text-white shadow-sm font-bold" : "text-gray-500 hover:text-gray-700 hover:bg-gray-55"}`}
+              className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all ${
+                activeTab === "rbac"
+                  ? "bg-white text-slate-900 shadow-sm border border-border/60"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/50"
+              }`}
             >
               🔒 Access Control Rules
             </button>
@@ -177,41 +185,41 @@ export default function SettingsPage() {
 
         {/* Tab 1: Profile */}
         {activeTab === "profile" && (
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="p-6 border-b bg-slate-50">
-              <h3 className="text-lg font-bold text-gray-850">User Profile Settings</h3>
-              <p className="text-xs text-gray-500 mt-1">Configure your personal information and security credentials</p>
+          <div className="erp-card overflow-hidden">
+            <div className="p-5 border-b border-border bg-slate-50/80 backdrop-blur">
+              <h3 className="text-base font-bold text-slate-900">User Profile Settings</h3>
+              <p className="text-xs text-slate-500 mt-0.5">Configure your personal information and security credentials</p>
             </div>
             
             <form onSubmit={handleUpdateProfile} className="p-6 space-y-6">
               {profileSuccess && (
-                <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-sm font-semibold">
+                <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-800 text-xs font-medium">
                   {profileSuccess}
                 </div>
               )}
               {profileError && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-800 text-sm font-semibold">
+                <div className="p-3 bg-rose-50 border border-rose-200 rounded-lg text-rose-800 text-xs font-medium">
                   ⚠️ {profileError}
                 </div>
               )}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Registered Email</label>
+                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Registered Email</label>
                   <input
                     type="email"
                     disabled
-                    className="w-full p-2.5 border rounded-lg bg-gray-100 cursor-not-allowed text-gray-500 font-semibold"
+                    className="w-full p-2.5 border border-border rounded-lg bg-slate-100 cursor-not-allowed text-slate-400 font-mono text-xs font-medium"
                     value={email}
                   />
-                  <span className="text-[10px] text-gray-400 mt-1 block">Email address cannot be changed.</span>
+                  <span className="text-[10px] text-slate-400 mt-1 block">Email address cannot be changed.</span>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Full Name *</label>
+                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Full Name *</label>
                   <input
                     type="text"
                     required
-                    className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium"
+                    className="w-full p-2.5 border border-border rounded-lg focus:ring-1 focus:ring-brand focus:border-brand outline-none text-xs font-medium text-slate-800 bg-white transition"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     placeholder="Enter your name"
@@ -219,28 +227,28 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              <div className="border-t pt-6 space-y-6">
+              <div className="border-t border-border pt-6 space-y-4">
                 <div>
-                  <h4 className="text-sm font-bold text-gray-800">Security Credentials (Change Password)</h4>
-                  <p className="text-xs text-gray-500 mt-1">Leave fields blank if you do not wish to update your password</p>
+                  <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Security Credentials (Change Password)</h4>
+                  <p className="text-xs text-slate-500 mt-0.5">Leave fields blank if you do not wish to update your password</p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div>
-                    <label className="block text-xs font-bold text-gray-500 uppercase mb-2">New Password</label>
+                    <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">New Password</label>
                     <input
                       type="password"
-                      className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                      className="w-full p-2.5 border border-border rounded-lg focus:ring-1 focus:ring-brand focus:border-brand outline-none text-xs text-slate-800 bg-white transition"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Confirm Password</label>
+                    <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Confirm Password</label>
                     <input
                       type="password"
-                      className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                      className="w-full p-2.5 border border-border rounded-lg focus:ring-1 focus:ring-brand focus:border-brand outline-none text-xs text-slate-800 bg-white transition"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       placeholder="••••••••"
@@ -249,11 +257,11 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              <div className="flex justify-end pt-4 border-t">
+              <div className="flex justify-end pt-4 border-t border-border">
                 <button
                   type="submit"
                   disabled={savingProfile}
-                  className="px-6 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition font-bold disabled:bg-gray-400 shadow-sm"
+                  className="btn-primary text-xs"
                 >
                   {savingProfile ? "Saving Profile..." : "Save Profile Details"}
                 </button>
@@ -264,30 +272,30 @@ export default function SettingsPage() {
 
         {/* Tab 2: RBAC Config */}
         {activeTab === "rbac" && userRole === "owner" && rbacRules && (
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="p-6 border-b bg-slate-50">
-              <h3 className="text-lg font-bold text-gray-855">Access Control Matrix</h3>
-              <p className="text-xs text-gray-500 mt-1">Configure visible tabs and action locks centrally across user roles</p>
+          <div className="erp-card overflow-hidden">
+            <div className="p-5 border-b border-border bg-slate-50/80 backdrop-blur">
+              <h3 className="text-base font-bold text-slate-900">Access Control Matrix</h3>
+              <p className="text-xs text-slate-500 mt-0.5">Configure visible tabs and action locks centrally across user roles</p>
             </div>
 
             <div className="p-6 space-y-6">
               {rbacSuccess && (
-                <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-sm font-semibold">
+                <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-800 text-xs font-medium">
                   {rbacSuccess}
                 </div>
               )}
               {rbacError && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-800 text-sm font-semibold">
+                <div className="p-3 bg-rose-50 border border-rose-200 rounded-lg text-rose-800 text-xs font-medium">
                   ⚠️ {rbacError}
                 </div>
               )}
 
               {/* 1. Visible Inventory Tabs */}
-              <div className="space-y-4">
-                <h4 className="text-sm font-bold text-slate-800">1. Factory Inventory Control Tab Visibility</h4>
-                <div className="border border-slate-200 rounded-xl overflow-hidden shadow-xs">
+              <div className="space-y-3">
+                <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">1. Factory Inventory Control Tab Visibility</h4>
+                <div className="border border-border rounded-xl overflow-hidden bg-white shadow-xs">
                   <table className="w-full text-left text-xs border-collapse">
-                    <thead className="bg-slate-100 font-bold text-slate-700 uppercase border-b border-slate-200">
+                    <thead className="bg-slate-50 font-bold text-slate-500 uppercase tracking-wider text-[11px] border-b border-border">
                       <tr>
                         <th className="p-3">Inventory Panel Tabs</th>
                         {rolesList.map(role => (
@@ -295,10 +303,10 @@ export default function SettingsPage() {
                         ))}
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className="divide-y divide-border">
                       {inventoryTabsList.map(tab => (
-                        <tr key={tab.id} className="hover:bg-slate-50/50">
-                          <td className="p-3 font-semibold text-slate-700 text-sm">{tab.label}</td>
+                        <tr key={tab.id} className="hover:bg-slate-50/60 transition-colors">
+                          <td className="p-3 font-medium text-slate-800 text-xs">{tab.label}</td>
                           {rolesList.map(role => {
                             const isChecked = rbacRules.visible_inventory_tabs[role]?.includes(tab.id);
                             return (
@@ -307,7 +315,7 @@ export default function SettingsPage() {
                                   type="checkbox"
                                   checked={isChecked || false}
                                   onChange={() => handleToggleTabPermission(role, tab.id)}
-                                  className="h-4.5 w-4.5 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer"
+                                  className="h-4 w-4 text-brand rounded border-border focus:ring-brand cursor-pointer"
                                 />
                               </td>
                             );
@@ -320,12 +328,12 @@ export default function SettingsPage() {
               </div>
 
               {/* 2. Feature Actions Matrix */}
-              <div className="border-t pt-6 space-y-4">
-                <h4 className="text-sm font-bold text-slate-800">2. Security Lockouts & Feature Actions</h4>
+              <div className="border-t border-border pt-6 space-y-3">
+                <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">2. Security Lockouts & Feature Actions</h4>
                 
-                <div className="border border-slate-200 rounded-xl overflow-hidden shadow-xs">
+                <div className="border border-border rounded-xl overflow-hidden bg-white shadow-xs">
                   <table className="w-full text-left text-xs border-collapse">
-                    <thead className="bg-slate-100 font-bold text-slate-700 uppercase border-b border-slate-200">
+                    <thead className="bg-slate-50 font-bold text-slate-500 uppercase tracking-wider text-[11px] border-b border-border">
                       <tr>
                         <th className="p-3">Global Application Actions</th>
                         {rolesList.map(role => (
@@ -333,10 +341,10 @@ export default function SettingsPage() {
                         ))}
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      <tr className="hover:bg-slate-50/50">
+                    <tbody className="divide-y divide-border">
+                      <tr className="hover:bg-slate-50/60 transition-colors">
                         <td className="p-3">
-                          <span className="font-semibold text-slate-750 text-sm block">🔄 POS Warehouse Select</span>
+                          <span className="font-medium text-slate-900 text-xs block">🔄 POS Warehouse Select</span>
                           <span className="text-[10px] text-slate-400">Allows cashier/user to toggle warehouse branches at POS</span>
                         </td>
                         {rolesList.map(role => {
@@ -347,15 +355,15 @@ export default function SettingsPage() {
                                 type="checkbox"
                                 checked={isChecked || false}
                                 onChange={() => handleToggleFeatureFlag("pos_warehouse_select", role)}
-                                className="h-4.5 w-4.5 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer"
+                                className="h-4 w-4 text-brand rounded border-border focus:ring-brand cursor-pointer"
                               />
                             </td>
                           );
                         })}
                       </tr>
-                      <tr className="hover:bg-slate-50/50">
+                      <tr className="hover:bg-slate-50/60 transition-colors">
                         <td className="p-3">
-                          <span className="font-semibold text-slate-750 text-sm block">🏷️ Edit Selling & Purchase Price</span>
+                          <span className="font-medium text-slate-900 text-xs block">🏷️ Edit Selling & Purchase Price</span>
                           <span className="text-[10px] text-slate-400">Allows modifying prices centrally in catalog/GRN receiving</span>
                         </td>
                         {rolesList.map(role => {
@@ -366,15 +374,15 @@ export default function SettingsPage() {
                                 type="checkbox"
                                 checked={isChecked || false}
                                 onChange={() => handleToggleFeatureFlag("product_price_edit", role)}
-                                className="h-4.5 w-4.5 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer"
+                                className="h-4 w-4 text-brand rounded border-border focus:ring-brand cursor-pointer"
                               />
                             </td>
                           );
                         })}
                       </tr>
-                      <tr className="hover:bg-slate-50/50">
+                      <tr className="hover:bg-slate-50/60 transition-colors">
                         <td className="p-3">
-                          <span className="font-semibold text-slate-760 text-sm block">🏢 Edit Company Profile Details</span>
+                          <span className="font-medium text-slate-900 text-xs block">🏢 Edit Company Profile Details</span>
                           <span className="text-[10px] text-slate-400">Allows updating firm phone, address, and credentials</span>
                         </td>
                         {rolesList.map(role => {
@@ -385,7 +393,7 @@ export default function SettingsPage() {
                                 type="checkbox"
                                 checked={isChecked || false}
                                 onChange={() => handleToggleFeatureFlag("company_profile_edit", role)}
-                                className="h-4.5 w-4.5 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer"
+                                className="h-4 w-4 text-brand rounded border-border focus:ring-brand cursor-pointer"
                               />
                             </td>
                           );
@@ -396,12 +404,12 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              <div className="flex justify-end pt-4 border-t">
+              <div className="flex justify-end pt-4 border-t border-border">
                 <button
                   type="button"
                   onClick={handleSaveRbac}
                   disabled={savingRbac}
-                  className="px-6 py-2.5 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition font-bold disabled:bg-gray-400 shadow-sm"
+                  className="btn-primary text-xs"
                 >
                   {savingRbac ? "Saving Rules..." : "Save Access Controls"}
                 </button>
