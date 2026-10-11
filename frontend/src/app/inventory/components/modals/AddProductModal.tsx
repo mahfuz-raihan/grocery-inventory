@@ -122,7 +122,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 overflow-y-auto">
-      <div className="bg-white rounded-xl border border-border shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto my-4">
+      <div className="bg-white rounded-lg border border-border shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto my-4">
         <div className="p-5 border-b border-border flex items-center justify-between bg-slate-50/70 sticky top-0 z-10">
           <div>
             <h3 className="text-base font-bold text-slate-900">Add New Product to Catalog</h3>
@@ -131,14 +131,14 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
           <button
             type="button"
             onClick={handleClose}
-            className="text-slate-400 hover:text-slate-700 w-8 h-8 rounded-lg hover:bg-slate-200/60 flex items-center justify-center text-lg transition"
+            className="text-slate-400 hover:text-slate-700 w-8 h-8 rounded-md hover:bg-slate-200/60 flex items-center justify-center text-lg transition"
           >
             ✕
           </button>
         </div>
 
         {productSuccessMessage && (
-          <div className="m-6 p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-semibold">
+          <div className="m-6 p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-md text-xs font-semibold">
             {productSuccessMessage}
           </div>
         )}
@@ -149,7 +149,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
               <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Product Code (SKU) *</label>
               <input
                 type="text"
-                className="w-full p-2.5 border border-border rounded-lg bg-white text-xs font-mono text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
+                className="w-full p-2.5 border border-border rounded-md bg-white text-xs font-mono text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
                 value={newProductSku}
                 onChange={(e) => setNewProductSku(e.target.value)}
                 placeholder="e.g. WD-CH-01"
@@ -159,7 +159,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
             <div>
               <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Product Unit *</label>
               <select
-                className="w-full p-2.5 border border-border rounded-lg bg-white text-xs text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
+                className="w-full p-2.5 border border-border rounded-md bg-white text-xs text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
                 value={newProductUnit}
                 onChange={(e) => setNewProductUnit(e.target.value)}
               >
@@ -175,7 +175,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
             <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Product Name *</label>
             <input
               type="text"
-              className="w-full p-2.5 border border-border rounded-lg bg-white text-xs text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
+              className="w-full p-2.5 border border-border rounded-md bg-white text-xs text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
               value={newProductName}
               onChange={(e) => setNewProductName(e.target.value)}
               placeholder="e.g. Oak Wood Dining Chair"
@@ -187,7 +187,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
             <div>
               <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Product Type *</label>
               <select
-                className="w-full p-2.5 border border-border rounded-lg bg-white text-xs text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
+                className="w-full p-2.5 border border-border rounded-md bg-white text-xs text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
                 value={newProductType}
                 onChange={(e) => setNewProductType(e.target.value)}
               >
@@ -203,7 +203,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
                 Parent Template (For Variations)
               </label>
               <select
-                className="w-full p-2.5 border border-border rounded-lg bg-white text-xs text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
+                className="w-full p-2.5 border border-border rounded-md bg-white text-xs text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
                 value={newProductParentId}
                 onChange={(e) => setNewProductParentId(e.target.value)}
               >
@@ -223,7 +223,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
             <div>
               <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Category</label>
               <select
-                className="w-full p-2.5 border border-border rounded-lg bg-white text-xs text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
+                className="w-full p-2.5 border border-border rounded-md bg-white text-xs text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
                 value={newProductCategory}
                 onChange={(e) => setNewProductCategory(e.target.value)}
               >
@@ -239,7 +239,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
               <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Color Variation</label>
               <input
                 type="text"
-                className="w-full p-2.5 border border-border rounded-lg bg-white text-xs text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
+                className="w-full p-2.5 border border-border rounded-md bg-white text-xs text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
                 value={newProductColor}
                 onChange={(e) => setNewProductColor(e.target.value)}
                 placeholder="e.g. Natural Varnish"
@@ -251,7 +251,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
             <div>
               <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Material Type</label>
               <select
-                className="w-full p-2.5 border border-border rounded-lg bg-white text-xs text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
+                className="w-full p-2.5 border border-border rounded-md bg-white text-xs text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
                 value={newProductMaterialType}
                 onChange={(e) => setNewProductMaterialType(e.target.value)}
               >
@@ -266,7 +266,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
             <div>
               <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Wood Type</label>
               <select
-                className="w-full p-2.5 border border-border rounded-lg bg-white text-xs text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
+                className="w-full p-2.5 border border-border rounded-md bg-white text-xs text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
                 value={newProductWoodType}
                 onChange={(e) => setNewProductWoodType(e.target.value)}
               >
@@ -285,7 +285,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
               <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Board Type</label>
               <input
                 type="text"
-                className="w-full p-2.5 border border-border rounded-lg bg-white text-xs text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
+                className="w-full p-2.5 border border-border rounded-md bg-white text-xs text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
                 value={newProductBoardType}
                 onChange={(e) => setNewProductBoardType(e.target.value)}
                 placeholder="e.g. MDF"
@@ -296,7 +296,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
               <input
                 type="number"
                 step="0.1"
-                className="w-full p-2.5 border border-border rounded-lg bg-white text-xs font-mono text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
+                className="w-full p-2.5 border border-border rounded-md bg-white text-xs font-mono text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
                 value={newProductWeight}
                 onChange={(e) => setNewProductWeight(e.target.value)}
                 placeholder="e.g. 12"
@@ -307,7 +307,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
               <input
                 type="number"
                 step="0.1"
-                className="w-full p-2.5 border border-border rounded-lg bg-white text-xs font-mono text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
+                className="w-full p-2.5 border border-border rounded-md bg-white text-xs font-mono text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
                 value={newProductThickness}
                 onChange={(e) => setNewProductThickness(e.target.value)}
                 placeholder="e.g. 18"
@@ -321,7 +321,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
               <input
                 type="number"
                 step="0.1"
-                className="w-full p-2.5 border border-border rounded-lg bg-white text-xs font-mono text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
+                className="w-full p-2.5 border border-border rounded-md bg-white text-xs font-mono text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
                 value={newProductLength}
                 onChange={(e) => setNewProductLength(e.target.value)}
                 placeholder="e.g. 36"
@@ -332,7 +332,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
               <input
                 type="number"
                 step="0.1"
-                className="w-full p-2.5 border border-border rounded-lg bg-white text-xs font-mono text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
+                className="w-full p-2.5 border border-border rounded-md bg-white text-xs font-mono text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
                 value={newProductWidth}
                 onChange={(e) => setNewProductWidth(e.target.value)}
                 placeholder="e.g. 24"
@@ -343,7 +343,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
               <input
                 type="number"
                 step="0.1"
-                className="w-full p-2.5 border border-border rounded-lg bg-white text-xs font-mono text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
+                className="w-full p-2.5 border border-border rounded-md bg-white text-xs font-mono text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
                 value={newProductHeight}
                 onChange={(e) => setNewProductHeight(e.target.value)}
                 placeholder="e.g. 30"
@@ -355,7 +355,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
             <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Product Image Link</label>
             <input
               type="text"
-              className="w-full p-2.5 border border-border rounded-lg bg-white text-xs text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
+              className="w-full p-2.5 border border-border rounded-md bg-white text-xs text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition"
               value={newProductImage}
               onChange={(e) => setNewProductImage(e.target.value)}
               placeholder="e.g. /images/chair.jpg"
