@@ -124,7 +124,7 @@ export const CustomersTab: React.FC<CustomersTabProps> = ({
     <div className="space-y-6">
       {/* 1. Header Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="erp-card p-5 border-border rounded-xl shadow-xs">
+        <div className="erp-card p-5 border-border rounded-md shadow-xs">
           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
             Unique Customers
           </span>
@@ -133,7 +133,7 @@ export const CustomersTab: React.FC<CustomersTabProps> = ({
             Registered buyers & walk-in clients
           </div>
         </div>
-        <div className="erp-card p-5 border-border rounded-xl shadow-xs">
+        <div className="erp-card p-5 border-border rounded-md shadow-xs">
           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
             Customer Spend
           </span>
@@ -144,7 +144,7 @@ export const CustomersTab: React.FC<CustomersTabProps> = ({
             Total revenue generated from customers
           </div>
         </div>
-        <div className="erp-card p-5 border-border rounded-xl shadow-xs">
+        <div className="erp-card p-5 border-border rounded-md shadow-xs">
           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
             Avg Customer Value
           </span>
@@ -158,7 +158,7 @@ export const CustomersTab: React.FC<CustomersTabProps> = ({
       </div>
 
       {/* 2. Controls Toolbar: Search, Sort & Column Toggle */}
-      <div className="erp-card p-3.5 border-border rounded-xl shadow-xs">
+      <div className="erp-card p-3.5 border-border rounded-md shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           {/* Search */}
           <div className="relative flex-1 min-w-[240px]">
@@ -167,7 +167,7 @@ export const CustomersTab: React.FC<CustomersTabProps> = ({
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search by Customer Name or Phone Number..."
-              className="w-full pl-9 pr-4 py-2 border border-border rounded-lg text-xs font-medium bg-slate-50/60 focus:bg-white focus:outline-none focus:ring-1 focus:ring-brand focus:border-brand transition"
+              className="w-full pl-9 pr-4 py-2 border border-border rounded-md text-xs font-medium bg-slate-50/60 focus:bg-white focus:outline-none focus:ring-1 focus:ring-brand focus:border-brand transition"
             />
             <span className="absolute left-3 top-2.5 text-slate-400 text-xs">🔍</span>
             {searchTerm && (
@@ -198,13 +198,13 @@ export const CustomersTab: React.FC<CustomersTabProps> = ({
               <button
                 type="button"
                 onClick={() => setShowColumnMenu(!showColumnMenu)}
-                className="px-3 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-border rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-xs"
+                className="px-3 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-border rounded-md text-xs font-semibold flex items-center gap-1.5 transition shadow-xs"
               >
                 <span>Columns 👁️</span>
               </button>
 
               {showColumnMenu && (
-                <div className="absolute right-0 top-11 w-48 bg-white border border-border rounded-xl shadow-xl z-30 p-3 text-xs space-y-2 animate-fadeIn">
+                <div className="absolute right-0 top-11 w-48 bg-white border border-border rounded-md shadow-xl z-30 p-3 text-xs space-y-2 animate-fadeIn">
                   <div className="font-bold text-slate-400 uppercase tracking-wider text-[10px] pb-1 border-b border-border">
                     Toggle Table Columns
                   </div>
@@ -238,7 +238,7 @@ export const CustomersTab: React.FC<CustomersTabProps> = ({
       </div>
 
       {/* 3. Customers Table */}
-      <div className="erp-card border-border rounded-xl overflow-hidden shadow-xs">
+      <div className="erp-card border-border rounded-md overflow-hidden shadow-xs">
         {filteredCustomers.length === 0 ? (
           <div className="text-center py-16 text-slate-400">
             <span className="text-4xl block mb-2">👥</span>
@@ -288,7 +288,7 @@ export const CustomersTab: React.FC<CustomersTabProps> = ({
                     {/* Total Invoices Count */}
                     {isVisible("total_invoices") && (
                       <td className="p-3 text-center">
-                        <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-800 border border-slate-200 font-mono">
+                        <span className="inline-block px-2.5 py-0.5 rounded text-xs font-semibold bg-slate-100 text-slate-800 border border-slate-200 font-mono">
                           {cust.total_invoices} {cust.total_invoices === 1 ? "Order" : "Orders"}
                         </span>
                       </td>
@@ -316,14 +316,14 @@ export const CustomersTab: React.FC<CustomersTabProps> = ({
                           onClick={() =>
                             setOpenMenuId(openMenuId === cust.id ? null : cust.id)
                           }
-                          className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-600 font-black text-sm transition"
+                          className="p-1.5 hover:bg-slate-100 rounded-md text-slate-600 font-black text-sm transition"
                           title="Options"
                         >
                           ⋮
                         </button>
 
                         {openMenuId === cust.id && (
-                          <div className="absolute right-3 top-10 w-48 bg-white border border-slate-200 rounded-xl shadow-2xl z-20 py-1 text-left text-xs animate-fadeIn">
+                          <div className="absolute right-3 top-10 w-48 bg-white border border-slate-200 rounded-md shadow-2xl z-20 py-1 text-left text-xs animate-fadeIn">
                             <button
                               onClick={() => {
                                 onOpenCustomerInvoices(cust);
