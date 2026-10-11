@@ -530,7 +530,7 @@ export default function POSTerminal() {
         <div className="bg-white p-4 border-b border-slate-200 z-10 flex items-center justify-between gap-4 shadow-xs">
           <div className="flex items-center space-x-3 flex-shrink-0">
             <h1 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-              <span className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-200 text-brand flex items-center justify-center text-sm shadow-xs">
+              <span className="w-8 h-8 rounded-md bg-emerald-50 border border-emerald-200 text-brand flex items-center justify-center text-sm shadow-xs">
                 🛒
               </span>
               <span>POS Terminal</span>
@@ -545,7 +545,7 @@ export default function POSTerminal() {
 
           {/* Autocomplete Search input wrapper */}
           <div className="relative flex-1 max-w-xl">
-            <div className="flex items-center bg-slate-50/80 border border-slate-200 rounded-lg focus-within:bg-white focus-within:border-brand focus-within:ring-1 focus-within:ring-brand transition-all shadow-xs">
+            <div className="flex items-center bg-slate-50/80 border border-slate-200 rounded-md focus-within:bg-white focus-within:border-brand focus-within:ring-1 focus-within:ring-brand transition-all shadow-xs">
               <span className="pl-3 text-slate-400 text-sm">🔍</span>
               <input
                 type="text"
@@ -576,7 +576,7 @@ export default function POSTerminal() {
                   className="fixed inset-0 z-25"
                   onClick={() => setShowSuggestions(false)}
                 />
-                <div className="absolute left-0 right-0 mt-1.5 bg-white border border-slate-200 rounded-xl shadow-dropdown z-30 overflow-hidden max-h-72 overflow-y-auto divide-y divide-slate-100 animate-fadeIn">
+                <div className="absolute left-0 right-0 mt-1.5 bg-white border border-slate-200 rounded-md shadow-dropdown z-30 overflow-hidden max-h-72 overflow-y-auto divide-y divide-slate-100 animate-fadeIn">
                   {searchSuggestions.map((product) => {
                     const availableStock = getAvailableStock(product);
                     const outOfStock = availableStock <= 0;
@@ -622,7 +622,7 @@ export default function POSTerminal() {
               value={selectedBranchId}
               onChange={(e) => handleBranchChange(e.target.value)}
               disabled={rbacRules ? !rbacRules.pos_warehouse_select?.includes(userRole) : (userRole !== "owner")}
-              className={`px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-medium text-slate-700 bg-slate-50 focus:bg-white focus:border-brand focus:ring-1 focus:ring-brand outline-none transition-all shadow-xs ${(rbacRules ? !rbacRules.pos_warehouse_select?.includes(userRole) : (userRole !== "owner")) ? "cursor-not-allowed bg-slate-100 opacity-80" : ""}`}
+              className={`px-3 py-1.5 border border-slate-200 rounded-md text-xs font-medium text-slate-700 bg-slate-50 focus:bg-white focus:border-brand focus:ring-1 focus:ring-brand outline-none transition-all shadow-xs ${(rbacRules ? !rbacRules.pos_warehouse_select?.includes(userRole) : (userRole !== "owner")) ? "cursor-not-allowed bg-slate-100 opacity-80" : ""}`}
             >
               {(rbacRules ? rbacRules.pos_warehouse_select?.includes(userRole) : (userRole === "owner")) && <option value="">All Warehouses</option>}
               {branches.map(b => (
@@ -638,7 +638,7 @@ export default function POSTerminal() {
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Supplier:</span>
             <button
               onClick={() => setPosSupplierFilter("")}
-              className={`px-3 py-1 rounded-lg text-xs font-medium border transition-all ${!posSupplierFilter
+              className={`px-3 py-1 rounded text-xs font-medium border transition-all ${!posSupplierFilter
                 ? "bg-brand text-white border-brand shadow-xs"
                 : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:border-slate-300"
                 }`}
@@ -649,7 +649,7 @@ export default function POSTerminal() {
               <button
                 key={s}
                 onClick={() => setPosSupplierFilter(s === posSupplierFilter ? "" : s)}
-                className={`px-3 py-1 rounded-lg text-xs font-medium border transition-all ${posSupplierFilter === s
+                className={`px-3 py-1 rounded text-xs font-medium border transition-all ${posSupplierFilter === s
                   ? "bg-brand text-white border-brand shadow-xs"
                   : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:border-slate-300"
                   }`}
@@ -677,7 +677,7 @@ export default function POSTerminal() {
             </div>
           ) : (
             posSupplierGroups.map(supplierKey => (
-              <div key={supplierKey} className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-card">
+              <div key={supplierKey} className="bg-white rounded-md border border-slate-200 overflow-hidden shadow-card">
                 {/* Supplier header */}
                 <div className="px-4 py-2.5 bg-slate-50/80 border-b border-slate-200 flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
@@ -749,7 +749,7 @@ export default function POSTerminal() {
                               <button
                                 onClick={() => !outOfStock && addToCart(product)}
                                 disabled={outOfStock}
-                                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all shadow-xs ${outOfStock
+                                className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all shadow-xs ${outOfStock
                                   ? "bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200"
                                   : "bg-emerald-50 text-brand hover:bg-brand hover:text-white border border-emerald-200"
                                   }`}
@@ -809,7 +809,7 @@ export default function POSTerminal() {
             cart.map((item) => (
               <div
                 key={`${item.id}-${item.supplier_name || 'no-supplier'}`}
-                className="flex justify-between items-center bg-slate-50/70 border border-slate-200 rounded-lg p-2.5 gap-2 transition hover:bg-slate-50 hover:border-slate-300 shadow-xs"
+                className="flex justify-between items-center bg-slate-50/70 border border-slate-200 rounded-md p-2.5 gap-2 transition hover:bg-slate-50 hover:border-slate-300 shadow-xs"
               >
                 <div className="min-w-0 flex-1">
                   <h4 className="font-semibold text-slate-900 text-xs truncate leading-tight">
@@ -823,7 +823,7 @@ export default function POSTerminal() {
                   </div>
                 </div>
 
-                <div className="flex items-center bg-white border border-slate-200 rounded-lg overflow-hidden flex-shrink-0 shadow-xs">
+                <div className="flex items-center bg-white border border-slate-200 rounded-md overflow-hidden flex-shrink-0 shadow-xs">
                   <button
                     onClick={() => updateQuantity(item.id, item.supplier_name, -1)}
                     className="text-slate-600 hover:bg-slate-100 px-2 py-1 text-xs font-bold transition-colors"
@@ -849,20 +849,20 @@ export default function POSTerminal() {
 
         {/* Customer Information & Calculations */}
         <div className="p-3 bg-slate-50/80 border-t border-slate-200 space-y-2.5 flex-shrink-0">
-          <div className="bg-white p-2.5 rounded-lg border border-slate-200 space-y-2 shadow-xs">
+          <div className="bg-white p-2.5 rounded-md border border-slate-200 space-y-2 shadow-xs">
             <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Customer Details</h3>
             <div className="grid grid-cols-2 gap-1.5">
               <input
                 type="text"
                 placeholder="Customer Name"
-                className="p-1.5 border border-slate-200 rounded-lg text-xs bg-slate-50 focus:bg-white focus:border-brand focus:ring-1 focus:ring-brand outline-none font-medium w-full transition-all"
+                className="p-1.5 border border-slate-200 rounded-md text-xs bg-slate-50 focus:bg-white focus:border-brand focus:ring-1 focus:ring-brand outline-none font-medium w-full transition-all"
                 value={customerName}
                 onChange={(e) => setCustomerName(e.target.value)}
               />
               <input
                 type="text"
                 placeholder="Phone Number"
-                className="p-1.5 border border-slate-200 rounded-lg text-xs bg-slate-50 focus:bg-white focus:border-brand focus:ring-1 focus:ring-brand outline-none font-medium w-full transition-all"
+                className="p-1.5 border border-slate-200 rounded-md text-xs bg-slate-50 focus:bg-white focus:border-brand focus:ring-1 focus:ring-brand outline-none font-medium w-full transition-all"
                 value={customerPhone}
                 onChange={(e) => setCustomerPhone(e.target.value)}
               />
@@ -870,7 +870,7 @@ export default function POSTerminal() {
             <input
               type="text"
               placeholder="Customer Address"
-              className="p-1.5 border border-slate-200 rounded-lg text-xs bg-slate-50 focus:bg-white focus:border-brand focus:ring-1 focus:ring-brand outline-none font-medium w-full transition-all"
+              className="p-1.5 border border-slate-200 rounded-md text-xs bg-slate-50 focus:bg-white focus:border-brand focus:ring-1 focus:ring-brand outline-none font-medium w-full transition-all"
               value={customerAddress}
               onChange={(e) => setCustomerAddress(e.target.value)}
             />
@@ -883,7 +883,7 @@ export default function POSTerminal() {
                   step="0.01"
                   min="0"
                   placeholder="0.00"
-                  className="p-1 pl-5 border border-slate-200 rounded-lg text-xs bg-slate-50 focus:bg-white focus:border-brand focus:ring-1 focus:ring-brand outline-none text-right font-mono font-bold text-slate-900 w-full transition-all"
+                  className="p-1 pl-5 border border-slate-200 rounded-md text-xs bg-slate-50 focus:bg-white focus:border-brand focus:ring-1 focus:ring-brand outline-none text-right font-mono font-bold text-slate-900 w-full transition-all"
                   value={discountStr}
                   onChange={(e) => setDiscountStr(e.target.value)}
                 />
@@ -911,7 +911,7 @@ export default function POSTerminal() {
           <button
             onClick={handleCheckout}
             disabled={cart.length === 0 || isProcessing}
-            className={`w-full py-2.5 rounded-lg text-white font-semibold text-sm transition-all shadow-sm
+            className={`w-full py-2.5 rounded-md text-white font-semibold text-sm transition-all shadow-sm
               ${cart.length === 0
                 ? "bg-slate-300 text-slate-500 cursor-not-allowed shadow-none"
                 : isProcessing
