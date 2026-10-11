@@ -322,25 +322,25 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50/50 text-slate-800 p-4 sm:p-6 md:p-8">
+    <div className="min-h-screen bg-surface-canvas text-slate-900 pb-12 font-sans">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header Block */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 erp-card p-5 border-border shadow-xs rounded-xl">
           <div>
-            <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">HQ Dashboard</h1>
-            <p className="text-slate-500 mt-1 font-medium">
+            <h1 className="text-xl font-bold text-slate-900 tracking-tight">HQ Dashboard</h1>
+            <p className="text-slate-500 mt-0.5 text-xs font-normal">
               Sales Analytics, Sold Invoices & Customer Directory Management
             </p>
           </div>
           <div className="flex items-center gap-3 w-full md:w-auto">
             <div className="flex flex-col gap-1 w-full sm:w-64">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-1">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-0.5">
                 Select Date Range
               </span>
               <select
                 value={dateFilter}
                 onChange={(e) => setDateFilter(e.target.value)}
-                className="w-full bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-700 shadow-sm focus:outline-none focus:ring-1 focus:ring-slate-900 transition-all cursor-pointer"
+                className="w-full bg-white border border-border rounded-lg px-3 py-2 text-xs font-semibold text-slate-800 shadow-xs focus:outline-none focus:ring-1 focus:ring-brand focus:border-brand transition cursor-pointer"
               >
                 {FILTER_OPTIONS.map((opt) => (
                   <option key={opt.id} value={opt.id}>
@@ -354,28 +354,28 @@ export default function Dashboard() {
 
         {/* Custom Date Pickers */}
         {showCustomRange && (
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-wrap items-end gap-3 animate-fadeIn">
+          <div className="erp-card p-4 border-border rounded-xl shadow-xs flex flex-wrap items-end gap-3 animate-fadeIn">
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold text-slate-500">Start Date</label>
+              <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">Start Date</label>
               <input
                 type="date"
                 value={customStartDate}
                 onChange={(e) => setCustomStartDate(e.target.value)}
-                className="p-2 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-1 focus:ring-slate-900"
+                className="p-2 border border-border rounded-lg text-xs bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-brand focus:border-brand transition"
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold text-slate-500">End Date</label>
+              <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">End Date</label>
               <input
                 type="date"
                 value={customEndDate}
                 onChange={(e) => setCustomEndDate(e.target.value)}
-                className="p-2 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-1 focus:ring-slate-900"
+                className="p-2 border border-border rounded-lg text-xs bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-brand focus:border-brand transition"
               />
             </div>
             <button
               onClick={applyCustomRange}
-              className="px-5 py-2 bg-slate-950 text-white text-xs font-bold rounded-lg border border-slate-950 hover:bg-slate-900 transition shadow-sm"
+              className="btn-primary text-xs py-2 px-4 shadow-xs"
             >
               Apply Custom Range
             </button>
@@ -383,15 +383,15 @@ export default function Dashboard() {
         )}
 
         {/* Tabs Bar */}
-        <div className="flex border-b border-slate-200 gap-2 pb-px">
+        <div className="flex border-b border-border gap-2 pb-px">
           {TABS.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`px-5 py-3 text-sm font-bold border-b-2 transition-all duration-150 ${
+              className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-all duration-150 ${
                 activeTab === tab.id
-                  ? "border-blue-600 text-blue-600 font-extrabold"
-                  : "border-transparent text-slate-500 hover:text-slate-700"
+                  ? "border-brand text-brand"
+                  : "border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300"
               }`}
             >
               {tab.label}
