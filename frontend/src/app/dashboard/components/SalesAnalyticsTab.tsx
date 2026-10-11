@@ -73,25 +73,25 @@ export const SalesAnalyticsTab: React.FC<SalesAnalyticsTabProps> = ({
   return (
     <div className="space-y-6">
       {/* KPI Summary Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
         {/* Revenue Card */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex items-center justify-between transition-all duration-300 hover:shadow-md hover:border-slate-300">
+        <div className="erp-card p-5 border-border shadow-xs rounded-xl flex items-center justify-between transition hover:border-slate-300">
           <div className="space-y-1">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
               Total Revenue
             </span>
-            <p className="text-3xl font-extrabold text-slate-900">
+            <p className="text-2xl font-bold font-mono text-slate-900 tracking-tight tabular-nums">
               {formatPrice(analytics?.total_revenue || 0)}
             </p>
-            <div className="pt-2">
-              <span className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 px-2.5 py-0.5 rounded-full text-[10px] font-bold border border-emerald-100">
-                <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>
+            <div className="pt-1.5">
+              <span className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-800 px-2.5 py-0.5 rounded-full text-[10px] font-bold border border-emerald-200">
+                <span className="w-1.5 h-1.5 bg-emerald-600 rounded-full animate-pulse"></span>
                 Settled Sales
               </span>
             </div>
           </div>
-          <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="w-11 h-11 bg-brand-light text-brand rounded-xl flex items-center justify-center border border-emerald-200/60">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -103,23 +103,23 @@ export const SalesAnalyticsTab: React.FC<SalesAnalyticsTabProps> = ({
         </div>
 
         {/* Orders Card */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex items-center justify-between transition-all duration-300 hover:shadow-md hover:border-slate-300">
+        <div className="erp-card p-5 border-border shadow-xs rounded-xl flex items-center justify-between transition hover:border-slate-300">
           <div className="space-y-1">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
               Total Orders
             </span>
-            <p className="text-3xl font-extrabold text-slate-900">
+            <p className="text-2xl font-bold font-mono text-slate-900 tracking-tight tabular-nums">
               {analytics?.total_orders || 0}
             </p>
-            <div className="pt-2">
-              <span className="inline-flex items-center gap-1.5 bg-blue-50 text-blue-700 px-2.5 py-0.5 rounded-full text-[10px] font-bold border border-blue-100">
-                <span className="w-1.5 h-1.5 bg-blue-500 rounded-full"></span>
+            <div className="pt-1.5">
+              <span className="inline-flex items-center gap-1.5 bg-slate-100 text-slate-700 px-2.5 py-0.5 rounded-full text-[10px] font-bold border border-slate-200">
+                <span className="w-1.5 h-1.5 bg-slate-500 rounded-full"></span>
                 Paid Orders
               </span>
             </div>
           </div>
-          <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="w-11 h-11 bg-slate-100 text-slate-700 rounded-xl flex items-center justify-center border border-slate-200">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -140,18 +140,18 @@ export const SalesAnalyticsTab: React.FC<SalesAnalyticsTabProps> = ({
         formatPrice={formatPrice}
       />
 
-      {/* Recent Sales Table Chart */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm transition-all duration-300 hover:shadow-md">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+      {/* Recent Sales Table */}
+      <div className="erp-card p-5 border-border shadow-xs rounded-xl transition hover:border-slate-300">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
           <div>
-            <h3 className="font-bold text-slate-800 text-base tracking-tight">Recent Sales Details</h3>
-            <p className="text-xs text-slate-400 font-medium">
+            <h3 className="font-bold text-slate-900 text-sm tracking-tight">Recent Sales Details</h3>
+            <p className="text-xs text-slate-400 font-normal mt-0.5">
               Latest transactions recorded in the selected period
             </p>
           </div>
           <button
             onClick={() => setShowAllSales(!showAllSales)}
-            className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl shadow-sm transition duration-150 sm:self-center"
+            className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-lg shadow-xs transition duration-150 sm:self-center"
           >
             {showAllSales ? "Show Less" : "View All"}
           </button>
@@ -159,7 +159,7 @@ export const SalesAnalyticsTab: React.FC<SalesAnalyticsTabProps> = ({
 
         {recentSalesList.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-slate-400">
-            <svg className="w-12 h-12 mb-2 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-10 h-10 mb-2 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -167,34 +167,38 @@ export const SalesAnalyticsTab: React.FC<SalesAnalyticsTabProps> = ({
                 d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
               />
             </svg>
-            <span className="text-sm font-semibold">No recent transactions in this range</span>
+            <span className="text-xs font-semibold">No recent transactions in this range</span>
           </div>
         ) : (
-          <div className="overflow-x-auto scrollbar-thin">
+          <div className="overflow-x-auto border border-border rounded-lg">
             <table className="w-full border-collapse text-xs">
               <thead>
-                <tr className="bg-slate-50 text-slate-400 font-bold uppercase tracking-wider text-[10px]">
-                  <th className="p-3 text-left first:rounded-l-xl">Order ID</th>
+                <tr className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider text-[11px] border-b border-border">
+                  <th className="p-3 text-left">Order ID</th>
                   <th className="p-3 text-left">Date</th>
                   <th className="p-3 text-left">Warehouse</th>
                   <th className="p-3 text-left">Customer Name</th>
                   <th className="p-3 text-left">Product</th>
                   <th className="p-3 text-left">Discount</th>
                   <th className="p-3 text-left">Amount</th>
-                  <th className="p-3 text-left last:rounded-r-xl">Invoice</th>
+                  <th className="p-3 text-left">Invoice</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-border">
                 {displayedSales.map((sale) => (
-                  <tr key={sale.id} className="hover:bg-slate-50/50 transition duration-150">
-                    <td className="p-3 font-bold text-slate-800">{sale.receipt_number}</td>
-                    <td className="p-3 text-slate-500 font-semibold">{formatDateTime(sale.created_at)}</td>
-                    <td className="p-3 text-slate-700 font-semibold">{getWarehouseName(sale.branch_id)}</td>
-                    <td className="p-3 text-slate-600 font-semibold">{sale.customer_name}</td>
+                  <tr key={sale.id} className="hover:bg-slate-50/60 transition duration-150">
+                    <td className="p-3 font-bold font-mono text-slate-900">{sale.receipt_number}</td>
+                    <td className="p-3 text-slate-500 font-mono text-[11px]">{formatDateTime(sale.created_at)}</td>
+                    <td className="p-3 text-slate-700 font-medium">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-700">
+                        {getWarehouseName(sale.branch_id)}
+                      </span>
+                    </td>
+                    <td className="p-3 text-slate-800 font-medium">{sale.customer_name}</td>
                     <td
                       className="p-3 text-slate-500 italic max-w-xs truncate"
                       title={sale.items
-                        .map(
+                        ?.map(
                           (item: any) =>
                             catalogProducts.find((p) => p.id === item.product_id)?.name || "Product"
                         )
@@ -202,12 +206,12 @@ export const SalesAnalyticsTab: React.FC<SalesAnalyticsTabProps> = ({
                     >
                       {getProductNamesString(sale.items)}
                     </td>
-                    <td className="p-3 text-slate-500 font-bold">{formatPrice(sale.discount)}</td>
-                    <td className="p-3 font-extrabold text-slate-900">{formatPrice(sale.total_amount)}</td>
+                    <td className="p-3 text-slate-500 font-mono font-medium tabular-nums">{formatPrice(sale.discount)}</td>
+                    <td className="p-3 font-bold font-mono text-slate-900 tabular-nums">{formatPrice(sale.total_amount)}</td>
                     <td className="p-3">
                       <button
                         onClick={() => onViewInvoice(sale)}
-                        className="px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200 rounded-lg font-bold shadow-sm transition duration-150"
+                        className="px-2.5 py-1 bg-brand-light text-brand hover:bg-emerald-100/70 border border-emerald-200 rounded-lg font-bold text-xs shadow-xs transition duration-150"
                       >
                         View Invoice
                       </button>
@@ -223,7 +227,7 @@ export const SalesAnalyticsTab: React.FC<SalesAnalyticsTabProps> = ({
   );
 };
 
-// LineChart Component
+// LineChart Component with Heritage Forest & Slate Styling
 function LineChart({
   title,
   data,
@@ -327,30 +331,30 @@ function LineChart({
       : "0%";
 
   return (
-    <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-4 transition-all duration-300 hover:shadow-md flex flex-col h-[320px] overflow-hidden w-full select-none">
+    <div className="erp-card p-5 border-border shadow-xs rounded-xl flex flex-col h-[320px] overflow-hidden w-full select-none transition hover:border-slate-300">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-4 flex-shrink-0">
         <div>
-          <h3 className="font-bold text-slate-800 text-sm tracking-tight">{title}</h3>
+          <h3 className="font-bold text-slate-900 text-sm tracking-tight">{title}</h3>
           <div className="flex items-center gap-3.5 mt-1">
             <div className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-              <span className="text-[10px] font-bold text-slate-500">Sales (৳)</span>
+              <span className="w-2.5 h-2.5 rounded-full bg-brand"></span>
+              <span className="text-[10px] font-bold text-slate-600">Sales (৳)</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+              <span className="w-2.5 h-2.5 rounded-full bg-slate-400"></span>
               <span className="text-[10px] font-bold text-slate-500">Order</span>
             </div>
           </div>
         </div>
 
         <div className="flex items-center gap-1.5">
-          <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
             Group By
           </span>
           <select
             value={activeGroup}
             onChange={(e) => setActiveGroup(e.target.value as any)}
-            className="bg-white border border-slate-200 rounded-xl px-2.5 py-1 text-[10px] font-bold text-slate-700 shadow-sm focus:outline-none focus:ring-1 focus:ring-slate-900 transition-all cursor-pointer"
+            className="bg-white border border-border rounded-lg px-2.5 py-1 text-xs font-semibold text-slate-700 shadow-xs focus:outline-none focus:ring-1 focus:ring-brand transition cursor-pointer"
           >
             <option value="daily">Daily</option>
             <option value="weekly">Weekly</option>
@@ -375,7 +379,7 @@ function LineChart({
       ) : (
         <div className="flex-1 flex flex-col justify-between overflow-hidden relative">
           <div className="flex-1 flex items-stretch h-44 overflow-hidden relative">
-            <div className="w-20 pr-2 flex flex-col justify-between text-[9px] font-bold text-slate-400 text-right border-r border-slate-100 flex-shrink-0 pointer-events-none">
+            <div className="w-20 pr-2 flex flex-col justify-between text-[9px] font-mono font-bold text-slate-400 text-right border-r border-slate-100 flex-shrink-0 pointer-events-none">
               {leftAxisLabels.map((lbl, idx) => (
                 <span key={idx} className="truncate">
                   {lbl}
@@ -398,19 +402,19 @@ function LineChart({
                   }`}
                   style={{ left: tooltipLeftOffset }}
                 >
-                  <div className="bg-white border border-slate-200 rounded-xl p-2.5 shadow-md space-y-0.5 min-w-[120px]">
-                    <div className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">
+                  <div className="bg-slate-900 text-white rounded-xl p-2.5 shadow-md space-y-0.5 min-w-[120px] border border-slate-800">
+                    <div className="text-[9px] font-mono text-slate-400 uppercase tracking-tight">
                       {data[hoveredIndex].label}
                     </div>
-                    <div className="text-[10px] text-slate-600 flex justify-between gap-3">
+                    <div className="text-[10px] text-slate-300 flex justify-between gap-3">
                       <span>Sale:</span>
-                      <span className="font-extrabold text-blue-600">
+                      <span className="font-extrabold font-mono text-emerald-400">
                         {formatPrice(data[hoveredIndex].amount)}
                       </span>
                     </div>
-                    <div className="text-[10px] text-slate-600 flex justify-between gap-3">
+                    <div className="text-[10px] text-slate-300 flex justify-between gap-3">
                       <span>Order:</span>
-                      <span className="font-extrabold text-emerald-600">
+                      <span className="font-extrabold font-mono text-white">
                         {data[hoveredIndex].count}
                       </span>
                     </div>
@@ -421,7 +425,7 @@ function LineChart({
               {hoveredIndex !== null && (
                 <div
                   style={{ left: `${getX(hoveredIndex) / 10}%` }}
-                  className="absolute bottom-[-8px] transform -translate-x-1/2 bg-white border border-slate-200 rounded px-1.5 py-0.5 text-[8px] font-extrabold text-slate-800 shadow-sm z-20"
+                  className="absolute bottom-[-8px] transform -translate-x-1/2 bg-white border border-slate-200 rounded px-1.5 py-0.5 text-[8px] font-mono font-extrabold text-slate-800 shadow-sm z-20"
                 >
                   {formatLabel(data[hoveredIndex].label, activeGroup)}
                 </div>
@@ -430,19 +434,19 @@ function LineChart({
               <svg className="w-full h-full overflow-visible z-10 relative" viewBox="0 0 1000 200" preserveAspectRatio="none">
                 <defs>
                   <linearGradient id="amountGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.15" />
-                    <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.0" />
+                    <stop offset="0%" stopColor="#065f46" stopOpacity="0.14" />
+                    <stop offset="100%" stopColor="#065f46" stopOpacity="0.0" />
                   </linearGradient>
                   <linearGradient id="ordersGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#10b981" stopOpacity="0.15" />
-                    <stop offset="100%" stopColor="#10b981" stopOpacity="0.0" />
+                    <stop offset="0%" stopColor="#64748b" stopOpacity="0.10" />
+                    <stop offset="100%" stopColor="#64748b" stopOpacity="0.0" />
                   </linearGradient>
                 </defs>
 
                 <path d={amountAreaPath} fill="url(#amountGrad)" className="transition-all duration-300" />
-                <path d={amountLinePath} fill="none" stroke="#3b82f6" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="transition-all duration-300" />
+                <path d={amountLinePath} fill="none" stroke="#065f46" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="transition-all duration-300" />
                 <path d={ordersAreaPath} fill="url(#ordersGrad)" className="transition-all duration-300" />
-                <path d={ordersLinePath} fill="none" stroke="#10b981" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="transition-all duration-300" />
+                <path d={ordersLinePath} fill="none" stroke="#64748b" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="transition-all duration-300" />
 
                 {hoveredIndex !== null && (
                   <line
@@ -461,16 +465,16 @@ function LineChart({
                     <circle
                       cx={getX(hoveredIndex)}
                       cy={getYAmount(data[hoveredIndex].amount)}
-                      r={5}
-                      fill="#3b82f6"
+                      r={4.5}
+                      fill="#065f46"
                       stroke="#ffffff"
                       strokeWidth={1.5}
                     />
                     <circle
                       cx={getX(hoveredIndex)}
                       cy={getYCount(data[hoveredIndex].count)}
-                      r={5}
-                      fill="#10b981"
+                      r={4}
+                      fill="#64748b"
                       stroke="#ffffff"
                       strokeWidth={1.5}
                     />
@@ -500,7 +504,7 @@ function LineChart({
               </svg>
             </div>
 
-            <div className="w-12 pl-2 flex flex-col justify-between text-[9px] font-bold text-slate-400 text-left border-l border-slate-100 flex-shrink-0 pointer-events-none">
+            <div className="w-12 pl-2 flex flex-col justify-between text-[9px] font-mono text-slate-400 text-left border-l border-slate-100 flex-shrink-0 pointer-events-none">
               {rightAxisLabels.map((lbl, idx) => (
                 <span key={idx}>{lbl}</span>
               ))}
@@ -528,4 +532,3 @@ function LineChart({
     </div>
   );
 }
-
