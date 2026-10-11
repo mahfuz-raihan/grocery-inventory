@@ -150,7 +150,7 @@ export const ReceivingTab: React.FC<ReceivingTabProps> = ({
 
       {/* Expandable Filter Fields */}
       {showAdvancedFilters && (
-        <div className="p-4 bg-slate-50/70 rounded-xl border border-border grid grid-cols-1 md:grid-cols-4 gap-4 animate-fadeIn">
+        <div className="p-4 bg-slate-50/70 rounded-md border border-border grid grid-cols-1 md:grid-cols-4 gap-4 animate-fadeIn">
           <div>
             <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Supplier Name</label>
             <input
@@ -158,13 +158,13 @@ export const ReceivingTab: React.FC<ReceivingTabProps> = ({
               value={filterSupplier}
               onChange={(e) => setFilterSupplier(e.target.value)}
               placeholder="Search supplier..."
-              className="w-full p-2 border border-border rounded-lg text-xs bg-white text-slate-800 outline-none focus:ring-1 focus:ring-brand focus:border-brand transition"
+              className="w-full p-2 border border-border rounded-md text-xs bg-white text-slate-800 outline-none focus:ring-1 focus:ring-brand focus:border-brand transition"
             />
           </div>
           <div>
             <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Catalog Product</label>
             <select
-              className="w-full p-2 border border-border rounded-lg bg-white text-slate-800 text-xs outline-none focus:ring-1 focus:ring-brand focus:border-brand transition"
+              className="w-full p-2 border border-border rounded-md bg-white text-slate-800 text-xs outline-none focus:ring-1 focus:ring-brand focus:border-brand transition"
               value={filterMovementProduct}
               onChange={(e) => setFilterMovementProduct(e.target.value)}
             >
@@ -182,7 +182,7 @@ export const ReceivingTab: React.FC<ReceivingTabProps> = ({
               type="date"
               value={filterStartDate}
               onChange={(e) => setFilterStartDate(e.target.value)}
-              className="w-full p-1.5 border border-border rounded-lg text-xs outline-none bg-white font-medium text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand"
+              className="w-full p-1.5 border border-border rounded-md text-xs outline-none bg-white font-medium text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand"
             />
           </div>
           <div>
@@ -191,7 +191,7 @@ export const ReceivingTab: React.FC<ReceivingTabProps> = ({
               type="date"
               value={filterEndDate}
               onChange={(e) => setFilterEndDate(e.target.value)}
-              className="w-full p-1.5 border border-border rounded-lg text-xs outline-none bg-white font-medium text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand"
+              className="w-full p-1.5 border border-border rounded-md text-xs outline-none bg-white font-medium text-slate-800 focus:ring-1 focus:ring-brand focus:border-brand"
             />
           </div>
         </div>
@@ -199,11 +199,11 @@ export const ReceivingTab: React.FC<ReceivingTabProps> = ({
 
       {/* List */}
       {sortedGrnItems.length === 0 ? (
-        <p className="text-xs text-slate-500 italic text-center py-12 bg-slate-50/50 rounded-xl border border-border">
+        <p className="text-xs text-slate-500 italic text-center py-12 bg-slate-50/50 rounded-md border border-border">
           No deliveries found matching the filters.
         </p>
       ) : (
-        <div className="overflow-x-auto max-h-[60vh] border border-border rounded-xl">
+        <div className="overflow-x-auto max-h-[60vh] border border-border rounded-md">
           <table className="w-full text-left text-xs border-collapse">
             <thead className="bg-slate-50 uppercase text-slate-500 font-semibold text-[11px] tracking-wider border-b border-border sticky top-0 z-10">
               <tr>
@@ -267,7 +267,7 @@ export const ReceivingTab: React.FC<ReceivingTabProps> = ({
                       <button
                         type="button"
                         onClick={() => onViewInvoice(item.grn)}
-                        className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg text-xs transition border border-border"
+                        className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-md text-xs transition border border-border"
                       >
                         🖨 View Invoice
                       </button>
