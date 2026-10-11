@@ -82,38 +82,37 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Background visual shapes */}
-      <div className="absolute top-[-20%] left-[-20%] w-[60%] h-[60%] rounded-full bg-blue-600/20 blur-[150px]" />
-      <div className="absolute bottom-[-20%] right-[-20%] w-[60%] h-[60%] rounded-full bg-emerald-600/10 blur-[150px]" />
+    <div className="min-h-screen bg-[#F8F9FA] flex flex-col items-center justify-center p-4 relative">
+      {/* Subtle brand ambient glow */}
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="w-full max-w-md bg-slate-800/80 backdrop-blur-md border border-slate-700/50 p-8 rounded-2xl shadow-2xl relative z-10">
-        <div className="flex flex-col items-center mb-8">
+      <div className="w-full max-w-sm bg-white border border-border p-8 rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.04)] relative z-10">
+        <div className="flex flex-col items-center mb-6">
           {/* Logo Icon */}
-          <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/30 mb-4 transform hover:rotate-12 transition-transform">
-            <svg className="w-9 h-9 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="w-12 h-12 bg-brand rounded-xl flex items-center justify-center shadow-sm mb-3">
+            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
             </svg>
           </div>
-          <h1 className="text-3xl font-extrabold text-white tracking-tight">ERP Pro</h1>
-          <p className="text-slate-400 mt-2 text-sm text-center">Enter credentials to access the ERP Terminal</p>
+          <h1 className="text-xl font-bold text-slate-900 tracking-tight">ERP Pro</h1>
+          <p className="text-slate-500 mt-1 text-xs text-center">Enter credentials to access the ERP Terminal</p>
         </div>
 
         {error && (
-          <div className="mb-6 p-4 bg-red-950/50 border border-red-500/30 text-red-400 rounded-xl text-sm flex items-start gap-3">
-            <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="mb-5 p-3.5 bg-rose-50 border border-rose-200 text-rose-800 rounded-lg text-xs font-medium flex items-start gap-2.5">
+            <svg className="w-4 h-4 flex-shrink-0 mt-0.5 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
             <span>{error}</span>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Email Address</label>
+            <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Email Address</label>
             <input
               type="email"
-              className="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all placeholder:text-slate-600"
+              className="w-full px-3.5 py-2.5 bg-white border border-border rounded-lg text-slate-900 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition text-xs font-mono placeholder:text-slate-400 placeholder:font-sans"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="e.g. admin@company.com"
@@ -122,10 +121,10 @@ export default function LoginPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Password</label>
+            <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Password</label>
             <input
               type="password"
-              className="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all placeholder:text-slate-600"
+              className="w-full px-3.5 py-2.5 bg-white border border-border rounded-lg text-slate-900 focus:ring-1 focus:ring-brand focus:border-brand outline-none transition text-xs placeholder:text-slate-400"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
@@ -136,11 +135,11 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-700 text-white font-bold rounded-xl transition-all shadow-lg shadow-blue-500/20 active:scale-[0.98] mt-2 flex items-center justify-center gap-2"
+            className="btn-primary w-full py-2.5 text-xs flex items-center justify-center gap-2 mt-2 shadow-xs"
           >
             {loading ? (
               <>
-                <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                 </svg>
@@ -151,6 +150,9 @@ export default function LoginPage() {
             )}
           </button>
         </form>
+      </div>
+      <div className="mt-6 text-center text-xs text-slate-400">
+        Enterprise Grade POS &amp; Inventory Control &bull; v2.0
       </div>
     </div>
   );
