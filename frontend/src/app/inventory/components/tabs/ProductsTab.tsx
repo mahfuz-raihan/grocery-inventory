@@ -615,15 +615,15 @@ export const ProductsTab: React.FC<ProductsTabProps> = ({
                   ) : (
                     filteredCatalog.map((p) => {
                       const stock = p.current_stock ?? 0;
-                      const min = p.min_stock_level ?? 0;
-                      const max = p.max_stock_level ?? Infinity;
+                      const min = p.min_stock_level && p.min_stock_level > 0 ? p.min_stock_level : 0;
+                      const max = p.max_stock_level && p.max_stock_level > 0 ? p.max_stock_level : Infinity;
 
                       let badgeColor = "bg-emerald-50 text-emerald-800 border-emerald-200";
                       let statusText = "Available";
                       if (stock <= 0) {
                         badgeColor = "bg-rose-50 text-rose-800 border-rose-200";
                         statusText = "Out of Stock";
-                      } else if (stock <= min) {
+                      } else if (min > 0 && stock <= min) {
                         badgeColor = "bg-amber-50 text-amber-800 border-amber-200";
                         statusText = "Low Stock";
                       } else if (max !== Infinity && stock > max) {
