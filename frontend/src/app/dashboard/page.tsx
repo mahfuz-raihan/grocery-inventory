@@ -18,6 +18,7 @@ import { CustomerInvoicesModal } from "./components/CustomerInvoicesModal";
 import { CustomerLedgerModal } from "./components/CustomerLedgerModal";
 import { CustomerProfileModal } from "./components/CustomerProfileModal";
 import { DailySalesReportModal } from "./components/DailySalesReportModal";
+import { toast } from "@/components/ui/Toast";
 
 const FILTER_OPTIONS = [
   { id: "today", label: "Today" },
@@ -253,13 +254,13 @@ export default function Dashboard() {
 
   const applyCustomRange = () => {
     if (!customStartDate || !customEndDate) {
-      alert("Please select both start and end dates.");
+      toast.warning("Please select both start and end dates.");
       return;
     }
     const start = new Date(customStartDate);
     const end = new Date(customEndDate);
     if (start > end) {
-      alert("Start date must be before or equal to end date.");
+      toast.warning("Start date must be before or equal to end date.");
       return;
     }
     fetchAnalytics(start, end);
