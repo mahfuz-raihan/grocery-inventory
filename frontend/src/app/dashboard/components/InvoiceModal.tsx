@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { toast } from "@/components/ui/Toast";
 import {
   SaleInvoice,
   CatalogProduct,
@@ -27,7 +28,7 @@ export const printSaleInvoice = (
 ) => {
   const printWindow = window.open("", "_blank");
   if (!printWindow) {
-    alert("Please allow popups to print invoices.");
+    toast.error("Please allow popups to print invoices.");
     return;
   }
 
@@ -340,6 +341,130 @@ export const printSaleInvoice = (
   printWindow.document.close();
 };
 
+// Exported 80mm POS Thermal Receipt Print Function
+export const printThermalReceipt = (
+  invoice: SaleInvoice,
+  catalogProducts: CatalogProduct[],
+  branches: Branch[],
+  companyProfile: CompanyProfile | null
+) => {
+  const printWindow = window.open("", "_blank");
+  if (!printWindow) {
+    toast.error("Please allow popups to print thermal receipts.");
+    return;
+  }
+
+  const branch = branches.find((b) => b.id === invoice.branch_id);
+  const warehouseName = branch ? branch.name : "Main Outlet";
+
+  const getProductName = (productId: string) => {
+    const prod = catalogProducts.find((p) => p.id === productId);
+    return prod ? prod.name : `Item (${productId.slice(0, 8)})`;
+  };
+
+  const subtotal = invoice.items.reduce(
+    (sum, item) => sum + item.quantity * item.unit_price,
+    0
+  );
+
+  const itemsRows = invoice.items
+    .map(
+      (item) => `
+      <div style="display: flex; justify-content: space-between; font-size: 11px; margin-top: 3px; font-weight: 700;">
+        <span style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${getProductName(item.product_id)}</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 3px; color: #1e293b;">
+        <span>${item.quantity} x ৳${item.unit_price.toFixed(2)}</span>
+        <span style="font-weight: 700; font-variant-numeric: tabular-nums;">৳${(item.quantity * item.unit_price).toFixed(2)}</span>
+      </div>
+    `
+    )
+    .join("");
+
+  printWindow.document.write(`
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Receipt - ${invoice.receipt_number}</title>
+        <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700;800&display=swap" rel="stylesheet">
+        <style>
+          @page {
+            size: 80mm auto;
+            margin: 0;
+          }
+          * {
+            box-sizing: border-box;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          body {
+            font-family: 'JetBrains Mono', monospace;
+            width: 72mm;
+            margin: 0 auto;
+            padding: 8px 4px;
+            color: #000000;
+            font-size: 11px;
+            line-height: 1.35;
+          }
+          .text-center { text-align: center; }
+          .store-name { font-size: 14px; font-weight: 800; text-transform: uppercase; margin-bottom: 2px; }
+          .store-sub { font-size: 10px; color: #1e293b; margin: 1px 0; }
+          .dashed { border-top: 1px dashed #000000; margin: 6px 0; }
+          .double { border-top: 2px solid #000000; margin: 6px 0; }
+          .row { display: flex; justify-content: space-between; margin: 2px 0; font-size: 10.5px; }
+          .total-row { display: flex; justify-content: space-between; font-size: 13px; font-weight: 800; margin: 4px 0; }
+          .footer { font-size: 9.5px; text-align: center; margin-top: 8px; color: #334155; }
+          @media print {
+            body { width: 100%; padding: 4px 0; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="text-center">
+          <div class="store-name">${companyProfile?.name || "PREMIUM GROCERY ERP"}</div>
+          <div class="store-sub">${companyProfile?.address || "Main Branch, Bangladesh"}</div>
+          <div class="store-sub">Phone: ${companyProfile?.phone || "01700-000000"}</div>
+          ${companyProfile?.email ? `<div class="store-sub">Email: ${companyProfile.email}</div>` : ""}
+        </div>
+
+        <div class="dashed"></div>
+
+        <div class="row"><span>Receipt #:</span><span style="font-weight: 700;">${invoice.receipt_number}</span></div>
+        <div class="row"><span>Date:</span><span>${formatDateTime(invoice.created_at)}</span></div>
+        <div class="row"><span>Outlet:</span><span>${warehouseName}</span></div>
+        ${invoice.customer_name ? `<div class="row"><span>Customer:</span><span>${invoice.customer_name}</span></div>` : ""}
+
+        <div class="dashed"></div>
+        <div style="font-weight: 700; margin-bottom: 2px;">ITEMS</div>
+        ${itemsRows}
+        <div class="dashed"></div>
+
+        <div class="row"><span>Subtotal:</span><span>৳${subtotal.toFixed(2)}</span></div>
+        ${invoice.discount && invoice.discount > 0 ? `<div class="row"><span>Discount:</span><span>-৳${invoice.discount.toFixed(2)}</span></div>` : ""}
+        <div class="double"></div>
+        <div class="total-row"><span>NET TOTAL:</span><span>৳${invoice.total_amount.toFixed(2)}</span></div>
+        <div class="double"></div>
+
+        <div class="row"><span>Payment:</span><span style="font-weight: 800;">${invoice.status.toUpperCase()}</span></div>
+
+        <div class="footer">
+          <p style="margin: 3px 0; font-weight: 700;">*** THANK YOU FOR SHOPPING ***</p>
+          <p style="margin: 1px 0;">Items returnable within 3 days with receipt.</p>
+        </div>
+
+        <script>
+          window.onload = function() {
+            window.print();
+            setTimeout(function() { window.close(); }, 750);
+          };
+        </script>
+      </body>
+    </html>
+  `);
+  printWindow.document.close();
+};
+
 export const InvoiceModal: React.FC<InvoiceModalProps> = ({
   invoice,
   onClose,
@@ -366,6 +491,10 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
     printSaleInvoice(invoice, catalogProducts, branches, companyProfile);
   };
 
+  const handlePrintThermal = () => {
+    printThermalReceipt(invoice, catalogProducts, branches, companyProfile);
+  };
+
   return (
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto animate-fadeIn">
       <div className="bg-white rounded-lg border border-border max-w-2xl w-full shadow-2xl overflow-hidden flex flex-col my-8">
@@ -386,7 +515,14 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
               <svg className="w-3.5 h-3.5 text-emerald-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
               </svg>
-              <span>Print / Download PDF</span>
+              <span>A4 Invoice</span>
+            </button>
+            <button
+              onClick={handlePrintThermal}
+              className="px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white font-medium rounded-md text-xs transition flex items-center gap-1.5 shadow-xs"
+              title="Print 80mm POS Thermal Slip"
+            >
+              <span>🧾 80mm Slip</span>
             </button>
             <button
               onClick={onClose}
