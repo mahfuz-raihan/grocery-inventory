@@ -8,6 +8,8 @@ export interface Product {
     min_selling_price?: number;
     current_stock: number;
     supplier_name?: string;
+    expiry_date?: string | null;
+    batch_number?: string | null;
 }
 
 export interface CartItem extends Product {
