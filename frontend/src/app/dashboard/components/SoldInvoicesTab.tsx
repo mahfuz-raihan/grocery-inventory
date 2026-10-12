@@ -14,6 +14,7 @@ import {
 } from "../types";
 import { printSaleInvoice } from "./InvoiceModal";
 import { ProfitBreakdownModal } from "./ProfitBreakdownModal";
+import { toast } from "@/components/ui/Toast";
 
 interface SoldInvoicesTabProps {
   invoices: SaleInvoice[];
@@ -180,9 +181,9 @@ export const SoldInvoicesTab: React.FC<SoldInvoicesTabProps> = ({
     try {
       await onDeleteInvoice(inv.id);
       setOpenMenuId(null);
-      alert(`✅ Invoice ${inv.receipt_number} deleted successfully.`);
+      toast.success(`Invoice ${inv.receipt_number} deleted successfully.`);
     } catch (err: any) {
-      alert(err.message || "Failed to delete invoice");
+      toast.error(err.message || "Failed to delete invoice");
     }
   };
 
