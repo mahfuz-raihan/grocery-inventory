@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { CustomerSummary, CatalogProduct, formatPrice, formatDateOnly } from "../types";
+import { toast } from "@/components/ui/Toast";
 
 interface CustomerProfileModalProps {
   customer: CustomerSummary | null;
@@ -86,7 +87,7 @@ export const CustomerProfileModal: React.FC<CustomerProfileModalProps> = ({
       });
 
       setIsEditing(false);
-      alert("✅ Customer profile updated successfully across all invoices!");
+      toast.success("Customer profile updated successfully across all invoices!");
     } catch (err: any) {
       setErrorMessage(err.message || "Error updating profile");
     } finally {
