@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "@/components/ui/Toast";
 
 interface Branch {
     id: string;
@@ -131,6 +132,7 @@ export default function UsersPage() {
 
       const newUser = await api.createUser(payload);
       setUsers(prev => [...prev, newUser]);
+      toast.success(`User "${newUserFullName}" registered successfully as "${newUserRole}"!`);
       setUserSuccessMessage(`✅ User "${newUserFullName}" registered successfully as "${newUserRole}"!`);
       setNewUserEmail("");
       setNewUserPassword("");
@@ -138,7 +140,7 @@ export default function UsersPage() {
       setNewUserRole("cashier");
     } catch (error: any) {
       console.error(error);
-      alert(error.message || "Failed to create user.");
+      toast.error(error.message || "Failed to create user.");
     } finally {
       setIsSubmittingUser(false);
     }
