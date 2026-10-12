@@ -10,8 +10,10 @@ import {
   getSyncQueue,
   clearSyncQueueItem
 } from "../lib/db";
-import { InvoiceModal } from "./dashboard/components/InvoiceModal";
+import { InvoiceModal, printThermalReceipt } from "./dashboard/components/InvoiceModal";
 import { SaleInvoice, Branch, CompanyProfile } from "./dashboard/types";
+import { getExpiryStatus } from "./inventory/types";
+import { toast } from "@/components/ui/Toast";
 
 const getApiBaseUrl = () => {
   if (typeof window !== 'undefined') {
@@ -151,6 +153,25 @@ export default function POSTerminal() {
   // --- OFFLINE CAPABILITY STATE ---
   const [isOnline, setIsOnline] = useState(true);
   const [pendingSync, setPendingSync] = useState(0);
+
+  // --- 80mm RECEIPT AUTO-PRINT STATE ---
+  const [autoPrintThermal, setAutoPrintThermal] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const savedAutoPrint = localStorage.getItem("pos_autoprint_thermal");
+      if (savedAutoPrint === "true") {
+        setAutoPrintThermal(true);
+      }
+    }
+  }, []);
+
+  const toggleAutoPrintThermal = (val: boolean) => {
+    setAutoPrintThermal(val);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("pos_autoprint_thermal", val ? "true" : "false");
+    }
+  };
 
   useEffect(() => {
     const role = localStorage.getItem("erp_role");
@@ -313,7 +334,7 @@ export default function POSTerminal() {
     setPendingSync(remaining.length);
 
     if (successCount > 0) {
-      alert(`✅ Successfully synced ${successCount} offline orders to the Main Server!`);
+      toast.success(`Successfully synced ${successCount} offline orders to Main Server!`);
       fetchProductsList(); // Refresh stock
     }
   };
@@ -384,7 +405,17 @@ export default function POSTerminal() {
   // --- Cart Actions ---
   const addToCart = (product: Product) => {
     const available = getAvailableStock(product);
-    if (available <= 0) return;
+    if (available <= 0) {
+      toast.warning(`"${product.name}" is out of stock.`);
+      return;
+    }
+
+    const expiry = getExpiryStatus(product.expiry_date);
+    if (expiry?.status === "expired") {
+      toast.error(`Perishable Alert: "${product.name}" is EXPIRED! Check batch.`, "Perishable Alert");
+    } else if (expiry?.status === "near_expiry") {
+      toast.warning(`Perishable Notice: "${product.name}" expires in ${expiry.days} days.`, "Near Expiry");
+    }
 
     setCart((prev) => {
       const existing = prev.find(
@@ -399,6 +430,7 @@ export default function POSTerminal() {
       }
       return [...prev, { ...product, cartQuantity: 1, subtotal: product.selling_price }];
     });
+    toast.success(`Added "${product.name}" to cart`);
   };
 
   const updateQuantity = (productId: string, supplierName: string | undefined, delta: number) => {
@@ -508,12 +540,33 @@ export default function POSTerminal() {
         setPendingSync(queue.length);
       }
 
+      if (autoPrintThermal) {
+        try {
+          printThermalReceipt(
+            createdInvoice,
+            products.map((p) => ({
+              id: p.product_id || p.id,
+              name: p.name,
+              sku: p.sku,
+              average_cost: p.selling_price,
+            })),
+            branches,
+            companyProfile
+          );
+        } catch (printErr) {
+          console.error("Auto-print thermal error:", printErr);
+        }
+        toast.success(`Order ${response.receipt_number} completed & 80mm slip printed!`);
+      } else {
+        toast.success(`Order ${response.receipt_number} completed successfully!`);
+      }
+
       setTimeout(() => { fetchProductsList(selectedBranchId || undefined); }, 500);
       setTimeout(() => { fetchProductsList(selectedBranchId || undefined); }, 3000);
 
     } catch (error) {
       console.error("Checkout process error:", error);
-      alert("Checkout failed. Please check the console.");
+      toast.error("Checkout failed. Please check the console.");
     } finally {
       setIsProcessing(false);
     }
@@ -723,7 +776,20 @@ export default function POSTerminal() {
                             key={product.id}
                             className={`hover:bg-slate-50/70 transition-colors ${outOfStock ? "opacity-50" : ""}`}
                           >
-                            <td className="px-4 py-2.5 font-semibold text-slate-900">{product.name}</td>
+                            <td className="px-4 py-2.5 font-semibold text-slate-900">
+                              <div className="flex items-center gap-2">
+                                <span>{product.name}</span>
+                                {(() => {
+                                  const exp = getExpiryStatus(product.expiry_date);
+                                  if (!exp) return null;
+                                  return (
+                                    <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold border ${exp.color}`} title={`Expiry: ${product.expiry_date}`}>
+                                      {exp.label}
+                                    </span>
+                                  );
+                                })()}
+                              </div>
+                            </td>
                             <td className="px-4 py-2.5">
                               <span className="font-mono text-[11px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded border border-slate-200/60">{product.sku}</span>
                             </td>
@@ -906,6 +972,20 @@ export default function POSTerminal() {
               <span className="text-xs">Net Payable:</span>
               <span className="text-xl text-brand font-black font-mono tracking-tight">৳{netPayable.toFixed(2)}</span>
             </div>
+          </div>
+
+          {/* 80mm Slip Auto-Print Toggle */}
+          <div className="flex items-center justify-between px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-md">
+            <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-700 select-none">
+              <input
+                type="checkbox"
+                checked={autoPrintThermal}
+                onChange={(e) => toggleAutoPrintThermal(e.target.checked)}
+                className="w-3.5 h-3.5 text-brand rounded border-slate-300 focus:ring-brand cursor-pointer"
+              />
+              <span>Auto-print 80mm receipt</span>
+            </label>
+            <span className="text-[10px] text-slate-500 font-mono font-bold bg-white px-1.5 py-0.5 rounded border border-slate-200">🧾 80mm</span>
           </div>
 
           <button
