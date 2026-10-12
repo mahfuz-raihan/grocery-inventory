@@ -116,8 +116,8 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
           name: r.product_name,
           product_type: r.category || "General",
           current_stock: r.available_qty,
-          min_stock_level: r.min_stock_level || 5.0,
-          reorder_quantity: (r.min_stock_level || 5.0) * 2,
+          min_stock_level: r.min_stock_level || 0,
+          reorder_quantity: (r.min_stock_level && r.min_stock_level > 0 ? r.min_stock_level * 2 : 1),
         }));
 
   const computedValuationSum = valuationDetails.reduce((sum, d) => sum + d.total_value, 0);
