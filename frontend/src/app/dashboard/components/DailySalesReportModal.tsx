@@ -12,6 +12,7 @@ import {
   getInvoiceCost,
   getInvoiceNetProfit,
 } from "../types";
+import { toast } from "@/components/ui/Toast";
 
 interface DailySalesReportModalProps {
   isOpen: boolean;
@@ -120,7 +121,7 @@ export const DailySalesReportModal: React.FC<DailySalesReportModalProps> = ({
   const handlePrint = () => {
     const printWindow = window.open("", "_blank");
     if (!printWindow) {
-      alert("Please allow popups to print the daily sales report.");
+      toast.warning("Please allow popups to print the daily sales report.");
       return;
     }
 
