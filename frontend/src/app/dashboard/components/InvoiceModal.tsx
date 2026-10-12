@@ -390,20 +390,22 @@ export const printThermalReceipt = (
         <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700;800&display=swap" rel="stylesheet">
         <style>
           @page {
-            size: 80mm auto;
-            margin: 0;
+            size: 80mm 297mm;
+            margin: 0mm;
           }
           * {
             box-sizing: border-box;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
           }
-          body {
-            font-family: 'JetBrains Mono', monospace;
+          html, body {
             width: 72mm;
+            max-width: 72mm;
             margin: 0 auto;
-            padding: 8px 4px;
+            padding: 6px 2px;
             color: #000000;
+            background: #ffffff;
+            font-family: 'JetBrains Mono', monospace;
             font-size: 11px;
             line-height: 1.35;
           }
@@ -416,7 +418,14 @@ export const printThermalReceipt = (
           .total-row { display: flex; justify-content: space-between; font-size: 13px; font-weight: 800; margin: 4px 0; }
           .footer { font-size: 9.5px; text-align: center; margin-top: 8px; color: #334155; }
           @media print {
-            body { width: 100%; padding: 4px 0; }
+            html, body {
+              width: 72mm !important;
+              max-width: 72mm !important;
+              margin: 0 auto !important;
+              padding: 4px 1px !important;
+              overflow: hidden;
+            }
+            .no-print { display: none !important; }
           }
         </style>
       </head>
