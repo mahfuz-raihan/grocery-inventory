@@ -895,9 +895,15 @@ async def get_low_stock_report(session: AsyncSession = Depends(db_manager.get_se
     for p in products:
         current_stock = stock_map.get(p.id, 0.0)
         
-        min_limit = p.min_stock_level if p.min_stock_level > 0 else 5.0
+        min_limit = p.min_stock_level if (p.min_stock_level and p.min_stock_level > 0) else 0.0
         
-        if current_stock <= min_limit:
+        is_low = False
+        if current_stock <= 0.0:
+            is_low = True
+        elif min_limit > 0.0 and current_stock <= min_limit:
+            is_low = True
+            
+        if is_low:
             low_stock_list.append({
                 "product_id": str(p.id),
                 "sku": p.sku,
@@ -905,7 +911,7 @@ async def get_low_stock_report(session: AsyncSession = Depends(db_manager.get_se
                 "product_type": p.product_type,
                 "current_stock": current_stock,
                 "min_stock_level": min_limit,
-                "reorder_quantity": p.reorder_quantity if p.reorder_quantity > 0 else 10.0
+                "reorder_quantity": p.reorder_quantity if (p.reorder_quantity and p.reorder_quantity > 0) else (min_limit * 2 if min_limit > 0 else 1.0)
             })
             
     return low_stock_list
