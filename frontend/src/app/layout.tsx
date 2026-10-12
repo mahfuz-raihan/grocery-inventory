@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
+import { ToastProvider } from '@/components/ui/Toast';
 import './globals.css';
 
 export default function RootLayout({
@@ -113,7 +114,9 @@ export default function RootLayout({
           <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
         </head>
         <body className="bg-surface text-slate-800 antialiased font-sans">
-          {children}
+          <ToastProvider>
+            {children}
+          </ToastProvider>
         </body>
       </html>
     );
@@ -130,6 +133,7 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
       </head>
       <body className="bg-surface text-slate-800 flex h-screen overflow-hidden antialiased font-sans">
+        <ToastProvider>
 
         {/* Sidebar */}
         <aside className={`${isSidebarCollapsed ? 'w-20' : 'w-64'} bg-white border-r border-slate-200 text-slate-700 flex-shrink-0 hidden md:flex flex-col z-20 transition-all duration-300`}>
@@ -379,6 +383,7 @@ export default function RootLayout({
           </main>
         </div>
 
+        </ToastProvider>
       </body>
     </html>
   );
