@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { api } from "../../types";
+import { toast } from "@/components/ui/Toast";
 
 export interface CompanyProfileModalProps {
   isOpen?: boolean;
@@ -107,7 +108,7 @@ export const CompanyProfileModal: React.FC<CompanyProfileModalProps> = ({
       : role === "owner" || !role;
 
     if (!canEditProfile) {
-      alert("Unauthorized: You do not have permissions to modify the Company Profile.");
+      toast.warning("Unauthorized: You do not have permissions to modify the Company Profile.");
       return;
     }
 
@@ -137,7 +138,7 @@ export const CompanyProfileModal: React.FC<CompanyProfileModalProps> = ({
       }
 
       handleClose();
-      alert("✅ Company profile updated successfully!");
+      toast.success("Company profile updated successfully!");
     } catch (err: any) {
       setErrorMessage(err.message || "Failed to update company profile");
     } finally {

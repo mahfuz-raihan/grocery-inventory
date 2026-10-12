@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { api, Product, Supplier, USD_EXCHANGE_RATE } from "../../types";
+import { toast } from "@/components/ui/Toast";
 
 interface EditProductModalProps {
   editingProduct: Product | null;
@@ -171,10 +172,11 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
 
       const updated = await api.updateProduct(editingProduct.id, payload);
       onProductUpdated(updated);
+      toast.success(`Product "${editName}" updated successfully!`);
       onClose();
     } catch (error: any) {
       console.error(error);
-      alert(error.message || "Failed to update product.");
+      toast.error(error.message || "Failed to update product.");
     } finally {
       setIsUpdatingProduct(false);
     }

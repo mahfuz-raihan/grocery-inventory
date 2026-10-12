@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { api, Supplier } from "../../types";
+import { toast } from "@/components/ui/Toast";
 
 interface SuppliersTabProps {
   suppliers: Supplier[];
@@ -47,15 +48,15 @@ export const SuppliersTab: React.FC<SuppliersTabProps> = ({ suppliers, setSuppli
       if (editingSupplier) {
         const updated = await api.updateSupplier(editingSupplier.id, payload);
         setSuppliers((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
-        alert("✅ Supplier updated successfully!");
+        toast.success("Supplier updated successfully!");
       } else {
         const newS = await api.createSupplier(payload);
         setSuppliers((prev) => [...prev, newS]);
-        alert("✅ Supplier registered successfully!");
+        toast.success("Supplier registered successfully!");
       }
       resetForm();
     } catch (err: any) {
-      alert(err.message || "Failed to save supplier info");
+      toast.error(err.message || "Failed to save supplier info");
     } finally {
       setIsSubmitting(false);
     }
@@ -205,9 +206,9 @@ export const SuppliersTab: React.FC<SuppliersTabProps> = ({ suppliers, setSuppli
                             try {
                               const updated = await api.updateSupplier(s.id, { is_active: s.is_active === false });
                               setSuppliers((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
-                              alert(`Status updated for ${s.name}`);
+                              toast.success(`Status updated for ${s.name}`);
                             } catch (err) {
-                              alert("Failed to toggle supplier status");
+                              toast.error("Failed to toggle supplier status");
                             }
                           }}
                           className={`px-2.5 py-1 rounded text-xs font-medium border transition ${

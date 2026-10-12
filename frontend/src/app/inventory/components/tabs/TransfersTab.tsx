@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { api, Branch, Product, Transfer } from "../../types";
+import { toast } from "@/components/ui/Toast";
 
 interface TransfersTabProps {
   transfers: Transfer[];
@@ -43,7 +44,7 @@ export const TransfersTab: React.FC<TransfersTabProps> = ({
     e.preventDefault();
     if (!txProduct || !txFrom || !txTo || !txQty) return;
     if (txFrom === txTo) {
-      alert("Source and Destination warehouses must be different!");
+      toast.warning("Source and Destination warehouses must be different!");
       return;
     }
 
@@ -65,9 +66,9 @@ export const TransfersTab: React.FC<TransfersTabProps> = ({
         onTransferCompleted();
       }
 
-      alert("✅ Inventory transfer complete!");
+      toast.success("Inventory transfer complete!");
     } catch (err: any) {
-      alert(err.message || "Failed to transfer inventory");
+      toast.error(err.message || "Failed to transfer inventory");
     } finally {
       setIsSubmitting(false);
     }

@@ -51,7 +51,40 @@ export interface Product {
   material_type?: string | null;
   wood_type?: string | null;
   board_type?: string | null;
+  expiry_date?: string | null;
+  batch_number?: string | null;
 }
+
+export const getExpiryStatus = (expiryDate?: string | null) => {
+  if (!expiryDate) return null;
+  const now = new Date();
+  const exp = new Date(expiryDate);
+  if (isNaN(exp.getTime())) return null;
+  const diffDays = Math.ceil((exp.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+  if (diffDays < 0) {
+    return {
+      status: "expired",
+      label: "Expired",
+      color: "bg-rose-50 text-rose-800 border-rose-200",
+      days: diffDays,
+    };
+  }
+  if (diffDays <= 7) {
+    return {
+      status: "near_expiry",
+      label: `${diffDays}d left`,
+      color: "bg-amber-50 text-amber-800 border-amber-200",
+      days: diffDays,
+    };
+  }
+  return {
+    status: "fresh",
+    label: `${diffDays}d fresh`,
+    color: "bg-emerald-50 text-emerald-800 border-emerald-200",
+    days: diffDays,
+  };
+};
 
 export interface Transfer {
   id: string;

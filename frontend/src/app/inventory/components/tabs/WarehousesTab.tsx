@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { api, Branch } from "../../types";
+import { toast } from "@/components/ui/Toast";
 
 interface WarehousesTabProps {
   branches: Branch[];
@@ -30,9 +31,9 @@ export const WarehousesTab: React.FC<WarehousesTabProps> = ({ branches, onWareho
       onWarehouseCreated(newB);
       setWarehouseName("");
       setWarehouseAddress("");
-      alert("✅ Warehouse created successfully!");
+      toast.success("Warehouse created successfully!");
     } catch (err: any) {
-      alert(err.message || "Failed to create warehouse");
+      toast.error(err.message || "Failed to create warehouse");
     } finally {
       setIsSubmitting(false);
     }

@@ -2,6 +2,7 @@
 
 import React from "react";
 import { api } from "../../types";
+import { toast } from "@/components/ui/Toast";
 
 interface ManageAttributesModalsProps {
   showProductTypesModal: boolean;
@@ -97,7 +98,7 @@ export default function ManageAttributesModals({
                     if (!val) return;
                     const key = val.toLowerCase().replace(/[^a-z0-9_]/g, "_");
                     if (productTypes.some(t => t.key === key)) {
-                      alert("Product type key already exists!");
+                      toast.warning("Product type key already exists!");
                       return;
                     }
                     updateProductTypes([...productTypes, { key, label: val }]);
@@ -138,9 +139,9 @@ export default function ManageAttributesModals({
                         try {
                           await api.deleteCategory(c.id);
                           setCategories(categories.filter(cat => cat.id !== c.id));
-                          alert("Category deleted successfully!");
+                          toast.success("Category deleted successfully!");
                         } catch (err: any) {
-                          alert(err.message || "Failed to delete category (Ensure no products belong to it)");
+                          toast.error(err.message || "Failed to delete category (Ensure no products belong to it)");
                         }
                       }
                     }}
@@ -170,9 +171,9 @@ export default function ManageAttributesModals({
                       const newCat = await api.createCategory({ name: val });
                       setCategories([...categories, newCat]);
                       nameInput.value = "";
-                      alert("Category created successfully!");
+                      toast.success("Category created successfully!");
                     } catch (err: any) {
-                      alert(err.message || "Failed to create category");
+                      toast.error(err.message || "Failed to create category");
                     }
                   }}
                   className="btn-primary text-xs"
@@ -233,7 +234,7 @@ export default function ManageAttributesModals({
                     const val = matInput?.value.trim();
                     if (!val) return;
                     if (materialTypes.includes(val)) {
-                      alert("Material Type already exists!");
+                      toast.warning("Material Type already exists!");
                       return;
                     }
                     updateMaterialTypes([...materialTypes, val]);
@@ -297,7 +298,7 @@ export default function ManageAttributesModals({
                     const val = woodInput?.value.trim();
                     if (!val) return;
                     if (woodTypes.includes(val)) {
-                      alert("Wood Type already exists!");
+                      toast.warning("Wood Type already exists!");
                       return;
                     }
                     updateWoodTypesState([...woodTypes, val]);

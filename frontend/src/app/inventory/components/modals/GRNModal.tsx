@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { api, Branch, formatPriceHelper, getLocalDateString, Product, Supplier, USD_EXCHANGE_RATE } from "../../types";
+import { toast } from "@/components/ui/Toast";
 
 export const generateInvoiceRef = (existingGrns: any[] = []) => {
   const d = new Date();
@@ -142,31 +143,31 @@ export const GRNModal: React.FC<GRNModalProps> = ({
     e.preventDefault();
 
     if (!selectedBranchId) {
-      alert("Please select a destination warehouse.");
+      toast.warning("Please select a destination warehouse.");
       return;
     }
     if (!grnSupplierName || grnSupplierName.trim().length < 2) {
-      alert("Please select a supplier company or enter a Supplier Name (at least 2 characters).");
+      toast.warning("Please select a supplier company or enter a Supplier Name (at least 2 characters).");
       return;
     }
 
     if (grnItemsList.length === 0) {
-      alert("Please add at least one product item to receive.");
+      toast.warning("Please add at least one product item to receive.");
       return;
     }
 
     for (let i = 0; i < grnItemsList.length; i++) {
       const item = grnItemsList[i];
       if (!item.product_id) {
-        alert(`Please select a catalog product for item #${i + 1}.`);
+        toast.warning(`Please select a catalog product for item #${i + 1}.`);
         return;
       }
       if (!item.quantity_received || parseFloat(item.quantity_received) <= 0) {
-        alert(`Please enter a valid received quantity for item #${i + 1}.`);
+        toast.warning(`Please enter a valid received quantity for item #${i + 1}.`);
         return;
       }
       if (!item.cost_price || parseFloat(item.cost_price) <= 0) {
-        alert(`Please enter a valid unit price for item #${i + 1}.`);
+        toast.warning(`Please enter a valid unit price for item #${i + 1}.`);
         return;
       }
     }
@@ -242,10 +243,11 @@ export const GRNModal: React.FC<GRNModalProps> = ({
       });
 
       resetForm();
+      toast.success("Delivery received (GRN) successfully!");
       onClose();
     } catch (error: any) {
       console.error(error);
-      alert(error.message || "Failed to submit GRN. Please check all fields and try again.");
+      toast.error(error.message || "Failed to submit GRN. Please check all fields and try again.");
     } finally {
       setIsSubmittingGRN(false);
     }
@@ -615,7 +617,7 @@ export const GRNModal: React.FC<GRNModalProps> = ({
                             type="button"
                             onClick={() => {
                               if (grnItemsList.length === 1) {
-                                alert("You must keep at least one product item row.");
+                                toast.warning("You must keep at least one product item row.");
                                 return;
                               }
                               setGrnItemsList((prev) => prev.filter((_, i) => i !== idx));

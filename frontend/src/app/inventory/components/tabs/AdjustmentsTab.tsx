@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Adjustment, api, Branch, Product } from "../../types";
+import { toast } from "@/components/ui/Toast";
 
 interface AdjustmentsTabProps {
   adjustments: Adjustment[];
@@ -63,9 +64,9 @@ export const AdjustmentsTab: React.FC<AdjustmentsTabProps> = ({
         onAdjustmentCompleted();
       }
 
-      alert("✅ Adjustment logged successfully!");
+      toast.success("Adjustment logged successfully!");
     } catch (err) {
-      alert("Failed to register stock adjustment");
+      toast.error("Failed to register stock adjustment");
     } finally {
       setIsSubmitting(false);
     }

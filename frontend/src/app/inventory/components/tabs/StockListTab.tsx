@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Product } from "../../types";
+import { getExpiryStatus, Product } from "../../types";
 
 interface StockListTabProps {
   stockListData: any[];
@@ -372,7 +372,22 @@ export const StockListTab: React.FC<StockListTabProps> = ({
                           }}
                         >
                           <td className="px-4 py-3">
-                            <span className="font-medium text-slate-800 text-sm">{row.product_name}</span>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-medium text-slate-800 text-sm">{row.product_name}</span>
+                              {(() => {
+                                const prod = products.find((p) => p.id === row.product_id);
+                                if (!prod?.expiry_date) return null;
+                                const exp = getExpiryStatus(prod.expiry_date);
+                                return (
+                                  <span
+                                    className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold border ${exp.badgeColor}`}
+                                    title={`Expiry Date: ${prod.expiry_date}`}
+                                  >
+                                    {exp.label}
+                                  </span>
+                                );
+                              })()}
+                            </div>
                           </td>
                           <td className="px-4 py-3">
                             <span className="font-mono text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded border border-border">

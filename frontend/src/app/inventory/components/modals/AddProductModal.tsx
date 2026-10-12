@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { api, Product } from "../../types";
+import { toast } from "@/components/ui/Toast";
 
 interface AddProductModalProps {
   isOpen: boolean;
@@ -108,13 +109,14 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
 
       const newProduct = await api.createProduct(payload);
       onProductCreated(newProduct);
+      toast.success(`Product "${productName}" registered successfully!`);
 
       // Close modal immediately on success
       resetForm();
       onClose();
     } catch (error: any) {
       console.error(error);
-      alert(error.message || "Failed to create product. SKU might already exist.");
+      toast.error(error.message || "Failed to create product. SKU might already exist.");
     } finally {
       setIsSubmittingProduct(false);
     }

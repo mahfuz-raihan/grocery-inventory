@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { api, formatPriceHelper, Product, Supplier, USD_EXCHANGE_RATE } from "../../types";
+import { api, formatPriceHelper, getExpiryStatus, Product, Supplier, USD_EXCHANGE_RATE } from "../../types";
+import { toast } from "@/components/ui/Toast";
 
 interface ProductsTabProps {
   products: Product[];
@@ -54,9 +55,59 @@ export const ProductsTab: React.FC<ProductsTabProps> = ({
   >({});
   const [isSavingPrices, setIsSavingPrices] = useState(false);
 
+  // Inline quick-edit state for Catalog table
+  const [inlineEditPriceId, setInlineEditPriceId] = useState<string | null>(null);
+  const [inlinePriceVal, setInlinePriceVal] = useState<string>("");
+  const [isSavingInlinePrice, setIsSavingInlinePrice] = useState(false);
+
   const formatPrice = (amount: number) => formatPriceHelper(amount, currency);
 
   const canEditPrice = rbacRules ? rbacRules.product_price_edit?.includes(userRole) : userRole === "owner";
+
+  const startInlinePriceEdit = (p: Product) => {
+    if (!canEditPrice) {
+      toast.warning("You do not have permission to edit product prices.");
+      return;
+    }
+    setInlineEditPriceId(p.id);
+    setInlinePriceVal(
+      currency === "USD"
+        ? (p.selling_price / USD_EXCHANGE_RATE).toFixed(2)
+        : (p.selling_price || 0).toString()
+    );
+  };
+
+  const cancelInlinePriceEdit = () => {
+    setInlineEditPriceId(null);
+    setInlinePriceVal("");
+  };
+
+  const handleSaveInlinePrice = async (prod: Product) => {
+    if (!canEditPrice) {
+      toast.warning("You do not have permission to edit product prices.");
+      return;
+    }
+    const val = parseFloat(inlinePriceVal || "0");
+    if (isNaN(val) || val < 0) {
+      toast.warning("Price cannot be negative or invalid.");
+      return;
+    }
+    const newSellingPrice = currency === "USD" ? val * USD_EXCHANGE_RATE : val;
+
+    setIsSavingInlinePrice(true);
+    try {
+      const updated = await api.updateProduct(prod.id, {
+        selling_price: newSellingPrice,
+      });
+      setProducts((prev) => prev.map((p) => (p.id === prod.id ? { ...p, ...updated } : p)));
+      setInlineEditPriceId(null);
+      toast.success(`Price updated for "${prod.name}" to ${formatPrice(newSellingPrice)}`);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update price");
+    } finally {
+      setIsSavingInlinePrice(false);
+    }
+  };
 
   const handlePriceChange = (prodId: string, field: "selling_price" | "min_selling_price", value: string) => {
     setPendingPrices((prev) => ({
@@ -77,7 +128,7 @@ export const ProductsTab: React.FC<ProductsTabProps> = ({
 
   const handleSaveSinglePrice = async (prod: Product) => {
     if (!canEditPrice) {
-      alert("You do not have permission to edit product prices.");
+      toast.warning("You do not have permission to edit product prices.");
       return;
     }
     const pending = pendingPrices[prod.id];
@@ -93,13 +144,13 @@ export const ProductsTab: React.FC<ProductsTabProps> = ({
         : parseFloat(pending.min_selling_price || "0");
 
     if (newSellingPrice < 0 || newMinPrice < 0) {
-      alert("Prices cannot be negative.");
+      toast.warning("Prices cannot be negative.");
       return;
     }
 
     const avgCostFloor = prod.average_cost || 0;
     if (avgCostFloor > 0 && newMinPrice < avgCostFloor) {
-      alert(`Minimum selling price cannot be lower than the average cost (${formatPrice(avgCostFloor)}). Setting to average cost.`);
+      toast.warning(`Minimum selling price cannot be lower than the average cost (${formatPrice(avgCostFloor)}). Setting to average cost.`);
       return;
     }
 
@@ -114,20 +165,20 @@ export const ProductsTab: React.FC<ProductsTabProps> = ({
         delete copy[prod.id];
         return copy;
       });
-      alert(`✅ Price updated for "${prod.name}"!`);
+      toast.success(`Price updated for "${prod.name}"!`);
     } catch (err: any) {
-      alert(err.message || "Failed to update price");
+      toast.error(err.message || "Failed to update price");
     }
   };
 
   const handleSaveAllPrices = async () => {
     if (!canEditPrice) {
-      alert("You do not have permission to edit product prices.");
+      toast.warning("You do not have permission to edit product prices.");
       return;
     }
     const prodIdsToUpdate = Object.keys(pendingPrices);
     if (prodIdsToUpdate.length === 0) {
-      alert("No pending price changes to save.");
+      toast.info("No pending price changes to save.");
       return;
     }
     setIsSavingPrices(true);
@@ -152,11 +203,11 @@ export const ProductsTab: React.FC<ProductsTabProps> = ({
         successCount++;
       }
       setPendingPrices({});
-      alert(
-        `✅ Successfully updated prices for ${successCount} products! All channels & POS will reflect this immediately.`
+      toast.success(
+        `Successfully updated prices for ${successCount} products! All channels & POS will reflect this immediately.`
       );
     } catch (err: any) {
-      alert(err.message || "Failed during bulk price save");
+      toast.error(err.message || "Failed during bulk price save");
     } finally {
       setIsSavingPrices(false);
     }
@@ -543,6 +594,9 @@ export const ProductsTab: React.FC<ProductsTabProps> = ({
                     <th className="px-4 py-3.5 text-left text-[10px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">
                       Category
                     </th>
+                    <th className="px-4 py-3.5 text-right text-[10px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">
+                      Selling Price ({currency === "USD" ? "$" : "৳"})
+                    </th>
                     <th className="px-4 py-3.5 text-center text-[10px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">
                       Status
                     </th>
@@ -554,7 +608,7 @@ export const ProductsTab: React.FC<ProductsTabProps> = ({
                 <tbody className="divide-y divide-slate-100">
                   {filteredCatalog.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="py-16 text-center text-slate-400">
+                      <td colSpan={8} className="py-16 text-center text-slate-400">
                         No products found matching filters.
                       </td>
                     </tr>
@@ -587,7 +641,22 @@ export const ProductsTab: React.FC<ProductsTabProps> = ({
                           className="hover:bg-slate-50/70 transition cursor-pointer"
                           onClick={() => onOpenProductDetail(p)}
                         >
-                          <td className="px-4 py-3.5 font-semibold text-slate-900">{p.name}</td>
+                          <td className="px-4 py-3.5 font-semibold text-slate-900">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span>{p.name}</span>
+                              {p.expiry_date && (() => {
+                                const exp = getExpiryStatus(p.expiry_date);
+                                return (
+                                  <span
+                                    className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold border ${exp.badgeColor}`}
+                                    title={`Expiry Date: ${p.expiry_date}`}
+                                  >
+                                    {exp.label}
+                                  </span>
+                                );
+                              })()}
+                            </div>
+                          </td>
                           <td className="px-4 py-3.5 text-xs text-slate-500 whitespace-nowrap">{supplierNameStr}</td>
                           <td className="px-4 py-3.5 font-mono text-xs font-bold text-brand whitespace-nowrap">
                             {p.sku}
@@ -595,6 +664,62 @@ export const ProductsTab: React.FC<ProductsTabProps> = ({
                           <td className="px-4 py-3.5 text-xs text-slate-500 whitespace-nowrap">{typeLabel}</td>
                           <td className="px-4 py-3.5 text-xs text-slate-500 whitespace-nowrap">
                             {categories.find((c) => c.id === p.category_id)?.name || "—"}
+                          </td>
+                          <td
+                            className="px-4 py-3.5 text-right whitespace-nowrap"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {inlineEditPriceId === p.id ? (
+                              <div className="flex items-center justify-end gap-1.5">
+                                <input
+                                  type="number"
+                                  step="any"
+                                  min="0"
+                                  autoFocus
+                                  value={inlinePriceVal}
+                                  onChange={(e) => setInlinePriceVal(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") handleSaveInlinePrice(p);
+                                    if (e.key === "Escape") cancelInlinePriceEdit();
+                                  }}
+                                  className="w-24 p-1 text-right font-mono font-bold text-xs border border-brand rounded-md bg-white text-slate-900 outline-none focus:ring-1 focus:ring-brand"
+                                  placeholder="0.00"
+                                />
+                                <button
+                                  type="button"
+                                  disabled={isSavingInlinePrice}
+                                  onClick={() => handleSaveInlinePrice(p)}
+                                  title="Save price (Enter)"
+                                  className="px-1.5 py-0.5 bg-brand text-white hover:bg-brand-dark rounded text-xs transition font-bold"
+                                >
+                                  ✓
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={cancelInlinePriceEdit}
+                                  title="Cancel (Esc)"
+                                  className="px-1.5 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded text-xs transition font-bold"
+                                >
+                                  ✕
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => startInlinePriceEdit(p)}
+                                className="inline-flex items-center justify-end gap-1 px-1.5 py-0.5 rounded hover:bg-slate-100/80 transition group text-right"
+                                title={canEditPrice ? "Click to quick-edit selling price" : undefined}
+                              >
+                                <span className="font-mono font-bold text-slate-900 text-xs">
+                                  {formatPrice(p.selling_price || 0)}
+                                </span>
+                                {canEditPrice && (
+                                  <span className="opacity-0 group-hover:opacity-100 text-slate-400 group-hover:text-brand text-[10px] transition">
+                                    ✏️
+                                  </span>
+                                )}
+                              </button>
+                            )}
                           </td>
                           <td className="px-4 py-3.5 text-center">
                             <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${badgeColor}`}>
